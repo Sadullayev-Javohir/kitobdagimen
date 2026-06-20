@@ -1,0 +1,88 @@
+@model IReadOnlyList<GenreDto>
+@{
+    ViewData["Title"] = "Janrlarni tanlang";
+    ViewData["HideChrome"] = true;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+
+    var icons = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Roman"] = "menu_book",
+        ["Ilmiy"] = "science",
+        ["Detektiv"] = "find_in_page",
+        ["Biografiya"] = "person_book",
+        ["Falsafa"] = "lightbulb",
+        ["Biznes"] = "business_center",
+        ["She'riyat"] = "format_quote",
+        ["Tarix"] = "history_edu",
+        ["Fantastika"] = "rocket_launch",
+        ["Psixologiya"] = "psychology"
+    };
+}
+
+<div class="onboarding">
+    <div class="onboarding-head">
+        <h1>Sizni nima qiziqtiradi?</h1>
+        <p class="muted">Yoqtirgan janrlaringizni tanlang — sizga mos postlarni ko'rsatamiz.</p>
+    </div>
+
+    <form method="post" action="/Onboarding/Save" id="genreForm">
+        @Html.AntiForgeryToken()
+        @if (!string.IsNullOrEmpty(returnUrl))
+        {
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+        }
+
+        <p class="onboarding-warning" id="genreWarning" role="alert" hidden>
+            <span class="material-symbols-outlined">warning</span>
+            <span>Ogohlantirish: davom etish uchun kamida bitta janr tanlang.</span>
+        </p>
+        <div class="genre-grid">
+            @foreach (var genre in Model)
+            {
+                var icon = icons.TryGetValue(genre.Name, out var i) ? i : "auto_stories";
+                <label class="genre-card">
+                    <input type="checkbox" name="genreIds" value="@genre.Id" />
+                    <span class="material-symbols-outlined">@icon</span>
+                    <span class="genre-name">@genre.Name</span>
+                </label>
+            }
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <p class="muted text-center" style="margin-top:24px">Hozircha janrlar yo'q. Administrator ularni qo'shadi.</p>
+        }
+
+        <div class="text-center" style="margin-top:40px">
+            <button type="submit" class="btn btn-accent" style="padding:14px 40px">Davom etish</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const form = document.getElementById("genreForm");
+            const warning = document.getElementById("genreWarning");
+            if (!form || !warning) return;
+
+            form.addEventListener("submit", function (e) {
+                const anySelected = form.querySelectorAll("input[name=genreIds]:checked").length > 0;
+                if (!anySelected) {
+                    e.preventDefault();
+                    warning.hidden = false;
+                    warning.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            });
+
+            // Foydalanuvchi janr tanlay boshlasa, ogohlantirishni yashiramiz.
+            form.querySelectorAll("input[name=genreIds]").forEach(function (cb) {
+                cb.addEventListener("change", function () {
+                    if (form.querySelectorAll("input[name=genreIds]:checked").length > 0) {
+                        warning.hidden = true;
+                    }
+                });
+            });
+        })();
+    </script>
+}

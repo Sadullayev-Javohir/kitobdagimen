@@ -1,0 +1,493 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser
+@using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres
+@using MediatR
+@inject ISender Mediator
+@model PagedResult<PostDto>
+@{
+    ViewData["Title"] = "Asosiy";
+    var me = await Mediator.Send(new GetCurrentUserQuery());
+    var meInitial = KitobdaGimen.Web.ViewHelpers.Initial(me?.FullName);
+    var genres = await Mediator.Send(new GetGenresQuery());
+    ViewData["ShowAuthorActions"] = true;
+    var search = ViewData["Search"] as string ?? "";
+}
+
+<div class="container page">
+    <div class="feed">
+        <!-- Qidiruv -->
+        <div class="feed-search-bar">
+            <button class="action-btn" id="feedSearchToggle" title="Qidirish" aria-label="Qidirish">
+                <span class="material-symbols-outlined">search</span>
+            </button>
+            <form method="get" action="/Feed" id="feedSearchForm" class="feed-search-form" style="@(string.IsNullOrEmpty(search) ? "display:none;" : "")">
+                <div class="search-box">
+                    <span class="search-ico material-symbols-outlined">search</span>
+                    <input class="input" type="search" name="q" id="feedSearchInput"
+                           placeholder="Post matni, kitob, muallif yoki muallif ismi bo'yicha qidiring..."
+                           value="@search" autocomplete="off" />
+                </div>
+            </form>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                <a class="btn btn-outline btn-sm" href="/Feed" id="feedSearchClear" title="Qidiruvni tozalash">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">close</span>
+                    Tozalash
+                </a>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <div class="muted" style="margin-bottom:16px; font-size:14px">
+                <strong>"@search"</strong> bo'yicha qidiruv natijalari —
+                <a href="/Feed">barcha postlarga qaytish</a>
+            </div>
+        }
+
+        <!-- Post yaratish — qidiruvda yashiriladi, qidiruv tugagach qaytadi -->
+        @if (string.IsNullOrEmpty(search))
+        {
+        <div class="card composer">
+            <div class="composer-head">
+                @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                {
+                    <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" />
+                }
+                else
+                {
+                    <span class="avatar">@meInitial</span>
+                }
+                <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
+            </div>
+
+            <form id="postForm" method="post" action="/posts/create">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BookId" id="bookId" />
+
+                <!-- Tanlangan kitob (tanlangach ko'rinadi) -->
+                <div id="selectedBook" class="composer-selected" hidden>
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span id="selectedBookLabel"></span>
+                    <button type="button" class="composer-clear" id="clearBook" aria-label="Bekor qilish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <!-- Kitob qidirish / qo'shish (kitob tanlanmaganda ko'rinadi) -->
+                <div id="bookPicker">
+                    <div class="composer-book">
+                        <input class="input" id="bookSearch" placeholder="Kitobni qidiring..." autocomplete="off" />
+                        <button type="button" class="btn btn-outline btn-sm" id="newBookToggle">Yangi kitob</button>
+                    </div>
+                    <div class="book-suggestions" id="bookSuggestions" hidden></div>
+
+                    <div id="newBookForm" class="composer-newbook stack" hidden>
+                        <input class="input" id="nbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
+                        <input class="input" id="nbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
+                        <input class="input" id="nbPages" type="number" min="1" max="100000" placeholder="Sahifalar soni" />
+                        <select class="input" id="nbGenre">
+                            <option value="">Kategoriyani tanlang</option>
+                            @foreach (var genre in genres)
+                            {
+                                <option value="@genre.Id">@genre.Name</option>
+                            }
+                        </select>
+
+                        <div class="nb-cover">
+                            <div class="nb-cover-preview" id="nbCoverPreview">
+                                <span class="material-symbols-outlined">image</span>
+                            </div>
+                            <div class="nb-cover-actions">
+                                <label class="btn btn-outline btn-sm" for="nbCover">Muqova rasmi</label>
+                                <input type="file" id="nbCover" accept="image/*" hidden />
+                                <button type="button" class="btn btn-ghost btn-sm" id="nbCoverClear" hidden>O'chirish</button>
+                                <span class="muted" id="nbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline btn-sm" id="nbSave">Kitobni qo'shish</button>
+                    </div>
+                </div>
+
+                <partial name="_RichEditor" model='new KitobdaGimen.Web.Models.RichEditorModel { Name = "ReviewText", Placeholder = "Kitob haqida fikringizni yozing...", MinLength = 3, MaxLength = 5000 }' />
+
+
+                <div class="composer-image-picker">
+                    <input type="hidden" name="ImageUrl" id="postImageUrl" />
+                    <div id="postImagePreview" class="composer-image-preview" hidden>
+                        <img id="postImagePreviewImg" src="" alt="Tanlangan rasm" />
+                        <button type="button" class="composer-image-remove" id="postImageClear" aria-label="Rasmni o'chirish">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <label class="btn btn-outline btn-sm" for="postImage">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
+                        Rasm qo'shish
+                    </label>
+                    <input type="file" id="postImage" accept="image/*" hidden />
+                </div>
+
+                <div class="composer-actions">
+                    <span class="muted" id="composerHint" style="font-size:13px">Avval kitobni tanlang yoki qo'shing.</span>
+                    <button type="submit" class="btn btn-primary" id="postSubmit" disabled>Joylash</button>
+                </div>
+            </form>
+        </div>
+        }
+
+        <!-- Postlar -->
+        @if (Model.Items.Count == 0)
+        {
+            <div class="card empty-state">
+                <span class="material-symbols-outlined">@(string.IsNullOrEmpty(search) ? "auto_stories" : "search_off")</span>
+                <p>
+                    @(string.IsNullOrEmpty(search)
+                        ? "Hozircha postlar yo'q. Birinchi bo'lib fikr ulashing yoki boshqa kitobxonlarni kuzating!"
+                        : $"\"{search}\" bo'yicha post topilmadi.")
+                </p>
+            </div>
+        }
+        else
+        {
+            @foreach (var post in Model.Items)
+            {
+                <partial name="_PostCard" model="post" />
+            }
+        }
+
+        <!-- Pastga tushganda keyingi postlar shu yerga animatsiya bilan qo'shiladi -->
+        <div class="infinite-loader" id="feedLoader" hidden>
+            <span class="spinner"></span>
+        </div>
+        <div id="feedSentinel" aria-hidden="true"
+             data-page="@Model.Page" data-total-pages="@Model.TotalPages" data-search="@search"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// --- Qidiruv: ikona bosilganda qidiruv maydonini ochish/yopish ---
+(function () {
+    const searchForm = document.getElementById("feedSearchForm");
+    const searchInput = document.getElementById("feedSearchInput");
+    document.getElementById("feedSearchToggle").addEventListener("click", () => {
+        const open = searchForm.style.display !== "none";
+        searchForm.style.display = open ? "none" : "block";
+        if (!open) searchInput.focus();
+    });
+
+    // --- Topilgan so'zlarni yashil rang bilan belgilash (highlight) ---
+    const term = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(search));
+    function highlightCards(cards) {
+        if (!term || !term.trim()) return;
+        const needle = term.trim().toLowerCase();
+        const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const rx = new RegExp("(" + escaped + ")", "gi");
+
+        const highlightNode = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (!node.nodeValue.toLowerCase().includes(needle)) return;
+                const frag = document.createDocumentFragment();
+                let last = 0;
+                node.nodeValue.replace(rx, (match, _g, offset) => {
+                    if (offset > last) frag.appendChild(document.createTextNode(node.nodeValue.slice(last, offset)));
+                    const mark = document.createElement("mark");
+                    mark.className = "search-mark";
+                    mark.textContent = match;
+                    frag.appendChild(mark);
+                    last = offset + match.length;
+                    return match;
+                });
+                if (last < node.nodeValue.length) frag.appendChild(document.createTextNode(node.nodeValue.slice(last)));
+                node.parentNode.replaceChild(frag, node);
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== "MARK") {
+                [...node.childNodes].forEach(highlightNode);
+            }
+        };
+
+        // Post matni, kitob nomi/muallifi va muallif ismi bo'yicha
+        cards.forEach((card) => {
+            card.querySelectorAll(".post-text, .post-book-title, .post-book-author, .name").forEach(highlightNode);
+        });
+    }
+    highlightCards(Array.from(document.querySelectorAll(".post-card")));
+
+    // --- Cheksiz skroll: pastga tushganda keyingi postlarni yuklash ---
+    const sentinel = document.getElementById("feedSentinel");
+    if (sentinel && window.kitob && kitob.infiniteScroll) {
+        const loader = document.getElementById("feedLoader");
+        kitob.infiniteScroll({
+            sentinel,
+            container: document.querySelector(".feed"),
+            insertBefore: loader,
+            loader,
+            endpoint: "/Feed/cards",
+            page: parseInt(sentinel.dataset.page, 10) || 1,
+            totalPages: parseInt(sentinel.dataset.totalPages, 10) || 1,
+            search: sentinel.dataset.search || "",
+            onAppend: (nodes) => {
+                highlightCards(nodes);
+                if (kitob.initRichEditors) nodes.forEach((n) => kitob.initRichEditors(n));
+            }
+        });
+    }
+})();
+
+(function () {
+    const form = document.getElementById("postForm");
+    if (!form) return; // Qidiruv rejimida composer yo'q
+    const bookIdInput = document.getElementById("bookId");
+    const bookPicker = document.getElementById("bookPicker");
+    const search = document.getElementById("bookSearch");
+    const suggestions = document.getElementById("bookSuggestions");
+    const selectedBook = document.getElementById("selectedBook");
+    const selectedLabel = document.getElementById("selectedBookLabel");
+    const newBookForm = document.getElementById("newBookForm");
+    let searchTimer;
+    const submitBtn = document.getElementById("postSubmit");
+    const hint = document.getElementById("composerHint");
+    const reviewText = form.querySelector("[name='ReviewText']");
+    const reviewEditor = form.querySelector("[data-rich-editor]");
+    const nbCover = document.getElementById("nbCover");
+    const nbCoverPreview = document.getElementById("nbCoverPreview");
+    const nbCoverClear = document.getElementById("nbCoverClear");
+    const nbCoverHint = document.getElementById("nbCoverHint");
+    const postImage = document.getElementById("postImage");
+    const postImagePreview = document.getElementById("postImagePreview");
+    const postImagePreviewImg = document.getElementById("postImagePreviewImg");
+    const postImageClear = document.getElementById("postImageClear");
+    const postImageUrl = document.getElementById("postImageUrl");
+    let coverUrl = null;       // server URL once uploaded
+    let coverFile = null;      // pending file chosen by the user
+    let imageUploading = false; // post image upload in progress
+
+    function resetCover() {
+        coverUrl = null;
+        coverFile = null;
+        nbCover.value = "";
+        nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
+        nbCoverClear.hidden = true;
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+    }
+
+    nbCover.addEventListener("change", () => {
+        const f = nbCover.files && nbCover.files[0];
+        if (!f) { resetCover(); return; }
+        coverFile = f;
+        coverUrl = null; // re-upload on next save
+        nbCoverClear.hidden = false;
+        nbCoverHint.textContent = f.name;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            nbCoverPreview.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = ev.target.result;
+            nbCoverPreview.appendChild(img);
+        };
+        reader.readAsDataURL(f);
+    });
+
+    nbCoverClear.addEventListener("click", resetCover);
+
+    async function uploadCover(file) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/books/upload-cover", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "RequestVerificationToken": kitob.antiforgeryToken()
+            },
+            body: fd
+        });
+        if (res.status === 401) { window.location.href = "/"; return null; }
+        if (!res.ok) {
+            let message = "Rasmni yuklab bo'lmadi.";
+            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+            throw new Error(message);
+        }
+        const data = await res.json();
+        return data.url;
+    }
+
+    function refreshState() {
+        const hasBook = !!bookIdInput.value;
+        const hasText = (reviewText.value || "").trim().length > 0;
+        submitBtn.disabled = !(hasBook && hasText) || imageUploading;
+        if (imageUploading) hint.textContent = "Rasm yuklanmoqda...";
+        else if (!hasBook) hint.textContent = "Avval kitobni tanlang yoki qo'shing.";
+        else if (!hasText) hint.textContent = "Endi fikringizni yozing.";
+        else hint.textContent = "Tayyor — fikringizni joylashingiz mumkin.";
+    }
+
+    function resetPostImage() {
+        postImage.value = "";
+        postImageUrl.value = "";
+        postImagePreviewImg.src = "";
+        postImagePreview.hidden = true;
+        imageUploading = false;
+        refreshState();
+    }
+
+    postImage.addEventListener("change", async () => {
+        const f = postImage.files && postImage.files[0];
+        if (!f) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            postImagePreviewImg.src = ev.target.result;
+            postImagePreview.hidden = false;
+        };
+        reader.readAsDataURL(f);
+
+        postImageUrl.value = "";
+        imageUploading = true;
+        refreshState();
+        try {
+            const fd = new FormData();
+            fd.append("file", f);
+            const res = await fetch("/posts/upload-image", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": kitob.antiforgeryToken()
+                },
+                body: fd
+            });
+            if (res.status === 401) { window.location.href = "/"; return; }
+            if (!res.ok) {
+                let message = "Rasmni yuklab bo'lmadi.";
+                try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+                throw new Error(message);
+            }
+            const data = await res.json();
+            postImageUrl.value = data.url;
+        } catch (err) {
+            alert(err.message);
+            resetPostImage();
+            return;
+        } finally {
+            imageUploading = false;
+            refreshState();
+        }
+    });
+
+    postImageClear.addEventListener("click", resetPostImage);
+
+    function pickBook(book) {
+        bookIdInput.value = book.id;
+        selectedLabel.textContent = `${book.title} — ${book.author}`;
+        selectedBook.hidden = false;
+        bookPicker.hidden = true;
+        suggestions.hidden = true;
+        suggestions.innerHTML = "";
+        search.value = "";
+        refreshState();
+    }
+
+    function clearBook() {
+        bookIdInput.value = "";
+        selectedBook.hidden = true;
+        bookPicker.hidden = false;
+        refreshState();
+    }
+
+    document.getElementById("clearBook").addEventListener("click", clearBook);
+    if (reviewEditor) reviewEditor.addEventListener("rich:input", refreshState);
+
+    // --- Kitob qidirish ---
+    search.addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        const q = search.value.trim();
+        if (q.length < 2) { suggestions.hidden = true; return; }
+        searchTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                if (!res.ok) return;
+                const books = await res.json();
+                suggestions.innerHTML = "";
+                books.forEach(b => {
+                    const div = document.createElement("div");
+                    div.textContent = `${b.title} — ${b.author} (${b.totalPages} bet)`;
+                    div.addEventListener("click", () => pickBook(b));
+                    suggestions.appendChild(div);
+                });
+                suggestions.hidden = books.length === 0;
+            } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
+        }, 250);
+    });
+
+    document.getElementById("newBookToggle").addEventListener("click", () => {
+        newBookForm.hidden = !newBookForm.hidden;
+    });
+
+    const nbSave = document.getElementById("nbSave");
+    nbSave.addEventListener("click", async () => {
+        const genreId = parseInt(document.getElementById("nbGenre").value, 10) || 0;
+        const command = {
+            title: document.getElementById("nbTitle").value.trim(),
+            author: document.getElementById("nbAuthor").value.trim(),
+            totalPages: parseInt(document.getElementById("nbPages").value, 10) || 0,
+            genreId: genreId || null
+        };
+        if (!command.title || !command.author || command.totalPages <= 0) {
+            alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
+            return;
+        }
+        if (command.title.length < 3 || command.title.length > 100) {
+            alert("Kitob nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (command.author.length < 3 || command.author.length > 100) {
+            alert("Muallif nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (command.totalPages > 100000) {
+            alert("Sahifalar soni juda katta.");
+            return;
+        }
+        if (!genreId) {
+            alert("Kitob kategoriyasini tanlang.");
+            return;
+        }
+        nbSave.disabled = true;
+        try {
+            // Upload the cover first (if chosen) so the book is created with its URL.
+            if (coverFile && !coverUrl) {
+                coverUrl = await uploadCover(coverFile);
+            }
+            if (coverUrl) command.coverUrl = coverUrl;
+
+            const book = await kitob.apiPost("/books/create", command);
+            if (book) pickBook(book);
+            newBookForm.hidden = true;
+            resetCover();
+        } catch (err) { alert(err.message); }
+        finally { nbSave.disabled = false; }
+    });
+
+    form.addEventListener("submit", (e) => {
+        if (reviewEditor && reviewEditor.richEditor) reviewEditor.richEditor.sync();
+        if (!bookIdInput.value) {
+            e.preventDefault();
+            alert("Avval kitobni tanlang yoki qo'shing.");
+        } else if (!(reviewText.value || "").trim()) {
+            e.preventDefault();
+            alert("Kitob haqida fikringizni yozing.");
+        } else if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooShort) {
+            e.preventDefault();
+            alert("Fikr kamida 3 belgidan iborat bo'lishi kerak.");
+        } else if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooLong) {
+            e.preventDefault();
+            alert("Fikr 5000 belgidan oshmasligi kerak.");
+        } else if (imageUploading) {
+            e.preventDefault();
+            alert("Rasm hali yuklanmoqda, biroz kuting.");
+        }
+    });
+
+    refreshState();
+})();
+</script>
+}

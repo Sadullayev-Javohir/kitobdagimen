@@ -1,0 +1,45 @@
+@model PagedResult<FollowUserDto>
+@{
+    var title = ViewData["Title"] as string ?? "Foydalanuvchilar";
+}
+
+<div class="container page">
+    <div class="feed">
+        <h1 class="section-title" style="margin-top:0">@title</h1>
+
+        <div class="card">
+            @if (Model.Items.Count == 0)
+            {
+                <p class="muted text-center">Ro'yxat bo'sh.</p>
+            }
+            else
+            {
+                foreach (var user in Model.Items)
+                {
+                    <div class="follow-row">
+                        <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(user.Username, user.Id)">
+                            @if (!string.IsNullOrEmpty(user.AvatarUrl))
+                            {
+                                <img class="avatar" src="@user.AvatarUrl" alt="@user.FullName" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@KitobdaGimen.Web.ViewHelpers.Initial(user.FullName)</span>
+                            }
+                        </a>
+                        <div class="info">
+                            <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(user.Username, user.Id)">@user.FullName</a>
+                            @if (!string.IsNullOrWhiteSpace(user.Bio))
+                            {
+                                <div class="muted" style="font-size:14px">@user.Bio</div>
+                            }
+                        </div>
+                        <button class="btn @(user.IsFollowedByCurrentUser ? "btn-outline" : "btn-primary") btn-sm" data-follow="@user.Id">
+                            @(user.IsFollowedByCurrentUser ? "Kuzatilmoqda" : "Kuzatish")
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,9 @@
+@model IReadOnlyList<PostDto>
+@{
+    // Feed kartalari bilan bir xil amallarni ko'rsatish (kuzatish/tahrir tugmalari).
+    ViewData["ShowAuthorActions"] = true;
+}
+@foreach (var post in Model)
+{
+    <partial name="_PostCard" model="post" />
+}

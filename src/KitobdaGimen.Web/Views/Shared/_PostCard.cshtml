@@ -1,0 +1,130 @@
+@model PostDto
+@{
+    var showAuthorActions = ViewData["ShowAuthorActions"] as bool? ?? false;
+    var postUrl = KitobdaGimen.Web.ViewHelpers.PostUrl(Model.Author.Username, Model.Author.Id, Model.Slug);
+    var postShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{postUrl}";
+    var reviewHtml = KitobdaGimen.Application.Common.RichTextSanitizer.Sanitize(Model.ReviewText);
+}
+
+<article class="card post-card" data-post-id="@Model.Id" data-post-scope>
+    <!-- Sarlavha: muallif -->
+    <header class="post-head">
+        @{
+            var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
+                ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" />")
+                : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName))}</span>");
+        }
+        @if (Model.AuthorHasStory)
+        {
+            <span class="post-avatar-wrap has-story" data-open-story="@Model.Author.Id" role="button" tabindex="0" title="Story">
+                @avatarBody
+            </span>
+        }
+        else
+        {
+            <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
+                @avatarBody
+            </a>
+        }
+        <div class="meta">
+            <div class="name-row">
+                <a class="name" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">@Model.Author.FullName</a>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(Model.Author.Username))
+                @if (showAuthorActions && Model.IsAuthor)
+                {
+                    <span class="badge badge-author">Muallif</span>
+                }
+            </div>
+            <div class="time">@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)</div>
+        </div>
+        @if (showAuthorActions && !Model.IsAuthor)
+        {
+            <button type="button"
+                    class="btn btn-sm post-follow-btn @(Model.IsFollowingAuthor ? "btn-outline" : "btn-primary")"
+                    data-follow="@Model.Author.Id" data-follow-source="feed">
+                @(Model.IsFollowingAuthor ? "Kuzatilmoqda" : "Kuzatish")
+            </button>
+        }
+    </header>
+
+    <div data-view-panel>
+        <!-- Tana: kitob muqovasi + fikr -->
+        <a class="post-body" href="@postUrl">
+            <div class="post-cover">
+                @if (!string.IsNullOrEmpty(Model.Book.CoverUrl))
+                {
+                    <img src="@Model.Book.CoverUrl" alt="@Model.Book.Title" />
+                }
+                else
+                {
+                    <span class="material-symbols-outlined">menu_book</span>
+                }
+            </div>
+            <div class="post-body-main">
+                <h2 class="post-book-title">@Model.Book.Title</h2>
+                <p class="post-book-author">@Model.Book.Author</p>
+                <p class="post-text" data-post-text>@KitobdaGimen.Web.ViewHelpers.RichText(Model.ReviewText)</p>
+            </div>
+        </a>
+
+        <a class="post-image-wrap" href="@postUrl" data-post-image @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")>
+            <img class="post-image" data-post-image-img src="@Model.ImageUrl" alt="Post rasmi" loading="lazy" />
+        </a>
+    </div>
+
+    @if (Model.IsAuthor)
+    {
+        <!-- Tahrirlash paneli — "Tahrirlash" bosilganda yuqoridagi ko'rinish panelini almashtiradi -->
+        <div class="post-edit-panel" data-edit-panel hidden>
+            <partial name="_RichEditor" model='new KitobdaGimen.Web.Models.RichEditorModel { Edit = true, Html = reviewHtml, Placeholder = "Fikringizni yozing...", MinLength = 3, MaxLength = 5000 }' />
+            <div class="composer-image-picker">
+                <input type="hidden" data-edit-image-url value="@Model.ImageUrl" data-original-url="@Model.ImageUrl" />
+                <div class="composer-image-preview" data-edit-image-preview @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")>
+                    <img data-edit-image-preview-img src="@Model.ImageUrl" alt="" />
+                    <button type="button" class="composer-image-remove" data-edit-image-remove aria-label="Rasmni o'chirish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <label class="btn btn-outline btn-sm">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
+                    Rasm qo'shish
+                    <input type="file" accept="image/*" data-edit-image-input hidden />
+                </label>
+            </div>
+            <div class="post-edit-actions">
+                <button type="button" class="btn btn-ghost btn-sm" data-cancel-edit-post>Bekor qilish</button>
+                <button type="button" class="btn btn-primary btn-sm" data-save-edit-post="@Model.Id">Saqlash</button>
+            </div>
+        </div>
+    }
+
+    <!-- Footer: faollik hisoblagichlari -->
+    <footer class="post-actions">
+        <button class="action-btn like-btn @(Model.IsLikedByCurrentUser ? "liked" : "")" data-like="@Model.Id" aria-label="Yoqtirish">
+            <span class="material-symbols-outlined">favorite</span>
+            <span class="like-count">@Model.LikeCount</span>
+        </button>
+        <a class="action-btn" href="@postUrl" aria-label="Izohlar">
+            <span class="material-symbols-outlined">chat_bubble</span>
+            <span>@Model.CommentCount</span>
+        </a>
+        <span class="action-btn action-static" aria-label="Ko'rishlar">
+            <span class="material-symbols-outlined">visibility</span>
+            <span>@Model.ViewCount</span>
+        </span>
+        <span class="post-actions-end">
+            <button type="button" class="action-btn" data-share-url="@postShareUrl" aria-label="Ulashish">
+                <span class="material-symbols-outlined">share</span>
+            </button>
+            @if (Model.IsAuthor)
+            {
+                <button type="button" class="action-btn" data-edit-post aria-label="Tahrirlash">
+                    <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button type="button" class="action-btn danger" data-delete-post="@Model.Id" aria-label="O'chirish">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            }
+        </span>
+    </footer>
+</article>

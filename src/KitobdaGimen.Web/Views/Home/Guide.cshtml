@@ -1,0 +1,298 @@
+@inject KitobdaGimen.Application.Common.Interfaces.ICurrentUserService CurrentUser
+@{
+    ViewData["Title"] = "Foydalanish qo'llanmasi";
+    ViewData["HideChrome"] = true;
+
+    var isAuth = CurrentUser.IsAuthenticated;
+    var primaryHref = isAuth ? "/feed" : "/auth/google-login";
+    var primaryLabel = isAuth ? "Tasmaga o'tish" : "Kirish";
+}
+
+<div class="lp guide">
+    <header class="lp-nav">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+            <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+        </a>
+        <nav class="lp-nav-links">
+            <a href="/">Bosh sahifa</a>
+            <a href="/#imkoniyatlar">Imkoniyatlar</a>
+            <a class="btn btn-accent btn-sm" href="@primaryHref">@primaryLabel</a>
+        </nav>
+    </header>
+
+    <section class="lp-hero guide-hero">
+        <span class="lp-eyebrow">Foydalanish qo'llanmasi</span>
+        <h1>kitobdagimen.uz dan qanday foydalanish kerak</h1>
+        <p class="lp-sub">
+            Ushbu qo'llanma platformaning barcha imkoniyatlarini boshidan oxirigacha,
+            bosqichma-bosqich tushuntiradi. Pastdagi mundarijadan kerakli bo'limga
+            o'tishingiz yoki ketma-ket o'qib chiqishingiz mumkin.
+        </p>
+    </section>
+
+    <nav class="guide-toc" aria-label="Mundarija">
+        <h2>Mundarija</h2>
+        <ol>
+            <li><a href="#kirish">1. Ro'yxatdan o'tish va kirish</a></li>
+            <li><a href="#janr">2. Qiziqishlarni tanlash (onboarding)</a></li>
+            <li><a href="#tasma">3. Tasma — postlar o'qish</a></li>
+            <li><a href="#post">4. Post (taqriz) yozish</a></li>
+            <li><a href="#kitob">5. Kitob qo'shish va qidirish</a></li>
+            <li><a href="#muloqot">6. Yoqtirish, izoh va ulashish</a></li>
+            <li><a href="#kutubxona">7. Kutubxona va o'qish maqsadlari</a></li>
+            <li><a href="#iqtibos">8. Iqtiboslar</a></li>
+            <li><a href="#story">9. Storylar</a></li>
+            <li><a href="#profil">10. Profil va kuzatish</a></li>
+            <li><a href="#xabar">11. Xabarlar (real vaqt chat)</a></li>
+            <li><a href="#bildirishnoma">12. Bildirishnomalar</a></li>
+            <li><a href="#sozlama">13. Kun/tun rejimi va qo'shimchalar</a></li>
+        </ol>
+    </nav>
+
+    <article class="guide-body">
+
+        <section class="guide-step" id="kirish">
+            <span class="guide-step-num">1</span>
+            <div class="guide-step-content">
+                <h2>Ro'yxatdan o'tish va kirish</h2>
+                <p>
+                    Platformaga kirish faqat <strong>Google hisobi</strong> orqali amalga oshiriladi —
+                    alohida parol o'ylab topish yoki email tasdiqlash shart emas.
+                </p>
+                <ul class="guide-list">
+                    <li>Bosh sahifadagi <strong>"Google orqali bepul boshlash"</strong> yoki yuqoridagi <strong>"Kirish"</strong> tugmasini bosing.</li>
+                    <li>Google hisobingizni tanlang va ruxsat bering.</li>
+                    <li>Tizim sizni avtomatik tarzda hisobingiz bilan bog'laydi va keyingi qadamga o'tkazadi.</li>
+                </ul>
+                <p class="guide-tip"><span class="material-symbols-outlined">lightbulb</span> Birinchi marta kirsangiz — qiziqishlaringizni tanlash sahifasiga, keyingi safar to'g'ridan-to'g'ri tasmangizga o'tasiz.</p>
+            </div>
+        </section>
+
+        <section class="guide-step" id="janr">
+            <span class="guide-step-num">2</span>
+            <div class="guide-step-content">
+                <h2>Qiziqishlarni tanlash (onboarding)</h2>
+                <p>
+                    Birinchi kirishdan so'ng sizdan yoqtirgan <strong>janrlaringizni</strong> tanlash so'raladi.
+                    Bu tanlov tasmangizdagi tavsiyalarni sizga moslashtiradi.
+                </p>
+                <ul class="guide-list">
+                    <li>O'zingizga yoqadigan bir nechta janrni belgilang (badiiy, ilmiy, tarix, biznes va h.k.).</li>
+                    <li>Ismingiz va profil ma'lumotlaringizni to'ldiring.</li>
+                    <li>Tasdiqlagach, asosiy tasmaga o'tasiz.</li>
+                </ul>
+                <p class="guide-tip"><span class="material-symbols-outlined">lightbulb</span> Qiziqishlarni keyinchalik profil sozlamalaringizdan o'zgartirishingiz mumkin.</p>
+            </div>
+        </section>
+
+        <section class="guide-step" id="tasma">
+            <span class="guide-step-num">3</span>
+            <div class="guide-step-content">
+                <h2>Tasma — postlar o'qish</h2>
+                <p>
+                    <strong>Tasma</strong> (Feed) — platformaning yuragi. Bu yerda siz va boshqa
+                    kitobxonlarning kitoblar haqidagi postlari (taqrizlari) ko'rsatiladi.
+                </p>
+                <ul class="guide-list">
+                    <li>Tasma <strong>aqlli algoritm</strong> bilan tartiblanadi: siz kuzatadigan kitobxonlarga ko'proq (~60%), qolganlarga kamroq (~40%) o'rin beriladi.</li>
+                    <li>Pastga tushgan sari eskiroq postlar ko'rinadi — sahifa avtomatik yangi postlar bilan to'ldiriladi.</li>
+                    <li>Har bir post tepasida muallifning <strong>storylari</strong> halqa ko'rinishida chiqadi — ustiga bosib ko'ring.</li>
+                    <li>Postga bosib, to'liq matn va barcha izohlar bilan batafsil sahifaga o'tasiz.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="post">
+            <span class="guide-step-num">4</span>
+            <div class="guide-step-content">
+                <h2>Post (taqriz) yozish</h2>
+                <p>
+                    O'qigan kitobingiz haqida fikr-mulohazangizni boshqalar bilan ulashing.
+                </p>
+                <ul class="guide-list">
+                    <li>Tasma yuqorisidagi <strong>matn maydoniga</strong> fikringizni yozing.</li>
+                    <li>Qaysi kitob haqida yozayotganingizni <strong>kitob qidiruvi</strong> orqali biriktiring (5-bo'limga qarang).</li>
+                    <li>Istasangiz <strong>baho</strong> (yulduzcha) qo'shing va matnni boy formatlash vositalari bilan bezang.</li>
+                    <li><strong>"Joylash"</strong> tugmasini bosing — postingiz darhol tasmada paydo bo'ladi.</li>
+                </ul>
+                <p class="guide-tip"><span class="material-symbols-outlined">lightbulb</span> Post matni — sizning shaxsiy taqrizingiz. Qancha batafsil yozsangiz, boshqalarga shuncha foydali bo'ladi.</p>
+            </div>
+        </section>
+
+        <section class="guide-step" id="kitob">
+            <span class="guide-step-num">5</span>
+            <div class="guide-step-content">
+                <h2>Kitob qo'shish va qidirish</h2>
+                <p>
+                    Post yozish, iqtibos saqlash yoki kutubxonaga kitob qo'shishda avval kitobni qidirasiz.
+                </p>
+                <ul class="guide-list">
+                    <li><strong>"Kitobni qidiring..."</strong> maydoniga kitob nomini yozing — mavjud kitoblar ro'yxatdan chiqadi, kerakligini tanlang.</li>
+                    <li>Kitob topilmasa, o'ng tomondagi <strong>"Yangi kitob"</strong> tugmasini bosing.</li>
+                    <li>Ochilgan formada <strong>nom, muallif, sahifalar soni, kategoriya (janr)</strong> va istasangiz <strong>muqova rasmini</strong> kiriting.</li>
+                    <li>Saqlagach, kitob avtomatik tanlanadi va boshqa kitobxonlar uchun ham qidiruvda paydo bo'ladi.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="muloqot">
+            <span class="guide-step-num">6</span>
+            <div class="guide-step-content">
+                <h2>Yoqtirish, izoh va ulashish</h2>
+                <p>Har bir post bilan o'zaro muloqot qilishingiz mumkin.</p>
+                <ul class="guide-list">
+                    <li><span class="material-symbols-outlined guide-inline-icon">favorite</span> <strong>Yoqtirish</strong> — yurakcha tugmasini bosing; muallifga bildirishnoma boradi.</li>
+                    <li><span class="material-symbols-outlined guide-inline-icon">chat_bubble</span> <strong>Izoh</strong> — fikringizni yozing, boshqa izohlarga <strong>javob</strong> ham bera olasiz.</li>
+                    <li><span class="material-symbols-outlined guide-inline-icon">share</span> <strong>Ulashish</strong> — post havolasini nusxalab boshqalarga yuboring.</li>
+                    <li>O'z postingizni <strong>tahrirlash</strong> yoki <strong>o'chirish</strong> tugmalari faqat sizga ko'rinadi.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="kutubxona">
+            <span class="guide-step-num">7</span>
+            <div class="guide-step-content">
+                <h2>Kutubxona va o'qish maqsadlari</h2>
+                <p>
+                    <strong>Kutubxona</strong> bo'limida o'qiyotgan kitoblaringizni va yillik o'qish
+                    maqsadingizni kuzatasiz.
+                </p>
+                <ul class="guide-list">
+                    <li>O'qiyotgan kitoblaringizni qo'shing va har biri uchun <strong>o'qilgan betlar sonini</strong> yangilab boring.</li>
+                    <li><strong>"Betlarni yangilash"</strong> orqali joriy sahifangizni kiriting — jarayon foiz bilan ko'rsatiladi.</li>
+                    <li>Yillik <strong>o'qish maqsadi</strong> belgilang (masalan: yiliga 20 kitob) va rivojlanishingizni ko'ring.</li>
+                    <li>Kitob tugagach, u <strong>"O'qilgan kitoblar"</strong> ro'yxatiga o'tadi.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="iqtibos">
+            <span class="guide-step-num">8</span>
+            <div class="guide-step-content">
+                <h2>Iqtiboslar</h2>
+                <p>
+                    Kitoblardagi eng yoqqan satrlarni <strong>Iqtiboslar</strong> bo'limida saqlang.
+                </p>
+                <ul class="guide-list">
+                    <li><strong>"Yangi iqtibos"</strong> tugmasini bosing, iqtibos matnini yozing va u qaysi kitobdan ekanini biriktiring.</li>
+                    <li>Iqtiboslarni <strong>yoqtirish</strong> va <strong>saqlash</strong> mumkin — saqlanganlar alohida bo'limda to'planadi.</li>
+                    <li><strong>Barcha / Mening / Saqlangan</strong> tablari orqali iqtiboslarni saralang.</li>
+                    <li>O'z iqtibosingizni istalgan vaqtda o'chira olasiz.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="story">
+            <span class="guide-step-num">9</span>
+            <div class="guide-step-content">
+                <h2>Storylar</h2>
+                <p>
+                    Hozir nima o'qiyotganingizni qisqa <strong>story</strong> ko'rinishida ulashing —
+                    ular belgilangan vaqtdan keyin avtomatik yo'qoladi.
+                </p>
+                <ul class="guide-list">
+                    <li>Tasma yoki profil tepasidagi <strong>"+"</strong> halqasini bosib story qo'shing.</li>
+                    <li>Sarlavha, matn kiriting va istasangiz <strong>rasm</strong> yuklang.</li>
+                    <li>Story qancha vaqt ko'rinishini tanlang: <strong>12, 24 yoki 48 soat</strong>.</li>
+                    <li>Boshqalarning storylariga <strong>yoqtirish</strong> bering; ko'rishlar soni hisoblanadi.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="profil">
+            <span class="guide-step-num">10</span>
+            <div class="guide-step-content">
+                <h2>Profil va kuzatish</h2>
+                <p>
+                    <strong>Profil</strong> sahifangiz — sizning kitobxonlik kartangiz.
+                </p>
+                <ul class="guide-list">
+                    <li>Avataringiz, ismingiz, motto (qisqa shior) va statistikalaringiz (postlar, obunachilar) ko'rinadi.</li>
+                    <li><strong>"Tahrirlash"</strong> orqali profil ma'lumotlaringizni yangilang.</li>
+                    <li>Boshqa kitobxonning profiliga kirib <strong>"Kuzatish"</strong> tugmasini bossangiz, uning postlari tasmangizda ko'proq chiqadi.</li>
+                    <li>Profil havolasini <strong>ulashish</strong> orqali boshqalarga yuborishingiz mumkin.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="xabar">
+            <span class="guide-step-num">11</span>
+            <div class="guide-step-content">
+                <h2>Xabarlar (real vaqt chat)</h2>
+                <p>
+                    <strong>Xabarlar</strong> bo'limida kitobxonlar bilan jonli suhbatlashing.
+                    Suhbat boshlash uchun avval <strong>ulanish</strong> kerak.
+                </p>
+                <ul class="guide-list">
+                    <li>Yuqoridagi qidiruvdan foydalanuvchini toping va <strong>"Ulanish"</strong> so'rovini yuboring.</li>
+                    <li>Qarshi tomon so'rovni <strong>qabul qilgach</strong>, suhbat ochiladi (ikki tomon ham bir-biriga taklif yuborsa avtomatik ulanadi).</li>
+                    <li>Suhbatdosh <strong>online</strong> ekani yashil nuqta bilan, oxirgi faolligi vaqt bilan ko'rsatiladi.</li>
+                    <li>Yuborilgan xabar <strong>ikki belgi (✓✓)</strong> ko'k bo'lganda o'qilganini bildiradi.</li>
+                    <li>Bir xabar uzunligi 5000 belgigacha bo'lishi mumkin.</li>
+                </ul>
+                <p class="guide-tip"><span class="material-symbols-outlined">lightbulb</span> Chat sahifasidagi 🦉 boyo'g'li yangi bildirishnomalarga jonli munosabat bildiradi.</p>
+            </div>
+        </section>
+
+        <section class="guide-step" id="bildirishnoma">
+            <span class="guide-step-num">12</span>
+            <div class="guide-step-content">
+                <h2>Bildirishnomalar</h2>
+                <p>
+                    Yuqori paneldagi <span class="material-symbols-outlined guide-inline-icon">notifications</span>
+                    <strong>qo'ng'iroq</strong> ikoni orqali barcha xabarlardan real vaqtda voqif bo'lasiz.
+                </p>
+                <ul class="guide-list">
+                    <li>Postingizga yoqtirish, izoh, yangi obunachi va ulanish so'rovlari shu yerda ko'rinadi.</li>
+                    <li>O'qilmagan bildirishnomalar soni qizil belgi bilan ko'rsatiladi.</li>
+                    <li>Bildirishnomaga bosib, tegishli post yoki profilga to'g'ridan-to'g'ri o'tasiz.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="guide-step" id="sozlama">
+            <span class="guide-step-num">13</span>
+            <div class="guide-step-content">
+                <h2>Kun/tun rejimi va qo'shimchalar</h2>
+                <ul class="guide-list">
+                    <li><span class="material-symbols-outlined guide-inline-icon">dark_mode</span> Yuqoridagi <strong>kun/tun</strong> tugmasi orqali ko'zingizga qulay rejimni tanlang — tanlov eslab qolinadi.</li>
+                    <li>Platforma telefon, planshet va kompyuterga to'liq <strong>moslashadi</strong> — istalgan qurilmadan qulay foydalaning.</li>
+                    <li>Hisobingizni o'chirmoqchi bo'lsangiz, profil sozlamalaridan <strong>"Hisobni o'chirish"</strong> imkoniyatidan foydalaning.</li>
+                </ul>
+            </div>
+        </section>
+
+    </article>
+
+    <section class="lp-cta guide-cta">
+        <h2>Endi boshlashga tayyormisiz?</h2>
+        <p>Yuqoridagi qadamlarni amalda sinab ko'ring — kitobxonlar jamiyati sizni kutmoqda.</p>
+        <a class="btn btn-accent lp-cta-btn-lg" href="@primaryHref">
+            @if (isAuth)
+            {
+                <text>Tasmaga o'tish</text>
+            }
+            else
+            {
+                <text>Bepul qo'shilish</text>
+            }
+        </a>
+    </section>
+
+    <footer class="lp-footer">
+        <div class="lp-footer-brand">
+            <div class="brand">
+                <img class="brand-logo" src="~/img/logo.svg" alt="" />
+                <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+            </div>
+            <p class="muted">O'zbek kitobxonlari uchun ijtimoiy platforma.</p>
+        </div>
+        <nav class="lp-footer-links">
+            <a href="/">Bosh sahifa</a>
+            <a href="/qollanma">Qo'llanma</a>
+            <a href="@primaryHref">@primaryLabel</a>
+        </nav>
+        <p class="lp-copy muted">© 2026 kitobdagimen.uz</p>
+    </footer>
+</div>

@@ -1,0 +1,31 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model IReadOnlyList<QuoteDto>
+@{
+    var meId = CurrentUser.UserId;
+}
+@foreach (var q in Model)
+{
+    <div class="card quote-card">
+        <p class="quote-text">@q.Text</p>
+        <div class="quote-foot">
+            <div class="quote-source">
+                <strong>@q.Book.Title</strong><br />@q.Book.Author
+            </div>
+            <div class="flex items-center gap-8">
+                <button class="action-btn @(q.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@q.Id" title="Saqlash">
+                    <span class="material-symbols-outlined">bookmark</span>
+                    <span class="save-count">@q.SaveCount</span>
+                </button>
+                @if (meId != null && q.Author.Id == meId)
+                {
+                    <form method="post" action="/quotes/@q.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="action-btn" title="O'chirish"><span class="material-symbols-outlined">delete</span></button>
+                    </form>
+                }
+            </div>
+        </div>
+        <div class="muted" style="font-size:13px; margin-top:8px">@q.Author.FullName</div>
+    </div>
+}

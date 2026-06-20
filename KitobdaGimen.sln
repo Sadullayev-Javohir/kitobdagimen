@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{07F2C544-48D5-4F55-8CFB-0352426F2CDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitobdaGimen.Domain", "src\KitobdaGimen.Domain\KitobdaGimen.Domain.csproj", "{F0467900-8E3F-4DDD-BFBA-66383146C83B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitobdaGimen.Application", "src\KitobdaGimen.Application\KitobdaGimen.Application.csproj", "{FA8DD159-E728-4BCE-9273-BE7443A2294D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitobdaGimen.Infrastructure", "src\KitobdaGimen.Infrastructure\KitobdaGimen.Infrastructure.csproj", "{F5E52A1C-F1A3-434C-A14D-D12517847021}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitobdaGimen.Web", "src\KitobdaGimen.Web\KitobdaGimen.Web.csproj", "{B8590C6E-422A-4E57-8A05-6228B2838A5E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B29A7180-F82D-4D90-949C-32D7821FE85E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KitobdaGimen.Application.Tests", "tests\KitobdaGimen.Application.Tests\KitobdaGimen.Application.Tests.csproj", "{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F0467900-8E3F-4DDD-BFBA-66383146C83B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0467900-8E3F-4DDD-BFBA-66383146C83B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0467900-8E3F-4DDD-BFBA-66383146C83B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0467900-8E3F-4DDD-BFBA-66383146C83B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA8DD159-E728-4BCE-9273-BE7443A2294D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA8DD159-E728-4BCE-9273-BE7443A2294D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA8DD159-E728-4BCE-9273-BE7443A2294D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA8DD159-E728-4BCE-9273-BE7443A2294D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5E52A1C-F1A3-434C-A14D-D12517847021}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5E52A1C-F1A3-434C-A14D-D12517847021}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5E52A1C-F1A3-434C-A14D-D12517847021}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5E52A1C-F1A3-434C-A14D-D12517847021}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8590C6E-422A-4E57-8A05-6228B2838A5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8590C6E-422A-4E57-8A05-6228B2838A5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8590C6E-422A-4E57-8A05-6228B2838A5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8590C6E-422A-4E57-8A05-6228B2838A5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F0467900-8E3F-4DDD-BFBA-66383146C83B} = {07F2C544-48D5-4F55-8CFB-0352426F2CDC}
+		{FA8DD159-E728-4BCE-9273-BE7443A2294D} = {07F2C544-48D5-4F55-8CFB-0352426F2CDC}
+		{F5E52A1C-F1A3-434C-A14D-D12517847021} = {07F2C544-48D5-4F55-8CFB-0352426F2CDC}
+		{B8590C6E-422A-4E57-8A05-6228B2838A5E} = {07F2C544-48D5-4F55-8CFB-0352426F2CDC}
+		{6AC79F1F-4EC9-4E44-8F3E-1930FC978A87} = {B29A7180-F82D-4D90-949C-32D7821FE85E}
+	EndGlobalSection
+EndGlobal

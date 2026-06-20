@@ -1,0 +1,159 @@
+@model UserDto?
+@{
+    ViewData["Title"] = "Profilni to'ldirish";
+    ViewData["HideChrome"] = true;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="onboarding" style="max-width:480px">
+    <div class="onboarding-head">
+        <h1>Profilingizni to'ldiring</h1>
+        <p class="muted">Davom etish uchun username va to'liq ismingizni kiriting. Profil rasmi ixtiyoriy.</p>
+    </div>
+
+    <div class="card">
+        <div id="profileFormError" class="form-error" hidden></div>
+
+        <form id="profileForm" class="stack">
+            @Html.AntiForgeryToken()
+
+            <div class="field text-center">
+                <div id="avatarPreview" class="avatar lg" style="margin:0 auto 8px">
+                    @if (!string.IsNullOrEmpty(Model?.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl" alt="Avatar" style="width:100%;height:100%;border-radius:inherit;object-fit:cover" />
+                    }
+                    else
+                    {
+                        <span>@KitobdaGimen.Web.ViewHelpers.Initial(Model?.FullName)</span>
+                    }
+                </div>
+                <input type="hidden" id="avatarUrl" value="@Model?.AvatarUrl" />
+                <label class="btn btn-outline btn-sm" for="avatarFile">Profil rasmi (ixtiyoriy)</label>
+                <input type="file" id="avatarFile" accept="image/*" hidden />
+            </div>
+
+            <div class="field">
+                <label for="username">Username</label>
+                <input class="input" id="username" maxlength="30" placeholder="masalan: javohir_98" required />
+                <p class="muted" style="font-size:12px;margin-top:4px">Faqat lotin harflari, raqam va pastki chiziq (_) — 3-30 belgi.</p>
+            </div>
+
+            <div class="field">
+                <label for="fullName">To'liq ism</label>
+                <input class="input" id="fullName" minlength="3" maxlength="32" value="@Model?.FullName" required />
+            </div>
+
+            <button type="submit" class="btn btn-accent btn-block" id="profileSubmit" style="margin-top:8px">Davom etish</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const form = document.getElementById("profileForm");
+    const errorBox = document.getElementById("profileFormError");
+    const submitBtn = document.getElementById("profileSubmit");
+    const avatarFile = document.getElementById("avatarFile");
+    const avatarUrl = document.getElementById("avatarUrl");
+    const avatarPreview = document.getElementById("avatarPreview");
+    const returnUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(returnUrl));
+    let avatarUploading = false;
+
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.hidden = false;
+    }
+
+    function clearError() {
+        errorBox.hidden = true;
+        errorBox.textContent = "";
+    }
+
+    avatarFile.addEventListener("change", async () => {
+        const f = avatarFile.files && avatarFile.files[0];
+        if (!f) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            avatarPreview.innerHTML = `<img src="${ev.target.result}" alt="Avatar" style="width:100%;height:100%;border-radius:inherit;object-fit:cover" />`;
+        };
+        reader.readAsDataURL(f);
+
+        avatarUploading = true;
+        submitBtn.disabled = true;
+        try {
+            const fd = new FormData();
+            fd.append("file", f);
+            const res = await fetch("/Onboarding/upload-avatar", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": kitob.antiforgeryToken()
+                },
+                body: fd
+            });
+            if (res.status === 401) { window.location.href = "/"; return; }
+            if (!res.ok) {
+                let message = "Rasmni yuklab bo'lmadi.";
+                try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+                throw new Error(message);
+            }
+            const data = await res.json();
+            avatarUrl.value = data.url;
+        } catch (err) {
+            showError(err.message);
+        } finally {
+            avatarUploading = false;
+            submitBtn.disabled = false;
+        }
+    });
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearError();
+        if (avatarUploading) {
+            showError("Rasm hali yuklanmoqda, biroz kuting.");
+            return;
+        }
+
+        const username = document.getElementById("username").value.trim();
+        const fullName = document.getElementById("fullName").value.trim();
+
+        submitBtn.disabled = true;
+        try {
+            const url = "/Onboarding/Profile" + (returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : "");
+            const res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": kitob.antiforgeryToken(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ username, fullName, avatarUrl: avatarUrl.value || null })
+            });
+            if (res.status === 401) { window.location.href = "/"; return; }
+            if (!res.ok) {
+                let message = "Xatolik yuz berdi.";
+                try {
+                    const d = await res.json();
+                    if (d.errors) {
+                        const firstField = Object.keys(d.errors)[0];
+                        message = d.errors[firstField][0];
+                    } else if (d.message) {
+                        message = d.message;
+                    }
+                } catch { /* ignore */ }
+                throw new Error(message);
+            }
+            const data = await res.json();
+            window.location.href = data.nextUrl || "/Feed";
+        } catch (err) {
+            showError(err.message);
+            submitBtn.disabled = false;
+        }
+    });
+})();
+</script>
+}

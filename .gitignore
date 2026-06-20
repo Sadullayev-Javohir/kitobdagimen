@@ -1,0 +1,42 @@
+# .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+
+# Rider / VS
+.vs/
+
+# Logs
+logs/
+*.log
+
+# Local secrets / env
+appsettings.*.local.json
+appsettings.Production.json
+appsettings.*.Production.json
+*.env
+.env
+secrets.json
+*.pfx
+*.pem
+*.key
+*.crt
+*.p12
+
+# Claude Code — shaxsiy ruxsatlar/lokal sozlamalar (lokal DB parol va bypass rejimi bo'lishi mumkin)
+.claude/settings.local.json
+.claude/**/*.local.json
+
+# Test results
+TestResults/
+[Tt]est[Rr]esults/
+
+# Foydalanuvchi yuklagan fayllar (muqova rasmlari)
+src/KitobdaGimen.Web/wwwroot/uploads/
+
+# OS
+.DS_Store
+Thumbs.db

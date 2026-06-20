@@ -1,0 +1,222 @@
+<!DOCTYPE html><html lang="uz"><head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Post Detail - kitobdagimen.uz</title>
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@100..900&amp;family=Source+Sans+3:wght@100..900&amp;display=swap" rel="stylesheet">
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"tertiary-container": "#254c37", "surface-paper": "#FFFDF8", "on-primary-container": "#8abda9", tertiary: "#0b3522", "primary-fixed": "#baeed9", "on-secondary": "#ffffff", "error-container": "#ffdad6", "surface-dim": "#d0ddd4", "primary-container": "#1b4d3e", "border-warm": "#E5DFD0", surface: "#f0fdf3", secondary: "#a33e07", "inverse-surface": "#28332d", outline: "#707974", "on-secondary-fixed-variant": "#7e2c00", "on-primary-fixed": "#002117", "on-primary": "#ffffff", "on-secondary-fixed": "#370e00", "on-surface-variant": "#404945", "secondary-fixed-dim": "#ffb598", background: "#f0fdf3", "outline-variant": "#c0c9c3", "surface-bright": "#f0fdf3", "inverse-primary": "#9ed1bd", "on-error-container": "#93000a", "on-background": "#131e18", error: "#ba1a1a", "tertiary-fixed-dim": "#a5d0b5", "background-warm": "#FAF6EE", "surface-container-lowest": "#ffffff", primary: "#003629", "surface-container-highest": "#d9e6dc", "surface-container": "#e4f1e7", "surface-tint": "#376757", "surface-container-high": "#dfebe2", "on-primary-fixed-variant": "#1d4f40", "on-tertiary": "#ffffff", "text-secondary": "#6B7568", "on-tertiary-fixed": "#002112", "tertiary-fixed": "#c1edd0", "on-surface": "#131e18", "surface-variant": "#d9e6dc", "on-tertiary-fixed-variant": "#274e39", "secondary-container": "#fd8048", "primary-fixed-dim": "#9ed1bd", "secondary-fixed": "#ffdbce", "surface-container-low": "#eaf7ed", "on-tertiary-container": "#91bca1", "on-secondary-container": "#682300", "on-error": "#ffffff", "inverse-on-surface": "#e7f4ea"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"stack-md": "16px", "navbar-height": "72px", "max-width": "1100px", "stack-sm": "8px", "section-gap": "48px", gutter: "24px"}, fontFamily: {"quote-text": ["Noto Serif"], "headline-sm": ["Noto Serif"], "headline-md": ["Noto Serif"], "body-md": ["\"Source Sans 3\""], "label-md": ["\"Source Sans 3\""], "headline-lg": ["Noto Serif"], "label-sm": ["\"Source Sans 3\""], "body-lg": ["\"Source Sans 3\""]}, fontSize: {"quote-text": ["20px", {lineHeight: "1.6", fontWeight: "400"}], "headline-sm": ["22px", {lineHeight: "1.4", fontWeight: "600"}], "headline-md": ["28px", {lineHeight: "1.3", fontWeight: "700"}], "body-md": ["16px", {lineHeight: "1.5", fontWeight: "400"}], "label-md": ["14px", {lineHeight: "1.2", fontWeight: "600"}], "headline-lg": ["40px", {lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700"}], "label-sm": ["12px", {lineHeight: "1.2", fontWeight: "500"}], "body-lg": ["18px", {lineHeight: "1.6", fontWeight: "400"}]}}}};</script>
+    <style>
+        /* Base typography setting */
+        body {
+            font-family: 'Source Sans 3', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body class="bg-background-warm text-on-background flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface-paper border-b border-border-warm shadow-[0px_4px_20px_rgba(27,77,62,0.05)] docked full-width top-0 fixed top-0 left-0 w-full h-[72px] z-50 flex items-center justify-between px-gutter mx-auto">
+    <div class="flex items-center gap-8 max-w-max-width mx-auto w-full justify-between">
+        <!-- Brand Logo -->
+        <a class="font-headline-md text-headline-md font-bold text-primary" href="#">
+            kitobdagimen.uz
+        </a>
+        <!-- Navigation Links -->
+        <nav class="hidden md:flex items-center gap-6">
+            <!-- Active Item -->
+            <a class="text-secondary border-b-2 border-secondary pb-1 font-label-md text-label-md hover:text-secondary-container transition-colors duration-200" href="#">
+                Asosiy
+            </a>
+            <!-- Inactive Items -->
+            <a class="text-text-secondary font-label-md text-label-md hover:text-secondary-container transition-colors duration-200" href="#">
+                Kutubxona
+            </a>
+            <a class="text-text-secondary font-label-md text-label-md hover:text-secondary-container transition-colors duration-200" href="#">
+                Iqtiboslar
+            </a>
+            <a class="text-text-secondary font-label-md text-label-md hover:text-secondary-container transition-colors duration-200" href="#">
+                Xabarlar
+            </a>
+        </nav>
+        <!-- Trailing Icons -->
+        <div class="flex items-center gap-4 text-primary">
+            <button aria-label="search" class="hover:text-secondary-container transition-colors duration-200 active:scale-95 transition-transform">
+                <span class="material-symbols-outlined">search</span>
+            </button>
+            <button aria-label="notifications" class="relative hover:text-secondary-container transition-colors duration-200 active:scale-95 transition-transform">
+                <span class="material-symbols-outlined">notifications</span>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full"></span>
+            </button>
+            <button aria-label="profile" class="active:scale-95 transition-transform">
+                <img alt="Foydalanuvchi profili" class="w-9 h-9 rounded-full border-2 border-secondary object-cover" data-alt="A soft, natural light close-up portrait of a young person smiling softly, serving as a user profile avatar. The background is a blurred, warm minimalist setting. Lighting is high-key and flattering, matching a clean, organic light-mode digital aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK1e-D-4v2vWFLPLq6J7XD56Bq2va5WtqanmAdZPUxY0J98LrxQYNI6AnXsSfBcyySsj1lxfiqCOgGRs9j0c9vEJp3xaqCY_xYMZ09NuDIjJA21cvYM4wxvAdnCywtsNLozP6esrprZO6gsVTsj4Mt8TDqUVrMtNBrkIlDDNTlSQpoTvwMrCCZ4o9xzMSWLUgT7LgjAhTH4wCERaq1J4j9k5Mw_Jxmn6aNeLLlRjbqrXLyhH1dENUR">
+            </button>
+        </div>
+    </div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-[120px] pb-section-gap px-gutter w-full max-w-max-width mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
+        <!-- Left Column: Article (65%) -->
+        <article class="md:col-span-8 space-y-8">
+            <!-- Author Info -->
+            <div class="flex items-center gap-4">
+                <img alt="Dilnoza" class="w-12 h-12 rounded-full border border-border-warm object-cover" data-alt="A soft, natural light close-up portrait of a young woman named Dilnoza, smiling softly. She is wearing a simple, elegant neutral-toned top. The background is a blurred, warm minimalist room with a hint of a bookshelf. Lighting is high-key and flattering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpWklgzOCWaXFGNMj74Iasw6qMRPveZCLdFd9dKoaYBX02kGK7YuZLbPIeFMxTtlb__tFaif6qrzpKgqVGcdotm9PEOMuvwhljSUJJvQ2-CFOlfgkBLs7SU8Tmz7PNESUcy6CEShVrxgOE7LFScT1wSecAYdpzKshrPcMBEIBj11CcpNpaHCkXFC5yAUDqadomnW0myLvJuhEGpP_J95NTTudb9jutyXcaiv4mb5ia5_IVanZq9TUo">
+                <div>
+                    <h2 class="font-label-md text-label-md text-primary">Dilnoza</h2>
+                    <time class="font-label-sm text-label-sm text-text-secondary">3 kun oldin</time>
+                </div>
+            </div>
+            <!-- Hero Image -->
+            <div class="w-full h-[400px] rounded-xl border border-border-warm overflow-hidden shadow-[0px_4px_20px_rgba(27,77,62,0.05)]">
+                <img alt="O'tkan kunlar kitobi" class="w-full h-full object-cover" data-alt="A beautiful, artistic flat-lay photograph of a vintage, cloth-bound book titled 'O'tkan Kunlar' resting on a warm, textured cream-colored linen cloth. Soft, natural sunlight illuminates the cover, creating gentle, serene shadows. The scene incorporates organic elements like a single dried eucalyptus branch and a delicate handmade ceramic teacup nearby. The aesthetic is organic minimalism, tactile, and calming, utilizing a palette of deep forest greens, warm whites, and subtle terracotta accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8XBMr_HeHdc9CKQmUT0o5gIoG09V-JYtqlLxvlw4i13OuXJh-zteRcAh1EMiNj_r_Lvnub8zYVbgFmmxyUj41WjX-_IUgYaGJaY8Kig7M-kBmr-1HnvXmGqnYD50Ge8ESjYgOpRfpwZL0rCEcT5DzuOukLbTJQKV2W7LrX7V6zt07oB-p38yrgWv8jm35ahOa9Zdqw4CHt8h5kBd4uR-X22b8M6yQju3TnyAM4HxpVD2l2YoOydoe">
+            </div>
+            <!-- Book Header -->
+            <div>
+                <h1 class="font-headline-lg text-headline-lg text-primary mb-2">O'tkan kunlar</h1>
+                <p class="font-body-lg text-body-lg text-text-secondary mb-4">Abdulla Qodiriy</p>
+                <!-- Genre Badges -->
+                <div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-border-warm">
+                            Roman
+                        </span>
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm border border-border-warm">
+                            Tarix
+                        </span>
+                </div>
+            </div>
+            <!-- Review Content -->
+            <div class="prose max-w-none text-on-surface-variant space-y-6">
+                <p class="font-body-md text-body-md">
+                    Asarni o‘qish jarayonida men o‘zimni nafaqat boshqa bir asrda, balki o‘zbek xalqining eng nozik qalb torlari chertilgan bir muhitda his qildim. Abdulla Qodiriyning tili shunchalik boy va jozibador-ki, har bir so‘z o‘z o‘rnida marjondek tizilgan. Otabek va Kumushning sof muhabbati fonida o‘sha davrning murakkab siyosiy va ijtimoiy jarayonlari ham juda mohirona ochib berilgan.
+                </p>
+                <p class="font-body-md text-body-md">
+                    Kitobdagi qahramonlarning har biri o‘ziga xos xarakterga ega. Ayniqsa, O‘zbekoyimning murakkab obrazi insonni ko‘p narsalar haqida o‘ylashga majbur qiladi. Bu asar shunchaki sevgi qissasi emas, balki millat fojiasi va insoniylik qadri haqidagi ulkan bir dostondir.
+                </p>
+                <!-- Quote Block (Brand Guideline Specific) -->
+                <blockquote class="border-l-[4px] border-secondary bg-surface-container-low p-6 my-8 rounded-r-lg">
+                    <p class="font-quote-text text-quote-text italic text-primary m-0">
+                        "Kelajak — bu hozirgi kunning mevasidir. Bugun ekayotgan urug'larimiz ertaga qanday hosil berishini o'ylashimiz kerak."
+                    </p>
+                </blockquote>
+                <p class="font-body-md text-body-md">
+                    O‘qish jarayoni juda yengil kechdi. Asarning har bir bobi meni o‘ziga jalb etdi va kitobni qo‘limdan qo‘ygim kelmadi. Men bu asarni har bir o‘zbek kitobxoni o‘qib chiqishi shart bo‘lgan asarlar ro‘yxatiga kiritgan bo‘lardim. O‘tkan kunlar – bu bizning o‘tmishimiz, ammo u bizga kelajak haqida ham ko‘p narsalarni o‘rgatadi.
+                </p>
+            </div>
+            <!-- Stats Row -->
+            <div class="flex items-center flex-wrap gap-6 py-6 border-t border-b border-border-warm text-text-secondary">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">menu_book</span>
+                    <span class="font-label-md text-label-md">400 bet o'qildi</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[20px]">schedule</span>
+                    <span class="font-label-md text-label-md">4 kun davomida</span>
+                </div>
+                <div class="flex items-center gap-1 text-secondary">
+                    <span class="material-symbols-outlined icon-fill text-[20px]">star</span>
+                    <span class="material-symbols-outlined icon-fill text-[20px]">star</span>
+                    <span class="material-symbols-outlined icon-fill text-[20px]">star</span>
+                    <span class="material-symbols-outlined icon-fill text-[20px]">star</span>
+                    <span class="material-symbols-outlined text-[20px] text-border-warm">star</span>
+                </div>
+            </div>
+            <!-- Action Panel (Secondary Style Buttons) -->
+            <div class="flex items-center gap-4 pt-2">
+                <button class="flex items-center gap-2 px-4 py-2 rounded-full border border-primary text-primary hover:bg-surface-container-low transition-colors duration-200">
+                    <span class="material-symbols-outlined">favorite</span>
+                    <span class="font-label-md text-label-md">Yoqdi (124)</span>
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 rounded-full border border-primary text-primary hover:bg-surface-container-low transition-colors duration-200">
+                    <span class="material-symbols-outlined">share</span>
+                    <span class="font-label-md text-label-md">Ulashish</span>
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 rounded-full border border-primary text-primary hover:bg-surface-container-low transition-colors duration-200 ml-auto">
+                    <span class="material-symbols-outlined">bookmark_add</span>
+                    <span class="font-label-md text-label-md">Saqlash</span>
+                </button>
+            </div>
+        </article>
+        <!-- Right Column: Comments (35%) -->
+        <aside class="md:col-span-4">
+            <div class="sticky top-[100px] bg-surface-paper border border-border-warm rounded-2xl p-6 shadow-[0px_4px_20px_rgba(27,77,62,0.05)]">
+                <h3 class="font-headline-sm text-headline-sm text-primary mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined">forum</span>
+                    Izohlar (3)
+                </h3>
+                <!-- Comment List -->
+                <div class="space-y-6 mb-8 max-h-[400px] overflow-y-auto pr-2">
+                    <!-- Comment 1 -->
+                    <div class="flex gap-3">
+                        <img alt="Sardor" class="w-8 h-8 rounded-full border border-border-warm flex-shrink-0" data-alt="A small circular avatar portrait of a young man with glasses, looking thoughtful in a bright, modern interior setting. Light mode, minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1UNpLlecvzz6BF7gAvTim9XnDB9xzLiUuBXOvvn2SE_z1xHCRfMMEf3Yyy2mPQbcVi5hrw4q2ErZTwPIwfZaBrcq4vKmXu5yawwln5LRTjZU3vEQtxC17x5gj_e0xQTh2ErqCfmLpjThC5KsXsOZGdERr1qc0YBrqjR-vmrYvn3ayRJO10L9bkHkvoOAw_2lJ0YgkDWNAto6yHPUwyoVwRURbb3kF21--hU5dfBKp39A6uBkBp0HJ">
+                        <div>
+                            <div class="bg-surface-container-low rounded-lg p-3 rounded-tl-none border border-border-warm">
+                                <h4 class="font-label-md text-label-md text-primary mb-1">Sardor</h4>
+                                <p class="font-body-sm text-sm text-on-surface-variant leading-relaxed">
+                                    Juda ajoyib taqriz! Ushbu asarni o'qiganimda men ham xuddi shunday hislarni tuydim. O'zbek adabiyotining haqiqiy durdonasi.
+                                </p>
+                            </div>
+                            <div class="mt-1 flex items-center gap-4 pl-1">
+                                <button class="text-text-secondary hover:text-secondary font-label-sm text-label-sm transition-colors">Javob berish</button>
+                                <span class="text-text-secondary font-label-sm text-label-sm opacity-60">1 soat oldin</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Comment 2 -->
+                    <div class="flex gap-3">
+                        <img alt="Malika" class="w-8 h-8 rounded-full border border-border-warm flex-shrink-0" data-alt="A small circular avatar portrait of a young woman with a warm smile, wearing a light scarf. Bright, soft lighting, neutral background, organic aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuD9tJjV05yxlpmmJhD3mt9LPqscsxlR702Mjtcbnrs5jzB4js_9G2tje1WiCXga28cRNniIT-mZfIuCknBnYBhQZmMIjDkmRU-WzPNtOx0W3v5RjOq9C_6E_RsKAO1tLYYPch2egDvaf1amfDxjiryqgvvkcsKhi0_TwPvi1T9YxkJEiWkKDHSc9rBWQrTKrFlTHio2CtQexUKbzq2C0gfc9n57cnIWkSSsUrhz7Y8uiuyVxk38XM">
+                        <div>
+                            <div class="bg-surface-container-low rounded-lg p-3 rounded-tl-none border border-border-warm">
+                                <h4 class="font-label-md text-label-md text-primary mb-1">Malika</h4>
+                                <p class="font-body-sm text-sm text-on-surface-variant leading-relaxed">
+                                    Rahmat sizga, ancha vaqtdan beri shu asarni o'qishni niyat qilib yurgandim. Fikrlaringizni o'qib qiziqishim yanada ortdi.
+                                </p>
+                            </div>
+                            <div class="mt-1 flex items-center gap-4 pl-1">
+                                <button class="text-text-secondary hover:text-secondary font-label-sm text-label-sm transition-colors">Javob berish</button>
+                                <span class="text-text-secondary font-label-sm text-label-sm opacity-60">Kecha</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Comment Input -->
+                <div class="border-t border-border-warm pt-6">
+                    <textarea class="w-full bg-surface-paper border border-border-warm rounded-lg p-3 font-body-md text-body-md text-on-surface placeholder:text-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none" placeholder="O'z fikringizni qoldiring..." rows="3"></textarea>
+                    <button class="w-full mt-3 bg-secondary text-on-secondary font-label-md text-label-md py-3 rounded-lg hover:bg-[#8e3505] transition-colors flex items-center justify-center gap-2 shadow-sm">
+                        <span class="material-symbols-outlined text-[20px]">send</span>
+                        Yuborish
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+<!-- Footer -->
+<footer class="bg-background border-t border-border-warm w-full py-section-gap px-gutter flex flex-col md:flex-row justify-between items-center max-w-max-width mx-auto mt-auto">
+    <div class="mb-4 md:mb-0">
+<span class="font-headline-sm text-headline-sm text-primary opacity-80 hover:opacity-100">
+                kitobdagimen.uz
+            </span>
+        <p class="font-body-md text-body-md text-text-secondary mt-2">
+            © 2024 kitobdagimen.uz. Barcha huquqlar himoyalangan.
+        </p>
+    </div>
+    <nav class="flex flex-wrap justify-center gap-6">
+        <a class="font-label-sm text-label-sm text-text-secondary hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Biz haqimizda</a>
+        <a class="font-label-sm text-label-sm text-text-secondary hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Foydalanish shartlari</a>
+        <a class="font-label-sm text-label-sm text-text-secondary hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Maxfiylik siyosati</a>
+        <a class="font-label-sm text-label-sm text-text-secondary hover:text-secondary transition-colors opacity-80 hover:opacity-100" href="#">Aloqa</a>
+    </nav>
+</footer>
+</body></html>

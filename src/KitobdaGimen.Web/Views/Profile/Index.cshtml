@@ -1,0 +1,452 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser
+@using MediatR
+@inject ISender Mediator
+@inject ICurrentUserService CurrentUser
+@model ProfilePageViewModel
+@{
+    var p = Model.Profile;
+    ViewData["Title"] = p.FullName;
+    var isAuth = CurrentUser.IsAuthenticated;
+    var myEmail = p.IsCurrentUser ? (await Mediator.Send(new GetCurrentUserQuery()))?.Email : null;
+    // Shareable, registration-free link to this profile. Prefer the unique username; fall back to id.
+    var shareSegment = string.IsNullOrWhiteSpace(p.Username) ? p.Id.ToString() : p.Username;
+    var shareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/u/{shareSegment}";
+
+    var avatarInner = !string.IsNullOrEmpty(p.AvatarUrl)
+        ? Html.Raw($"<img class=\"avatar lg\" src=\"{p.AvatarUrl}\" alt=\"{Html.Encode(p.FullName)}\" />")
+        : Html.Raw($"<span class=\"avatar lg\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(p.FullName))}</span>");
+}
+
+@if (!isAuth)
+{
+    <header class="public-bar">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+            <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+        </a>
+        <a class="btn btn-accent btn-sm" href="/auth/google-login">Kirish</a>
+    </header>
+}
+
+<div class="container page">
+    <!-- Profil sarlavhasi -->
+    <section class="profile-hero">
+        @if (p.HasStory)
+        {
+            <div class="profile-avatar-wrap has-story" data-open-story="@p.Id" role="button" tabindex="0" title="Story">
+                @avatarInner
+            </div>
+        }
+        else
+        {
+            <div class="profile-ring">
+                @avatarInner
+            </div>
+        }
+        <div class="profile-hero-info">
+            <h1>@p.FullName @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(p.Username))</h1>
+            @if (!string.IsNullOrWhiteSpace(p.Username))
+            {
+                <p class="muted" style="margin:-2px 0 10px">@@@p.Username</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(p.Bio))
+            {
+                <p class="profile-motto">@p.Bio</p>
+            }
+            <div class="profile-statbar">
+                <div>
+                    <span class="lbl">Postlar</span>
+                    <span class="num">@p.PostCount</span>
+                </div>
+                @if (isAuth)
+                {
+                    <a href="/profile/@p.Id/followers">
+                        <span class="lbl">Kuzatuvchilar</span>
+                        <span class="num" data-follower-count>@p.FollowerCount</span>
+                    </a>
+                    <a href="/profile/@p.Id/following">
+                        <span class="lbl">Kuzatilayotganlar</span>
+                        <span class="num">@p.FollowingCount</span>
+                    </a>
+                }
+                else
+                {
+                    <div>
+                        <span class="lbl">Kuzatuvchilar</span>
+                        <span class="num" data-follower-count>@p.FollowerCount</span>
+                    </div>
+                    <div>
+                        <span class="lbl">Kuzatilayotganlar</span>
+                        <span class="num">@p.FollowingCount</span>
+                    </div>
+                }
+            </div>
+
+            @if (p.IsCurrentUser)
+            {
+                <div class="profile-actions">
+                    <button type="button" class="btn btn-primary btn-sm" data-open-story-composer>
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">add_circle</span>
+                        Story qo'shish
+                    </button>
+                    <a class="btn btn-outline btn-sm" href="/profile/edit">Profilni tahrirlash</a>
+                    <button type="button" class="btn btn-outline btn-sm" data-share-profile data-share-url="@shareUrl" title="Profil havolasini nusxalash">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">share</span>
+                        Ulashish
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm danger-text" data-open-delete-account>Akkauntni o'chirish</button>
+                </div>
+            }
+            else if (isAuth)
+            {
+                <div class="profile-actions">
+                    <button class="btn @(p.IsFollowedByCurrentUser ? "btn-outline" : "btn-accent")" data-follow="@p.Id">
+                        @(p.IsFollowedByCurrentUser ? "Kuzatilmoqda" : "Kuzatish")
+                    </button>
+                    <form method="post" action="/chat/start" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="otherUserId" value="@p.Id" />
+                        <button type="submit" class="btn btn-outline">Xabar</button>
+                    </form>
+                    <button type="button" class="btn btn-outline" data-share-profile data-share-url="@shareUrl" title="Profil havolasini nusxalash">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">share</span>
+                        Ulashish
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="profile-actions">
+                    <a class="btn btn-accent" href="/auth/google-login">Kuzatish uchun kiring</a>
+                    <button type="button" class="btn btn-outline" data-share-profile data-share-url="@shareUrl" title="Profil havolasini nusxalash">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">share</span>
+                        Ulashish
+                    </button>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Tablar + postlar | Hozir o'qiyapti -->
+    <div class="profile-layout">
+        <div class="profile-main">
+            <nav class="profile-tabs">
+                <button type="button" class="profile-tab active" data-profile-tab="posts">Postlar</button>
+                <button type="button" class="profile-tab" data-profile-tab="stories">Storylar</button>
+                <button type="button" class="profile-tab" data-profile-tab="quotes">Iqtiboslar</button>
+            </nav>
+
+            <div data-tab-panel="posts">
+                @if (Model.Posts.Items.Count == 0)
+                {
+                    <div class="card text-center muted">Hali postlar yo'q.</div>
+                }
+                else
+                {
+                    <div class="post-tiles">
+                        @foreach (var post in Model.Posts.Items)
+                        {
+                            var postUrl = KitobdaGimen.Web.ViewHelpers.PostUrl(post.Author.Username, post.Author.Id, post.Slug);
+                            var tileImg = !string.IsNullOrEmpty(post.ImageUrl) ? post.ImageUrl : post.Book.CoverUrl;
+                            <a class="post-tile" href="@postUrl" title="@post.Book.Title">
+                                @if (!string.IsNullOrEmpty(tileImg))
+                                {
+                                    <img src="@tileImg" alt="@post.Book.Title" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="post-tile-fallback">
+                                        <span class="material-symbols-outlined">menu_book</span>
+                                        <span class="t">@post.Book.Title</span>
+                                    </span>
+                                }
+                                <span class="post-tile-overlay">
+                                    <span class="stat">
+                                        <span class="material-symbols-outlined">favorite</span>
+                                        @post.LikeCount
+                                    </span>
+                                    <span class="stat">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                        @post.ViewCount
+                                    </span>
+                                </span>
+                            </a>
+                        }
+                    </div>
+
+                    @if (Model.Posts.TotalPages > 1)
+                    {
+                        <div class="pagination">
+                            @if (Model.Posts.HasPrevious)
+                            {
+                                <a class="btn btn-outline btn-sm" href="@ViewHelpers.ProfileUrl(p.Username, p.Id)?page=@(Model.Posts.Page - 1)">Oldingi</a>
+                            }
+                            <span class="btn btn-ghost btn-sm">@Model.Posts.Page / @Model.Posts.TotalPages</span>
+                            @if (Model.Posts.HasNext)
+                            {
+                                <a class="btn btn-outline btn-sm" href="@ViewHelpers.ProfileUrl(p.Username, p.Id)?page=@(Model.Posts.Page + 1)">Keyingi</a>
+                            }
+                        </div>
+                    }
+                }
+
+                @if (Model.FinishedBooks.Count > 0)
+                {
+                    <h2 class="section-title">Tugatilgan kitoblar</h2>
+                    <partial name="_FinishedBooks" model="Model.FinishedBooks" />
+                }
+            </div>
+
+            <div data-tab-panel="stories" hidden>
+                @if (Model.Stories.Count == 0)
+                {
+                    <div class="card text-center muted">Hali story qo'yilmagan.</div>
+                }
+                else
+                {
+                    <div class="story-tiles">
+                        @foreach (var st in Model.Stories)
+                        {
+                            <a class="story-tile" href="/stories/@st.Id" title="@st.Title">
+                                <span class="story-tile-img">
+                                    @if (!string.IsNullOrEmpty(st.ImageUrl))
+                                    {
+                                        <img src="@st.ImageUrl" alt="@st.Title" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <span class="story-tile-fallback">
+                                            <span class="material-symbols-outlined">auto_stories</span>
+                                            <span class="t">@st.Title</span>
+                                        </span>
+                                    }
+                                </span>
+                                <span class="story-tile-meta">
+                                    <span class="story-tile-date">@st.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                                    <span class="story-tile-stats">
+                                        <span class="stat" title="Yoqtirishlar">
+                                            <span class="material-symbols-outlined">favorite</span>@st.LikeCount
+                                        </span>
+                                        <span class="stat" title="Ko'rganlar">
+                                            <span class="material-symbols-outlined">visibility</span>@st.ViewCount
+                                        </span>
+                                    </span>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div data-tab-panel="quotes" hidden>
+                @if (Model.MyQuotes.Count == 0)
+                {
+                    <div class="card text-center muted">@(p.IsCurrentUser ? "Hali iqtibos yozmagansiz." : "Hali iqtibos yo'q.")</div>
+                }
+                else
+                {
+                    <div class="quote-grid">
+                        @foreach (var q in Model.MyQuotes)
+                        {
+                            <div class="card quote-card">
+                                <p class="quote-text">@q.Text</p>
+                                <div class="quote-foot">
+                                    <div class="quote-source">
+                                        <strong>@q.Book.Title</strong><br />@q.Book.Author
+                                    </div>
+                                    <div class="flex items-center gap-8">
+                                        <span class="action-btn" title="Saqlanganlar">
+                                            <span class="material-symbols-outlined">bookmark</span>
+                                            <span class="save-count">@q.SaveCount</span>
+                                        </span>
+                                        @if (p.IsCurrentUser)
+                                        {
+                                            <form method="post" action="/quotes/@q.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="action-btn" title="O'chirish"><span class="material-symbols-outlined">delete</span></button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="muted" style="font-size:13px; margin-top:8px">@q.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <aside class="profile-side">
+            @if (Model.CurrentBooks.Count > 0)
+            {
+                <div class="reading-now">
+                    <h3>Hozir o'qiyapti @if (Model.CurrentBooks.Count > 1) {<span class="reading-now-count">@Model.CurrentBooks.Count</span>}</h3>
+                    <div class="reading-now-list">
+                        @foreach (var cb in Model.CurrentBooks)
+                        {
+                            <div class="reading-now-inner">
+                                <div class="reading-now-cover">
+                                    @if (!string.IsNullOrEmpty(cb.Book.CoverUrl))
+                                    {
+                                        <img src="@cb.Book.CoverUrl" alt="@cb.Book.Title muqovasi" />
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined" style="font-size:42px">menu_book</span>
+                                    }
+                                </div>
+                                <div>
+                                    <p class="title">@cb.Book.Title</p>
+                                    <p class="author">@cb.Book.Author</p>
+                                </div>
+                                <div class="reading-now-ring" style="--p:@(cb.ProgressPercent)%">
+                                    <div class="inner">@cb.ProgressPercent%</div>
+                                </div>
+                                @if (cb.DailyPageGoal > 0)
+                                {
+                                    <p class="reading-now-goal">Kunlik maqsad: @cb.DailyPageGoal bet</p>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </aside>
+    </div>
+</div>
+
+@if (p.IsCurrentUser)
+{
+    <!-- Akkauntni o'chirish — ko'p bosqichli modal -->
+    <div class="modal-overlay" id="deleteAccountModal" data-email="@(myEmail?.ToLowerInvariant())" hidden>
+        <div class="modal-box">
+            <!-- 1-bosqich -->
+            <div class="modal-step" data-step="1">
+                <h3 class="modal-title">Akkauntni o'chirish</h3>
+                <p>Akkauntingizni haqiqatdan o'chirmoqchimisiz?</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" data-del-cancel>Bekor qilish</button>
+                    <button type="button" class="btn btn-danger" data-del-next="2">Ha</button>
+                </div>
+            </div>
+            <!-- 2-bosqich: email tasdiqlash -->
+            <div class="modal-step" data-step="2" hidden>
+                <h3 class="modal-title">Emailingizni tasdiqlang</h3>
+                <p>Tasdiqlash uchun akkauntingizga bog'langan Gmail manzilini kiriting.</p>
+                <input class="input" type="email" id="delAccountEmail" placeholder="siz@@gmail.com" autocomplete="off" />
+                <p class="username-status" id="delEmailError" data-state="bad" hidden></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" data-del-back="1">Orqaga</button>
+                    <button type="button" class="btn btn-primary" data-del-verify-email>Davom etish</button>
+                </div>
+            </div>
+            <!-- 3-bosqich: yakuniy ogohlantirish -->
+            <div class="modal-step" data-step="3" hidden>
+                <h3 class="modal-title">Diqqat!</h3>
+                <p>O'chirilsa, <strong>barcha ma'lumotlaringiz</strong> — postlar, story'lar, izohlar, iqtiboslar, kuzatuvlar va xabarlar — butunlay o'chadi va qaytarib bo'lmaydi.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" data-del-back="2">Orqaga</button>
+                    <button type="button" class="btn btn-danger" data-del-confirm>O'chirish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+// Profil tablari (Postlar / Storylar / Iqtiboslar). Story kartalari endi
+// to'g'ridan-to'g'ri /stories/{id} detal sahifasiga havola (modal emas).
+(function () {
+    const tabs = Array.from(document.querySelectorAll("[data-profile-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-tab-panel]"));
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            const name = tab.getAttribute("data-profile-tab");
+            tabs.forEach((t) => t.classList.toggle("active", t === tab));
+            panels.forEach((pn) => { pn.hidden = pn.getAttribute("data-tab-panel") !== name; });
+        });
+    });
+
+    // "Ulashish" — profil havolasini (/u/{id}) clipboard'ga nusxalaymiz
+    document.querySelectorAll("[data-share-profile]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const url = btn.getAttribute("data-share-url");
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: document.title, url });
+                    return;
+                }
+                await navigator.clipboard.writeText(url);
+                kitob.showToast && kitob.showToast("Havola nusxalandi");
+            } catch {
+                window.prompt("Profil havolasi:", url);
+            }
+        });
+    });
+})();
+</script>
+<script>
+(function () {
+    const modal = document.getElementById("deleteAccountModal");
+    if (!modal) return;
+
+    const registeredEmail = (modal.dataset.email || "").trim().toLowerCase();
+    const emailInput = document.getElementById("delAccountEmail");
+    const emailError = document.getElementById("delEmailError");
+
+    function showStep(n) {
+        modal.querySelectorAll(".modal-step").forEach((s) => {
+            s.hidden = s.getAttribute("data-step") !== String(n);
+        });
+    }
+    function openModal() { modal.hidden = false; showStep(1); emailInput.value = ""; emailError.hidden = true; }
+    function closeModal() { modal.hidden = true; }
+
+    document.querySelector("[data-open-delete-account]")?.addEventListener("click", openModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+    modal.querySelector("[data-del-cancel]")?.addEventListener("click", closeModal);
+    modal.querySelectorAll("[data-del-next]").forEach((b) =>
+        b.addEventListener("click", () => showStep(b.getAttribute("data-del-next"))));
+    modal.querySelectorAll("[data-del-back]").forEach((b) =>
+        b.addEventListener("click", () => showStep(b.getAttribute("data-del-back"))));
+
+    modal.querySelector("[data-del-verify-email]")?.addEventListener("click", () => {
+        const value = (emailInput.value || "").trim().toLowerCase();
+        if (value && value === registeredEmail) {
+            emailError.hidden = true;
+            showStep(3);
+        } else {
+            emailError.textContent = "Email akkauntingizdagi email bilan mos kelmadi.";
+            emailError.hidden = false;
+        }
+    });
+
+    modal.querySelector("[data-del-confirm]")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/profile/delete-account?email=${encodeURIComponent(emailInput.value.trim())}`, {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": kitob.antiforgeryToken() }
+            });
+            if (!res.ok) {
+                let message = "Akkauntni o'chirib bo'lmadi.";
+                try { const d = await res.json(); message = (d.errors && d.errors.Email && d.errors.Email[0]) || d.message || message; } catch { /* ignore */ }
+                emailError.textContent = message;
+                emailError.hidden = false;
+                showStep(2);
+                return;
+            }
+            const data = await res.json();
+            window.location.href = (data && data.redirect) || "/";
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+})();
+</script>
+}

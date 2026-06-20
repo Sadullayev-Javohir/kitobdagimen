@@ -1,0 +1,346 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model PostDetailDto
+@{
+    ViewData["Title"] = Model.Post.Book.Title;
+    var heroUrl = !string.IsNullOrEmpty(Model.Post.ImageUrl) ? Model.Post.ImageUrl : Model.Post.Book.CoverUrl;
+    var isAuth = CurrentUser.IsAuthenticated;
+    var postUrl = KitobdaGimen.Web.ViewHelpers.PostUrl(Model.Post.Author.Username, Model.Post.Author.Id, Model.Post.Slug);
+    var postShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{postUrl}";
+    var loginUrl = "/auth/google-login?returnUrl=" + Uri.EscapeDataString(postUrl);
+    var reviewHtml = KitobdaGimen.Application.Common.RichTextSanitizer.Sanitize(Model.Post.ReviewText);
+    // The post owner may delete any comment on their post — let the comment partial show the delete button.
+    ViewData["ViewerIsPostOwner"] = Model.Post.IsAuthor;
+}
+
+<div class="container page pd-page">
+    @if (!isAuth)
+    {
+        <div class="anon-banner">
+            <a class="brand" href="/">
+                <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+                <span>kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+            </a>
+            <p>Siz bu postni ro'yxatdan o'tmagan holda ko'rmoqdasiz. Kitobxonlar jamoasiga qo'shilib, o'zingiz ham fikr ulashing!</p>
+            <a class="btn btn-accent" href="@loginUrl">Ro'yxatdan o'tish</a>
+        </div>
+    }
+    else
+    {
+        <a class="btn btn-ghost btn-sm pd-back" href="/Feed">
+            <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+            Asosiyga
+        </a>
+    }
+
+    <div class="pd-grid">
+        <!-- Chap ustun: post matni -->
+        <article class="pd-article" data-post-scope>
+            <div class="pd-author">
+                <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Post.Author.Username, Model.Post.Author.Id)">
+                    @if (!string.IsNullOrEmpty(Model.Post.Author.AvatarUrl))
+                    {
+                        <img class="avatar" src="@Model.Post.Author.AvatarUrl" alt="@Model.Post.Author.FullName" />
+                    }
+                    else
+                    {
+                        <span class="avatar">@KitobdaGimen.Web.ViewHelpers.Initial(Model.Post.Author.FullName)</span>
+                    }
+                </a>
+                <div class="meta">
+                    <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Post.Author.Username, Model.Post.Author.Id)">@Model.Post.Author.FullName</a>
+                    <time class="time" datetime="@Model.Post.CreatedAt.ToString("o")" title="@Model.Post.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")">
+                        <span class="material-symbols-outlined">schedule</span>
+                        @KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.Post.CreatedAt)
+                    </time>
+                </div>
+            </div>
+
+            <div class="pd-bookhead">
+                <h1>@Model.Post.Book.Title</h1>
+                <p class="pd-book-author">@Model.Post.Book.Author</p>
+                @if (!string.IsNullOrEmpty(Model.Post.Book.GenreName))
+                {
+                    <div class="pd-genres">
+                        <span class="pd-genre">
+                            <span class="material-symbols-outlined">local_library</span>
+                            @Model.Post.Book.GenreName
+                        </span>
+                    </div>
+                }
+            </div>
+
+            <div data-view-panel>
+                <div class="pd-hero" data-post-image data-book-cover-url="@Model.Post.Book.CoverUrl" @(string.IsNullOrEmpty(heroUrl) ? "hidden" : "")>
+                    <img data-post-image-img src="@heroUrl" alt="@Model.Post.Book.Title" />
+                </div>
+
+                <div class="pd-review" data-post-text>@KitobdaGimen.Web.ViewHelpers.RichText(Model.Post.ReviewText)</div>
+            </div>
+
+            @if (Model.Post.IsAuthor)
+            {
+                <div class="post-edit-panel" data-edit-panel hidden style="padding:0">
+                    <partial name="_RichEditor" model='new KitobdaGimen.Web.Models.RichEditorModel { Edit = true, Html = reviewHtml, Placeholder = "Fikringizni yozing...", MinLength = 3, MaxLength = 5000 }' />
+                    <div class="composer-image-picker">
+                        <input type="hidden" data-edit-image-url value="@Model.Post.ImageUrl" data-original-url="@Model.Post.ImageUrl" />
+                        <div class="composer-image-preview" data-edit-image-preview @(string.IsNullOrEmpty(Model.Post.ImageUrl) ? "hidden" : "")>
+                            <img data-edit-image-preview-img src="@Model.Post.ImageUrl" alt="" />
+                            <button type="button" class="composer-image-remove" data-edit-image-remove aria-label="Rasmni o'chirish">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <label class="btn btn-outline btn-sm">
+                            <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
+                            Rasm qo'shish
+                            <input type="file" accept="image/*" data-edit-image-input hidden />
+                        </label>
+                    </div>
+                    <div class="post-edit-actions">
+                        <button type="button" class="btn btn-ghost btn-sm" data-cancel-edit-post>Bekor qilish</button>
+                        <button type="button" class="btn btn-primary btn-sm" data-save-edit-post="@Model.Post.Id">Saqlash</button>
+                    </div>
+                </div>
+            }
+
+            <div class="pd-stats">
+                <span><span class="material-symbols-outlined">chat_bubble</span> <span id="commentCount">@Model.Post.CommentCount</span> izoh</span>
+                <span><span class="material-symbols-outlined">visibility</span> @Model.Post.ViewCount ko'rish</span>
+            </div>
+
+            <div class="pd-actions">
+                @if (isAuth)
+                {
+                    <button type="button" class="pd-action-btn like-btn @(Model.Post.IsLikedByCurrentUser ? "liked" : "")" data-like="@Model.Post.Id">
+                        <span class="material-symbols-outlined">favorite</span>
+                        <span>Yoqdi (<span class="like-count">@Model.Post.LikeCount</span>)</span>
+                    </button>
+                }
+                <button type="button" class="pd-action-btn" data-share-url="@postShareUrl">
+                    <span class="material-symbols-outlined">share</span>
+                    <span>Ulashish</span>
+                </button>
+                @if (Model.Post.IsAuthor)
+                {
+                    <button type="button" class="pd-action-btn" data-edit-post>
+                        <span class="material-symbols-outlined">edit</span>
+                        <span>Tahrirlash</span>
+                    </button>
+                    <button type="button" class="pd-action-btn" data-delete-post="@Model.Post.Id">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>O'chirish</span>
+                    </button>
+                }
+            </div>
+        </article>
+
+        <!-- O'ng ustun: izohlar -->
+        <aside class="pd-comments">
+            <div class="pd-comments-card">
+                <h3 class="pd-comments-title">
+                    <span class="material-symbols-outlined">forum</span>
+                    Izohlar
+                    <button type="button" class="pd-comments-expand" id="expandComments" title="Barcha izohlarni ko'rish" aria-label="Barcha izohlarni ko'rish">
+                        <span class="material-symbols-outlined">open_in_full</span>
+                    </button>
+                </h3>
+
+                <div class="pd-comment-list" id="commentList">
+                    @if (Model.Comments.Count == 0)
+                    {
+                        <p class="muted" id="noComments">Hozircha izohlar yo'q. Birinchi bo'ling!</p>
+                    }
+                    else
+                    {
+                        foreach (var comment in Model.Comments)
+                        {
+                            <partial name="_Comment" model="comment" />
+                        }
+                    }
+                </div>
+
+                @if (isAuth)
+                {
+                    <form id="commentForm" class="pd-comment-form">
+                        @Html.AntiForgeryToken()
+                        <textarea class="input" id="commentText" rows="3" placeholder="O'z fikringizni qoldiring..." spellcheck="false" minlength="3" maxlength="500" required></textarea>
+                        <button type="submit" class="btn btn-accent btn-block">
+                            <span class="material-symbols-outlined" style="font-size:18px">send</span>
+                            Yuborish
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="pd-comment-form">
+                        <a class="btn btn-accent btn-block" href="@loginUrl">Izoh qoldirish uchun ro'yxatdan o'ting</a>
+                    </div>
+                }
+            </div>
+        </aside>
+    </div>
+</div>
+
+<!-- Barcha izohlar modal oynasi -->
+<div class="modal-overlay" id="commentsModal" hidden>
+    <div class="modal-box modal-box-wide pd-comments-modal-box">
+        <div class="pd-comments-modal-head">
+            <h3 class="modal-title">
+                <span class="material-symbols-outlined">forum</span>
+                Barcha izohlar
+                <span class="muted" id="modalCommentCount"></span>
+            </h3>
+            <button type="button" class="icon-btn" id="closeCommentsModal" aria-label="Yopish">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="pd-comments-modal-body" id="modalCommentBody"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const form = document.getElementById("commentForm");
+    const input = document.getElementById("commentText");
+    const list = document.getElementById("commentList");
+    const commentCountEl = document.getElementById("commentCount");
+    const postId = @Model.Post.Id;
+    const postAuthorId = @Model.Post.Author.Id;
+
+    // "Barcha izohlar" modal oynasi — jonli `#commentList` tugunini modalga ko'chiramiz.
+    // Bu ro'yxatdan o'tmagan foydalanuvchilar uchun ham ishlashi kerak, shuning uchun
+    // izoh formasini tekshiruvchi `return`'dan OLDIN o'rnatamiz.
+    const expandBtn = document.getElementById("expandComments");
+    const modal = document.getElementById("commentsModal");
+    const modalBody = document.getElementById("modalCommentBody");
+    const modalCount = document.getElementById("modalCommentCount");
+    const closeBtn = document.getElementById("closeCommentsModal");
+    if (expandBtn && modal && modalBody && list) {
+        // Ro'yxatni asl joyiga qaytarish uchun joy belgisi.
+        const anchor = document.createComment("comment-list-anchor");
+        list.parentNode.insertBefore(anchor, list);
+
+        const openModal = () => {
+            const count = commentCountEl ? parseInt(commentCountEl.textContent, 10) || 0 : 0;
+            if (modalCount) modalCount.textContent = count ? `(${count})` : "";
+            modalBody.appendChild(list);
+            modal.hidden = false;
+            document.body.style.overflow = "hidden";
+        };
+        const closeModal = () => {
+            anchor.parentNode.insertBefore(list, anchor);
+            modal.hidden = true;
+            document.body.style.overflow = "";
+        };
+
+        expandBtn.addEventListener("click", openModal);
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+        modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+    }
+
+    // Quyidagilar faqat izoh formasi mavjud bo'lganda (ro'yxatdan o'tgan foydalanuvchi).
+    if (!form) return;
+
+    function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function bumpCommentCount(delta) {
+        if (!commentCountEl) return;
+        commentCountEl.textContent = String((parseInt(commentCountEl.textContent, 10) || 0) + delta);
+    }
+
+    function commentHtml(c, isReply) {
+        const initial = (c.author.fullName || "?").trim().charAt(0).toUpperCase();
+        const avatar = c.author.avatarUrl
+            ? `<img class="avatar sm" src="${escapeHtml(c.author.avatarUrl)}" alt="" />`
+            : `<span class="avatar sm">${initial}</span>`;
+        const isAuthor = c.author.id === postAuthorId;
+        const authorBadge = isAuthor ? `<span class="badge badge-author">Muallif</span>` : "";
+        const replyBtn = isReply ? "" : `<button type="button" class="comment-reply-btn" data-reply="${c.id}">Javob berish</button>`;
+        const repliesBox = isReply ? "" : `<div class="replies" data-replies-for="${c.id}"></div>`;
+        // Yangi yaratilgan izoh doim joriy foydalanuvchiga tegishli, shuning uchun o'chirish tugmasi ko'rsatiladi.
+        return `
+            <div class="comment ${isAuthor ? "comment-author" : ""}" data-comment-id="${c.id}">
+                <a href="/profile/${c.author.username || c.author.id}">${avatar}</a>
+                <div class="body">
+                    <div class="bubble">
+                        <div class="comment-meta">
+                            <a class="name" href="/profile/${c.author.username || c.author.id}">${escapeHtml(c.author.fullName)}</a>
+                            ${authorBadge}
+                            <button type="button" class="comment-delete" data-delete-comment="${c.id}" aria-label="O'chirish" title="O'chirish">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                        <div class="text">${escapeHtml(c.text)}</div>
+                    </div>
+                    <div class="comment-footer">
+                        ${replyBtn}
+                        <span class="time">hozirgina</span>
+                    </div>
+                    ${repliesBox}
+                </div>
+            </div>`;
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text.length < 3) { alert("Izoh kamida 3 belgidan iborat bo'lishi kerak."); return; }
+        if (text.length > 500) { alert("Izoh 500 belgidan oshmasligi kerak."); return; }
+        try {
+            const c = await kitob.apiPost(`/posts/${postId}/comment`, { postId: postId, text: text });
+            if (!c) return;
+            const noComments = document.getElementById("noComments");
+            if (noComments) noComments.remove();
+            list.insertAdjacentHTML("beforeend", commentHtml(c, false));
+            bumpCommentCount(1);
+            input.value = "";
+        } catch (err) { alert(err.message); }
+    });
+
+    // "Javob berish" — izoh ostida kichik javob formasini ochadi/yopadi.
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-reply]");
+        if (!btn) return;
+        e.preventDefault();
+        const commentId = btn.getAttribute("data-reply");
+        const existing = document.querySelector(`.comment-reply-form[data-reply-form-for="${commentId}"]`);
+        if (existing) { existing.remove(); return; }
+
+        const footer = btn.closest(".comment-footer");
+        const replyForm = document.createElement("form");
+        replyForm.className = "comment-reply-form";
+        replyForm.setAttribute("data-reply-form-for", commentId);
+        replyForm.innerHTML = `
+            <textarea class="input" rows="2" placeholder="Javobingizni yozing..." spellcheck="false" minlength="3" maxlength="500" required></textarea>
+            <button type="submit" class="btn btn-accent btn-sm">Yuborish</button>`;
+        footer.insertAdjacentElement("afterend", replyForm);
+        replyForm.querySelector("textarea").focus();
+    });
+
+    document.addEventListener("submit", async (e) => {
+        const replyForm = e.target.closest(".comment-reply-form");
+        if (!replyForm) return;
+        e.preventDefault();
+        const commentId = replyForm.getAttribute("data-reply-form-for");
+        const textarea = replyForm.querySelector("textarea");
+        const text = textarea.value.trim();
+        if (text.length < 3) { alert("Izoh kamida 3 belgidan iborat bo'lishi kerak."); return; }
+        if (text.length > 500) { alert("Izoh 500 belgidan oshmasligi kerak."); return; }
+        try {
+            const c = await kitob.apiPost(`/posts/${postId}/comment`, { postId: postId, text: text, parentCommentId: parseInt(commentId, 10) });
+            if (!c) return;
+            const repliesBox = document.querySelector(`[data-replies-for="${commentId}"]`);
+            if (repliesBox) repliesBox.insertAdjacentHTML("beforeend", commentHtml(c, true));
+            bumpCommentCount(1);
+            replyForm.remove();
+        } catch (err) { alert(err.message); }
+    });
+})();
+</script>
+}

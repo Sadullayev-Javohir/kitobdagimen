@@ -1,0 +1,188 @@
+@model ProfileDto
+@{
+    ViewData["Title"] = "Profilni tahrirlash";
+}
+
+<div class="container page">
+    <div class="feed">
+        <div class="card">
+            <h1 style="font-size:24px;margin-bottom:20px">Profilni tahrirlash</h1>
+            <form method="post" action="/profile/edit" id="profileEditForm">
+                @Html.AntiForgeryToken()
+
+                <div class="field">
+                    <label>Avatar</label>
+                    <div class="avatar-edit">
+                        <div class="avatar-edit-preview">
+                            @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                            {
+                                <img id="avatarPreviewImg" src="@Model.AvatarUrl" alt="Avatar" />
+                            }
+                            else
+                            {
+                                <img id="avatarPreviewImg" src="" alt="Avatar" hidden />
+                                <span id="avatarPreviewFallback" class="avatar-edit-fallback">@KitobdaGimen.Web.ViewHelpers.Initial(Model.FullName)</span>
+                            }
+                        </div>
+                        <div class="avatar-edit-controls">
+                            <input type="hidden" id="AvatarUrl" name="AvatarUrl" value="@Model.AvatarUrl" maxlength="2048" />
+                            <label class="btn btn-outline btn-sm">
+                                <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">photo_camera</span>
+                                Rasm tanlash
+                                <input type="file" id="avatarInput" accept="image/*" hidden />
+                            </label>
+                            <button type="button" class="btn btn-ghost btn-sm" id="avatarRemove" @(string.IsNullOrEmpty(Model.AvatarUrl) ? "hidden" : "")>O'chirish</button>
+                            <p class="muted avatar-edit-hint" id="avatarHint">JPG, PNG, WEBP yoki GIF. Rasm avtomatik .webp formatiga o'tkaziladi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="Username">Username</label>
+                    <input class="input" id="Username" name="Username" value="@Model.Username" minlength="3" maxlength="32" required placeholder="masalan: kitobxon_07" autocomplete="off" />
+                    <p class="muted" style="margin:6px 0 0;font-size:13px">3-32 belgi: harf, raqam va pastki chiziq (_).</p>
+                    <p class="username-status" id="usernameStatus" data-state="" hidden></p>
+                </div>
+
+                <div class="field">
+                    <label for="FullName">To'liq ism</label>
+                    <input class="input" id="FullName" name="FullName" value="@Model.FullName" minlength="3" maxlength="32" required />
+                </div>
+
+                <div class="field">
+                    <label for="Bio">Bio</label>
+                    <textarea class="input" id="Bio" name="Bio" maxlength="100" placeholder="O'zingiz haqingizda qisqacha...">@Model.Bio</textarea>
+                </div>
+
+                <div class="composer-actions" style="margin-top:20px">
+                    <a class="btn btn-ghost" href="/profile">Bekor qilish</a>
+                    <button type="submit" class="btn btn-primary" id="profileSaveBtn">Saqlash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const input = document.getElementById("avatarInput");
+    const urlField = document.getElementById("AvatarUrl");
+    const previewImg = document.getElementById("avatarPreviewImg");
+    const fallback = document.getElementById("avatarPreviewFallback");
+    const removeBtn = document.getElementById("avatarRemove");
+    const hint = document.getElementById("avatarHint");
+    const saveBtn = document.getElementById("profileSaveBtn");
+
+    function showImage(src) {
+        if (previewImg) { previewImg.src = src; previewImg.hidden = false; }
+        if (fallback) fallback.hidden = true;
+        if (removeBtn) removeBtn.hidden = false;
+    }
+    function clearImage() {
+        urlField.value = "";
+        if (previewImg) { previewImg.src = ""; previewImg.hidden = true; }
+        if (fallback) fallback.hidden = false;
+        if (removeBtn) removeBtn.hidden = true;
+    }
+
+    input.addEventListener("change", async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+
+        // Darhol mahalliy ko'rinish (preview), so'ng serverga yuklab .webp URL olamiz.
+        const reader = new FileReader();
+        reader.onload = (ev) => showImage(ev.target.result);
+        reader.readAsDataURL(file);
+
+        saveBtn.disabled = true;
+        if (hint) hint.textContent = "Rasm yuklanmoqda...";
+
+        try {
+            const fd = new FormData();
+            fd.append("file", file);
+            const res = await fetch("/profile/upload-avatar", {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": kitob.antiforgeryToken() },
+                body: fd
+            });
+            if (res.status === 401) { window.location.href = "/"; return; }
+            if (!res.ok) {
+                let message = "Rasmni yuklab bo'lmadi.";
+                try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+                throw new Error(message);
+            }
+            const data = await res.json();
+            urlField.value = data.url;
+            showImage(data.url);
+            if (hint) hint.textContent = "Rasm yuklandi.";
+        } catch (err) {
+            alert(err.message);
+            clearImage();
+            if (hint) hint.textContent = "JPG, PNG, WEBP yoki GIF. Rasm avtomatik .webp formatiga o'tkaziladi.";
+        } finally {
+            saveBtn.disabled = false;
+            input.value = "";
+        }
+    });
+
+    if (removeBtn) {
+        removeBtn.addEventListener("click", () => clearImage());
+    }
+
+    // ===== Username jonli (real-time) tekshiruvi =====
+    const usernameInput = document.getElementById("Username");
+    const usernameStatus = document.getElementById("usernameStatus");
+    const form = document.getElementById("profileEditForm");
+    const originalUsername = (usernameInput.value || "").trim().toLowerCase();
+    let usernameOk = true;     // formatli va bo'sh (yoki o'zinikicha)
+    let usernameTimer;
+
+    function setStatus(state, message) {
+        usernameStatus.hidden = false;
+        usernameStatus.dataset.state = state;       // "ok" | "bad" | "checking"
+        usernameStatus.textContent = message;
+    }
+
+    async function checkUsername() {
+        const value = (usernameInput.value || "").trim();
+        if (value.toLowerCase() === originalUsername) {
+            usernameOk = true;
+            usernameStatus.hidden = true;
+            return;
+        }
+        if (!/^[a-zA-Z0-9_]{3,32}$/.test(value)) {
+            usernameOk = false;
+            setStatus("bad", "Username 3-32 belgi: harf, raqam va pastki chiziq (_).");
+            return;
+        }
+        setStatus("checking", "Tekshirilmoqda...");
+        try {
+            const res = await fetch(`/profile/check-username?username=${encodeURIComponent(value)}`,
+                { headers: { "X-Requested-With": "XMLHttpRequest" } });
+            if (!res.ok) { usernameOk = true; usernameStatus.hidden = true; return; }
+            const data = await res.json();
+            usernameOk = data.isValid && data.isAvailable;
+            setStatus(usernameOk ? "ok" : "bad", data.message);
+        } catch {
+            // Tarmoq xatosi — jonli tekshiruvni jim o'tkazamiz; server submit'da baribir tekshiradi.
+            usernameOk = true;
+            usernameStatus.hidden = true;
+        }
+    }
+
+    usernameInput.addEventListener("input", () => {
+        clearTimeout(usernameTimer);
+        usernameTimer = setTimeout(checkUsername, 350);
+    });
+
+    form.addEventListener("submit", (e) => {
+        if (!usernameOk) {
+            e.preventDefault();
+            checkUsername();
+            usernameInput.focus();
+        }
+    });
+})();
+</script>
+}

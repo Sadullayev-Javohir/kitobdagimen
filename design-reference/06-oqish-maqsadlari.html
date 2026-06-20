@@ -1,0 +1,186 @@
+<!DOCTYPE html><html class="light" lang="uz"><head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Kitob maqsadlarim - kitobdagimen.uz</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400..700;1,400..700&amp;family=Source+Sans+3:ital,wght@0,200..900;1,200..900&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+    <script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"primary-fixed-dim": "#9ed1bd", "surface-dim": "#d0ddd4", "on-secondary-container": "#682300", "inverse-on-surface": "#e7f4ea", "on-primary": "#ffffff", "on-secondary-fixed-variant": "#7e2c00", "border-warm": "#E5DFD0", surface: "#f0fdf3", "outline-variant": "#c0c9c3", "text-secondary": "#6B7568", "on-tertiary-container": "#91bca1", "surface-container-highest": "#d9e6dc", "inverse-surface": "#28332d", "on-tertiary-fixed-variant": "#274e39", "surface-container-lowest": "#ffffff", "on-error": "#ffffff", "surface-container-low": "#eaf7ed", "on-tertiary-fixed": "#002112", "on-primary-fixed-variant": "#1d4f40", "on-primary-fixed": "#002117", "on-surface": "#131e18", background: "#f0fdf3", "on-secondary": "#ffffff", "secondary-container": "#fd8048", "on-secondary-fixed": "#370e00", tertiary: "#0b3522", "surface-bright": "#f0fdf3", "primary-fixed": "#baeed9", error: "#ba1a1a", "surface-tint": "#376757", "secondary-fixed-dim": "#ffb598", "tertiary-fixed-dim": "#a5d0b5", "on-error-container": "#93000a", "surface-container": "#e4f1e7", "on-background": "#131e18", primary: "#003629", "surface-variant": "#d9e6dc", "error-container": "#ffdad6", outline: "#707974", "primary-container": "#1b4d3e", "tertiary-fixed": "#c1edd0", "secondary-fixed": "#ffdbce", "background-warm": "#FAF6EE", "inverse-primary": "#9ed1bd", "surface-container-high": "#dfebe2", secondary: "#a33e07", "surface-paper": "#FFFDF8", "tertiary-container": "#254c37", "on-primary-container": "#8abda9", "on-tertiary": "#ffffff", "on-surface-variant": "#404945"}, borderRadius: {DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px"}, spacing: {"max-width": "1100px", "stack-sm": "8px", gutter: "24px", "section-gap": "48px", "stack-md": "16px", "navbar-height": "72px"}, fontFamily: {"headline-sm": ["Noto Serif"], "label-md": ["\"Source Sans 3\""], "body-md": ["\"Source Sans 3\""], "headline-md": ["Noto Serif"], "body-lg": ["\"Source Sans 3\""], "quote-text": ["Noto Serif"], "label-sm": ["\"Source Sans 3\""], "headline-lg": ["Noto Serif"]}, fontSize: {"headline-sm": ["22px", {lineHeight: "1.4", fontWeight: "600"}], "label-md": ["14px", {lineHeight: "1.2", fontWeight: "600"}], "body-md": ["16px", {lineHeight: "1.5", fontWeight: "400"}], "headline-md": ["28px", {lineHeight: "1.3", fontWeight: "700"}], "body-lg": ["18px", {lineHeight: "1.6", fontWeight: "400"}], "quote-text": ["20px", {lineHeight: "1.6", fontWeight: "400"}], "label-sm": ["12px", {lineHeight: "1.2", fontWeight: "500"}], "headline-lg": ["40px", {lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "700"}]}}}};</script>
+    <style>
+        .circular-progress {
+            transform: rotate(-90deg);
+        }
+        .circular-progress circle {
+            transition: stroke-dashoffset 1s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background-warm text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface-paper dark:bg-surface-container-low border-b border-border-warm dark:border-outline-variant shadow-[0px_4px_20px_rgba(27,77,62,0.05)] docked full-width top-0 fixed top-0 left-0 w-full h-[72px] z-50 flex items-center justify-between px-gutter max-w-max-width mx-auto">
+    <div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+        kitobdagimen.uz
+    </div>
+    <div class="hidden md:flex items-center space-x-8 h-full">
+        <a class="text-text-secondary dark:text-on-surface-variant hover:text-secondary-container transition-colors duration-200 h-full flex items-center font-label-md text-label-md px-2" href="#">Asosiy</a>
+        <a class="text-secondary dark:text-secondary-fixed-dim border-b-2 border-secondary h-full flex items-center font-label-md text-label-md px-2" href="#">Kutubxona</a>
+        <a class="text-text-secondary dark:text-on-surface-variant hover:text-secondary-container transition-colors duration-200 h-full flex items-center font-label-md text-label-md px-2" href="#">Iqtiboslar</a>
+        <a class="text-text-secondary dark:text-on-surface-variant hover:text-secondary-container transition-colors duration-200 h-full flex items-center font-label-md text-label-md px-2" href="#">Xabarlar</a>
+    </div>
+    <div class="flex items-center space-x-4">
+        <button class="text-primary hover:text-secondary-container transition-colors duration-200">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search</span>
+        </button>
+        <button class="text-primary hover:text-secondary-container transition-colors duration-200 relative">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+            <span class="absolute top-0 right-0 w-2 h-2 bg-[#E8703A] rounded-full border border-surface-paper"></span>
+        </button>
+        <div class="w-9 h-9 rounded-full border-2 border-[#E8703A] overflow-hidden flex-shrink-0 cursor-pointer">
+            <img alt="Foydalanuvchi profili" class="w-full h-full object-cover" data-alt="A close-up portrait of an individual reading a book, softly illuminated by warm, natural light. The mood is calm and contemplative, fitting the digital sanctuary aesthetic. The colors are muted organic tones with deep greens and warm whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMjMHdhjLnA6XfcVgry5RXzlWblegTAxhYDhFBqV6O8l--4j2SAtdkr3wBOkkNDfeNjt1V0ZOhIAzb5NczEjwqoI-StB1U0SijnSwGP2_YmEVkS7vn6R27vovq5ymolsS0BtBmEvjmOVUYYnBcqiF_AhhloifUeA7HvRIEJOlbgo8zoDwdVyvAvgPYig75joaND73uiguscN0UumBzcVW4yt0cvVCcQf5pWmTr9JCeaBuotUk7ivAH">
+        </div>
+    </div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-[120px] pb-section-gap px-gutter w-full max-w-max-width mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-stack-md gap-4">
+        <h1 class="font-headline-lg text-headline-lg text-primary-container">Kitob maqsadlarim</h1>
+        <button class="bg-[#E8703A] text-on-primary font-label-md text-label-md px-6 py-3 rounded-lg hover:bg-secondary transition-colors duration-200 shadow-sm whitespace-nowrap">
+            Yangi kitob qo'shish
+        </button>
+    </div>
+    <!-- Add Book Form -->
+    <div class="bg-surface-paper rounded-[20px] p-8 border border-border-warm shadow-[0px_4px_20px_rgba(27,77,62,0.05)] mb-section-gap">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label class="font-label-md text-label-md text-text-secondary block">Kitob nomi</label>
+                <input class="w-full bg-[#FFFDF8] border border-[#E5DFD0] rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors duration-200 placeholder-text-secondary/50" placeholder="Kitob nomini kiriting" type="text">
+            </div>
+            <div class="space-y-2">
+                <label class="font-label-md text-label-md text-text-secondary block">Muallif</label>
+                <input class="w-full bg-[#FFFDF8] border border-[#E5DFD0] rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors duration-200 placeholder-text-secondary/50" placeholder="Muallif ismini kiriting" type="text">
+            </div>
+            <div class="space-y-2">
+                <label class="font-label-md text-label-md text-text-secondary block">Jami betlar soni</label>
+                <input class="w-full bg-[#FFFDF8] border border-[#E5DFD0] rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors duration-200 placeholder-text-secondary/50" placeholder="Masalan: 320" type="number">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="font-label-md text-label-md text-text-secondary block">Kunlik bet maqsadi</label>
+                    <input class="w-full bg-[#FFFDF8] border border-[#E5DFD0] rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors duration-200 placeholder-text-secondary/50" placeholder="20" type="number">
+                </div>
+                <div class="space-y-2">
+                    <label class="font-label-md text-label-md text-text-secondary block">Boshlanish sanasi</label>
+                    <input class="w-full bg-[#FFFDF8] border border-[#E5DFD0] rounded-lg px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary transition-colors duration-200 text-text-secondary" type="date">
+                </div>
+            </div>
+        </div>
+        <div class="mt-8 flex justify-end">
+            <button class="bg-[#E8703A] text-on-primary font-label-md text-label-md px-8 py-3 rounded-lg hover:bg-secondary transition-colors duration-200 shadow-sm">
+                Saqlash
+            </button>
+        </div>
+    </div>
+    <!-- Active Books List -->
+    <h2 class="font-headline-md text-headline-md text-primary-container mb-stack-md">Faol kitoblarim</h2>
+    <div class="flex flex-col space-y-4">
+        <!-- Book 1 -->
+        <div class="bg-surface-paper rounded-[20px] p-6 border border-border-warm shadow-[0px_4px_20px_rgba(27,77,62,0.05)] flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-1 transition-transform duration-300">
+            <div class="flex items-center gap-6 w-full md:w-auto">
+                <div class="w-[80px] h-[120px] rounded-md overflow-hidden shadow-sm flex-shrink-0 border border-border-warm">
+                    <img alt="Kichik shahzoda kitob muqovasi" class="w-full h-full object-cover" data-alt="A beautifully illustrated book cover featuring a minimalist, hand-drawn little prince on a tiny planet. The background is a soft, starry night in organic, tactile textures. High-quality digital art style, fitting a modern library app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcO2cZ_UEU25ta422BlSXJ7lsfV_pFUkZb1PvheiXoktNARsCWJ_YVVcIqHAqWbPlMOpW7w87Ltcnxq16KrEIxoxB4-G6PpYkImQKBEvURiZFfidtrB7VAhcg8EEudSMhn6AqHt8Y5IK9w15zmUc0n4RfLjKdPy9z8-HsVutwJbFpUMI5-FeTu5xokJ-2Ur2jH-YrbB8D2-_RFBUWxkUUF08CGlAe8KmqIq5JHEeX0dJYq5Nkv3J5z">
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-headline-sm text-primary mb-1">Kichik shahzoda</h3>
+                    <p class="font-body-md text-body-md text-text-secondary">Antuan de Sent-Ekzyuperi</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-center w-full md:w-auto mt-4 md:mt-0">
+                <div class="relative w-20 h-20 mb-3">
+                    <svg class="circular-progress w-full h-full" viewBox="0 0 100 100">
+                        <circle class="text-surface-variant stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-width="8"></circle>
+                        <circle class="text-[#E8703A] stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-dasharray="251.2" stroke-dashoffset="138.16" stroke-linecap="round" stroke-width="8"></circle> <!-- 45% -->
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center font-label-md text-label-md text-primary-container">
+                        45%
+                    </div>
+                </div>
+                <p class="font-label-sm text-label-sm text-text-secondary mb-3">Bugun: 18 / 30 bet</p>
+                <button class="bg-transparent border border-primary text-primary font-label-md text-label-sm px-4 py-1.5 rounded-full hover:bg-surface-variant transition-colors duration-200">
+                    Betlarni yangilash
+                </button>
+            </div>
+        </div>
+        <!-- Book 2 -->
+        <div class="bg-surface-paper rounded-[20px] p-6 border border-border-warm shadow-[0px_4px_20px_rgba(27,77,62,0.05)] flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-1 transition-transform duration-300">
+            <div class="flex items-center gap-6 w-full md:w-auto">
+                <div class="w-[80px] h-[120px] rounded-md overflow-hidden shadow-sm flex-shrink-0 border border-border-warm">
+                    <img alt="Xamsa kitob muqovasi" class="w-full h-full object-cover" data-alt="An ornate, classic book cover design featuring traditional Central Asian motifs in deep forest green and gold. The tactile paper texture is clearly visible, evoking a sense of ancient wisdom and organic minimalism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSuZjUQebqSrii4byuLTstoelZyRjQUayi8Vrb8PrVmTWEerrQNiOY76nG79Mt7CKYmEYo0-7f22Y7-P3Zvm8TgMGRknAeg4B4nS5xIYYKwKWkDZ3YNlPXzOdcXVtRcz3px6Xau3QyEU6GUwsmOZsPH9RbV0rzQgrjEk5h13maacU2Moj1PEpgaPOMJESSYCWqUBCGuVrm07u9W1l9e5pkbGKrUtIqreHdaD_uMehaKSNuBDp9179Q">
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-headline-sm text-primary mb-1">Xamsa</h3>
+                    <p class="font-body-md text-body-md text-text-secondary">Alisher Navoiy</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-center w-full md:w-auto mt-4 md:mt-0">
+                <div class="relative w-20 h-20 mb-3">
+                    <svg class="circular-progress w-full h-full" viewBox="0 0 100 100">
+                        <circle class="text-surface-variant stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-width="8"></circle>
+                        <circle class="text-[#E8703A] stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-dasharray="251.2" stroke-dashoffset="70.33" stroke-linecap="round" stroke-width="8"></circle> <!-- 72% -->
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center font-label-md text-label-md text-primary-container">
+                        72%
+                    </div>
+                </div>
+                <p class="font-label-sm text-label-sm text-text-secondary mb-3">Bugun: 45 / 50 bet</p>
+                <button class="bg-transparent border border-primary text-primary font-label-md text-label-sm px-4 py-1.5 rounded-full hover:bg-surface-variant transition-colors duration-200">
+                    Betlarni yangilash
+                </button>
+            </div>
+        </div>
+        <!-- Book 3 -->
+        <div class="bg-surface-paper rounded-[20px] p-6 border border-border-warm shadow-[0px_4px_20px_rgba(27,77,62,0.05)] flex flex-col md:flex-row items-center justify-between gap-6 hover:-translate-y-1 transition-transform duration-300">
+            <div class="flex items-center gap-6 w-full md:w-auto">
+                <div class="w-[80px] h-[120px] rounded-md overflow-hidden shadow-sm flex-shrink-0 border border-border-warm">
+                    <img alt="Atomik odatlar kitob muqovasi" class="w-full h-full object-cover" data-alt="A clean, modern book cover design emphasizing atomic structures or geometric shapes in warm cream and terracotta tones. The style aligns with organic minimalism, avoiding harsh digital glare, feeling like a physical object." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDZB866DZ_YqmTm1QjigYnzaq4BNM6vdugnImWuJpLESxJAJuzvy5OK62DgocbYETRKPu5P8VjYCGkAzgVtmhN36mybAWNM6Ww5UW5zJB0fIBlvw6mgF6ETVOF6y-RwxQ57EE--76d-1HOFgMf3Td44ssejwm-7Oq7wPHb9L4rOBHKzM_8uMXD09DvlQaHwIwzHrjaBL746X7-4pAZQPnBjiZ2NXNn72MMqW5QSimgEQWDR5MPp21D">
+                </div>
+                <div>
+                    <h3 class="font-headline-sm text-headline-sm text-primary mb-1">Atomik odatlar</h3>
+                    <p class="font-body-md text-body-md text-text-secondary">James Clear</p>
+                </div>
+            </div>
+            <div class="flex flex-col items-center w-full md:w-auto mt-4 md:mt-0">
+                <div class="relative w-20 h-20 mb-3">
+                    <svg class="circular-progress w-full h-full" viewBox="0 0 100 100">
+                        <circle class="text-surface-variant stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-width="8"></circle>
+                        <circle class="text-[#E8703A] stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-dasharray="251.2" stroke-dashoffset="25.12" stroke-linecap="round" stroke-width="8"></circle> <!-- 90% -->
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center font-label-md text-label-md text-primary-container">
+                        90%
+                    </div>
+                </div>
+                <p class="font-label-sm text-label-sm text-text-secondary mb-3">Bugun: 20 / 20 bet</p>
+                <button class="bg-transparent border border-primary text-primary font-label-md text-label-sm px-4 py-1.5 rounded-full hover:bg-surface-variant transition-colors duration-200 opacity-50 cursor-not-allowed">
+                    Tugallandi
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer -->
+<footer class="bg-background dark:bg-surface-dim border-t border-border-warm dark:border-outline-variant w-full py-section-gap px-gutter flex flex-col md:flex-row justify-between items-center max-w-max-width mx-auto mt-auto">
+    <div class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim mb-4 md:mb-0">
+        kitobdagimen.uz
+    </div>
+    <div class="flex flex-wrap justify-center gap-6 font-label-sm text-label-sm text-text-secondary dark:text-on-surface-variant">
+        <a class="hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-80 hover:opacity-100" href="#">Biz haqimizda</a>
+        <a class="hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-80 hover:opacity-100" href="#">Foydalanish shartlari</a>
+        <a class="hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-80 hover:opacity-100" href="#">Maxfiylik siyosati</a>
+        <a class="hover:text-secondary dark:hover:text-secondary-fixed transition-colors opacity-80 hover:opacity-100" href="#">Aloqa</a>
+    </div>
+    <div class="font-body-md text-body-md text-text-secondary dark:text-on-surface-variant mt-4 md:mt-0 opacity-80">
+        © 2024 kitobdagimen.uz. Barcha huquqlar himoyalangan.
+    </div>
+</footer>
+</body></html>

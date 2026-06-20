@@ -1,0 +1,30 @@
+@model IReadOnlyList<KitobdaGimen.Application.Features.ReadingGoals.Dtos.ReadingGoalDto>
+
+<div class="finished-books">
+    @foreach (var goal in Model)
+    {
+        <div class="finished-book" data-goal-id="@goal.Id">
+            <a class="finished-link" href="/reading-books/@goal.Id" title="@goal.Book.Title">
+                <div class="finished-cover">
+                    @if (!string.IsNullOrEmpty(goal.Book.CoverUrl))
+                    {
+                        <img src="@goal.Book.CoverUrl" alt="@goal.Book.Title muqovasi" />
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">menu_book</span>
+                    }
+                    <span class="finished-badge" title="Tugatilgan">
+                        <span class="material-symbols-outlined">check</span>
+                    </span>
+                </div>
+                <div class="finished-title">@goal.Book.Title</div>
+                <div class="muted finished-author">@goal.Book.Author</div>
+                <div class="muted finished-pages">@goal.TotalPages bet</div>
+            </a>
+            <button type="button" class="finished-delete-btn goal-delete-btn" data-goal="@goal.Id" data-title="@goal.Book.Title" title="O'chirish">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+        </div>
+    }
+</div>

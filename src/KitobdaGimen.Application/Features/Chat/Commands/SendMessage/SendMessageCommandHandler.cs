@@ -1,0 +1,107 @@
+using KitobdaGimen.Application.Common.Exceptions;
+using KitobdaGimen.Application.Common.Interfaces;
+using KitobdaGimen.Domain.Entities;
+using KitobdaGimen.Domain.Enums;
+using KitobdaGimen.Application.Features.Chat.Dtos;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+
+namespace KitobdaGimen.Application.Features.Chat.Commands.SendMessage;
+
+public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, MessageDto>
+{
+    private readonly IAppDbContext _db;
+    private readonly ICurrentUserService _currentUser;
+    private readonly IChatNotifier _chatNotifier;
+
+    public SendMessageCommandHandler(IAppDbContext db, ICurrentUserService currentUser, IChatNotifier chatNotifier)
+    {
+        _db = db;
+        _currentUser = currentUser;
+        _chatNotifier = chatNotifier;
+    }
+
+    public async Task<MessageDto> Handle(SendMessageCommand request, CancellationToken cancellationToken)
+    {
+        var userId = _currentUser.UserId
+            ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
+
+        Conversation conversation;
+        if (request.ConversationId is int conversationId)
+        {
+            conversation = await _db.Conversations
+                .FirstOrDefaultAsync(c => c.Id == conversationId, cancellationToken)
+                ?? throw new NotFoundException("Suhbat", conversationId);
+
+            if (conversation.User1Id != userId && conversation.User2Id != userId)
+            {
+                throw new ForbiddenAccessException();
+            }
+        }
+        else
+        {
+            var recipientId = request.RecipientId!.Value;
+            if (recipientId == userId)
+            {
+                throw new ForbiddenAccessException("O'zingizga xabar yubora olmaysiz.");
+            }
+
+            var recipientExists = await _db.Users.AnyAsync(u => u.Id == recipientId, cancellationToken);
+            if (!recipientExists)
+            {
+                throw new NotFoundException("Foydalanuvchi", recipientId);
+            }
+
+            conversation = await ConversationHelper.GetOrCreateAsync(_db, userId, recipientId, cancellationToken);
+        }
+
+        // Gate: the two participants must have an accepted connection before they can chat.
+        var otherId = conversation.User1Id == userId ? conversation.User2Id : conversation.User1Id;
+        var isConnected = await _db.Connections.AnyAsync(
+            c => c.Status == ConnectionStatus.Accepted
+                 && ((c.RequesterId == userId && c.AddresseeId == otherId)
+                     || (c.RequesterId == otherId && c.AddresseeId == userId)),
+            cancellationToken);
+        if (!isConnected)
+        {
+            throw new ForbiddenAccessException("Avval taklif yuborib, qabul qilinishini kuting.");
+        }
+
+        if (request.SharedPostId is int sharedPostId)
+        {
+            var postExists = await _db.Posts.AnyAsync(p => p.Id == sharedPostId, cancellationToken);
+            if (!postExists)
+            {
+                throw new NotFoundException("Post", sharedPostId);
+            }
+        }
+
+        var message = new Message
+        {
+            ConversationId = conversation.Id,
+            SenderId = userId,
+            Text = string.IsNullOrWhiteSpace(request.Text) ? null : request.Text,
+            SharedPostId = request.SharedPostId,
+            SentAt = DateTime.UtcNow,
+            IsRead = false
+        };
+
+        _db.Messages.Add(message);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var dto = await _db.Messages
+            .Where(m => m.Id == message.Id)
+            .ToMessageDto(userId)
+            .FirstAsync(cancellationToken);
+
+        // Push the message to the other participant in real time (from their perspective IsMine = false).
+        var otherUserId = conversation.User1Id == userId ? conversation.User2Id : conversation.User1Id;
+        await _chatNotifier.MessageReceivedAsync(otherUserId, dto with { IsMine = false }, cancellationToken);
+
+        // Light up the recipient's navbar "Xabarlar" badge on any page (global notification hub).
+        await _chatNotifier.NewMessageBadgeAsync(
+            otherUserId, conversation.Id, dto.Sender.FullName, dto.Sender.AvatarUrl, cancellationToken);
+
+        return dto;
+    }
+}

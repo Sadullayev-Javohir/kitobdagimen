@@ -1,0 +1,409 @@
+@using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres
+@using MediatR
+@inject ISender Mediator
+@model ReadingBooksPageViewModel
+@{
+    ViewData["Title"] = "Kutubxona";
+    var genres = await Mediator.Send(new GetGenresQuery());
+    var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+}
+
+<div class="container page">
+    <div class="rb-header">
+        <h1 style="margin:0">Kitob maqsadlarim</h1>
+        <button class="btn btn-accent" id="newGoalToggle">Yangi kitob qo'shish</button>
+    </div>
+
+    <div class="card" id="newGoalForm" style="display:none; margin-bottom:24px">
+        <h3 style="margin-bottom:14px">Yangi kitob qo'shish</h3>
+        <form method="post" action="/reading-books/create">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="BookId" id="goalBookId" />
+
+            <!-- Tanlangan kitob (tanlangach ko'rinadi) -->
+            <div id="goalSelectedBook" class="composer-selected" hidden>
+                <span class="material-symbols-outlined">menu_book</span>
+                <span id="goalSelectedLabel"></span>
+                <button type="button" class="composer-clear" id="goalClearBook" aria-label="Bekor qilish">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Kitob qidirish / qo'shish (kitob tanlanmaganda ko'rinadi) -->
+            <div id="goalBookPicker">
+                <div class="composer-book">
+                    <input class="input" id="goalBookSearch" placeholder="Kitobni qidiring..." autocomplete="off" />
+                    <button type="button" class="btn btn-outline btn-sm" id="goalNewBookToggle">Yangi kitob</button>
+                </div>
+                <div class="book-suggestions" id="goalBookSuggestions" hidden></div>
+
+                <div id="goalNewBookForm" class="composer-newbook stack" hidden>
+                    <input class="input" id="goalNbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
+                    <input class="input" id="goalNbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
+                    <input class="input" id="goalNbPages" type="number" min="1" placeholder="Jami betlar soni" />
+                    <select class="input" id="goalNbGenre">
+                        <option value="">Kategoriyani tanlang</option>
+                        @foreach (var genre in genres)
+                        {
+                            <option value="@genre.Id">@genre.Name</option>
+                        }
+                    </select>
+
+                    <div class="nb-cover">
+                        <div class="nb-cover-preview" id="goalNbCoverPreview">
+                            <span class="material-symbols-outlined">image</span>
+                        </div>
+                        <div class="nb-cover-actions">
+                            <label class="btn btn-outline btn-sm" for="goalNbCover">Muqova rasmi</label>
+                            <input type="file" id="goalNbCover" accept="image/*" hidden />
+                            <button type="button" class="btn btn-ghost btn-sm" id="goalNbCoverClear" hidden>O'chirish</button>
+                            <span class="muted" id="goalNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-outline btn-sm" id="goalNbSave">Kitobni qo'shish</button>
+                </div>
+            </div>
+
+            <div class="rb-form-grid">
+                <div class="field">
+                    <label for="DailyPageGoal">Kunlik bet maqsadi</label>
+                    <input class="input" type="number" min="1" name="DailyPageGoal" id="DailyPageGoal" value="20" required />
+                </div>
+
+                <div class="field">
+                    <label for="goalStartDate">Boshlanish sanasi</label>
+                    <input class="input" type="date" name="StartDate" id="goalStartDate" value="@today" max="@today" required />
+                    <span class="muted" style="font-size:12px">Kelajakdagi sanani tanlab bo'lmaydi.</span>
+                </div>
+            </div>
+
+            <div class="composer-actions" style="margin-top:16px">
+                <a class="btn btn-ghost" href="#" onclick="document.getElementById('newGoalForm').style.display='none';return false;">Bekor</a>
+                <button type="submit" class="btn btn-primary" id="goalSubmit" disabled>Saqlash</button>
+            </div>
+        </form>
+    </div>
+
+    <h2 class="section-title" style="margin-top:8px">Faol kitoblarim</h2>
+
+    @if (Model.Active.Count == 0)
+    {
+        <div class="card text-center muted">Hali faol kitobingiz yo'q. Yuqoridan yangi kitob qo'shing!</div>
+    }
+    else
+    {
+        <div class="book-rows">
+            @foreach (var goal in Model.Active)
+            {
+                var pct = goal.ProgressPercent;
+                var done = pct >= 100;
+                <div class="book-row@(done ? " is-done" : "")" data-goal-id="@goal.Id">
+                    <a class="rb-cover" href="/reading-books/@goal.Id">
+                        @if (!string.IsNullOrEmpty(goal.Book.CoverUrl))
+                        {
+                            <img src="@goal.Book.CoverUrl" alt="@goal.Book.Title muqovasi" />
+                        }
+                        else
+                        {
+                            <span class="material-symbols-outlined">menu_book</span>
+                        }
+                        <span class="rb-pct-badge"><span class="goal-pct">@pct</span>%</span>
+                    </a>
+
+                    <div class="rb-body">
+                        <div class="rb-head">
+                            <a class="rb-title" href="/reading-books/@goal.Id">@goal.Book.Title</a>
+                            <div class="rb-author">@goal.Book.Author</div>
+                        </div>
+
+                        <div class="rb-track" role="progressbar" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100">
+                            <span class="rb-track-fill" style="width:@pct%"></span>
+                        </div>
+
+                        <div class="rb-stats">
+                            <span class="rb-stat">
+                                <span class="material-symbols-outlined">local_fire_department</span>
+                                Bugun <strong class="today-pages">@goal.PagesReadToday</strong>/@goal.DailyPageGoal bet
+                            </span>
+                            <span class="rb-stat">
+                                <span class="material-symbols-outlined">auto_stories</span>
+                                <strong class="read-pages">@goal.CurrentPage</strong>/@goal.TotalPages bet
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="rb-actions book-row-progress">
+                        @if (done)
+                        {
+                            <span class="rb-done-pill"><span class="material-symbols-outlined">task_alt</span> Tugallandi</span>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm btn-pill goal-log-toggle">
+                                <span class="material-symbols-outlined">add</span> Betlarni yangilash
+                            </button>
+                        }
+                        <div class="goal-log" hidden>
+                            <input class="input goal-pages-input" type="number" min="1" placeholder="bet" />
+                            <button class="btn btn-accent btn-sm goal-log-btn" data-goal="@goal.Id">Qo'shish</button>
+                        </div>
+                        <button class="rb-delete goal-delete-btn" data-goal="@goal.Id" data-title="@goal.Book.Title" aria-label="O'chirish">
+                            <span class="material-symbols-outlined">delete</span> O'chirish
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <h2 class="section-title" style="margin-top:32px">Tugatilgan kitoblar</h2>
+    @if (Model.Finished.Count == 0)
+    {
+        <div class="card text-center muted">Hali tugatilgan kitobingiz yo'q.</div>
+    }
+    else
+    {
+        <partial name="_FinishedBooks" model="Model.Finished" />
+    }
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const toggle = document.getElementById("newGoalToggle");
+    const form = document.getElementById("newGoalForm");
+    toggle.addEventListener("click", () => {
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    });
+
+    // --- Kitob tanlash ---
+    const search = document.getElementById("goalBookSearch");
+    const suggestions = document.getElementById("goalBookSuggestions");
+    const bookIdInput = document.getElementById("goalBookId");
+    const bookPicker = document.getElementById("goalBookPicker");
+    const selectedBook = document.getElementById("goalSelectedBook");
+    const selectedLabel = document.getElementById("goalSelectedLabel");
+    const newBookForm = document.getElementById("goalNewBookForm");
+    const submitBtn = document.getElementById("goalSubmit");
+    let timer;
+
+    function refreshState() {
+        submitBtn.disabled = !bookIdInput.value;
+    }
+
+    function pickBook(book) {
+        bookIdInput.value = book.id;
+        selectedLabel.textContent = `${book.title} — ${book.author}`;
+        selectedBook.hidden = false;
+        bookPicker.hidden = true;
+        suggestions.hidden = true;
+        suggestions.innerHTML = "";
+        search.value = "";
+        refreshState();
+    }
+
+    function clearBook() {
+        bookIdInput.value = "";
+        selectedBook.hidden = true;
+        bookPicker.hidden = false;
+        refreshState();
+    }
+
+    document.getElementById("goalClearBook").addEventListener("click", clearBook);
+
+    search.addEventListener("input", () => {
+        clearTimeout(timer);
+        const q = search.value.trim();
+        if (q.length < 2) { suggestions.hidden = true; return; }
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                if (!res.ok) return;
+                const books = await res.json();
+                suggestions.innerHTML = "";
+                books.forEach(b => {
+                    const div = document.createElement("div");
+                    div.textContent = `${b.title} — ${b.author} (${b.totalPages} bet)`;
+                    div.addEventListener("click", () => pickBook(b));
+                    suggestions.appendChild(div);
+                });
+                suggestions.hidden = books.length === 0;
+            } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
+        }, 250);
+    });
+
+    // --- Yangi kitob qo'shish ---
+    const nbToggle = document.getElementById("goalNewBookToggle");
+    const nbCover = document.getElementById("goalNbCover");
+    const nbCoverPreview = document.getElementById("goalNbCoverPreview");
+    const nbCoverClear = document.getElementById("goalNbCoverClear");
+    const nbCoverHint = document.getElementById("goalNbCoverHint");
+    const nbSave = document.getElementById("goalNbSave");
+    let coverUrl = null;
+    let coverFile = null;
+
+    nbToggle.addEventListener("click", () => {
+        newBookForm.hidden = !newBookForm.hidden;
+    });
+
+    function resetCover() {
+        coverUrl = null;
+        coverFile = null;
+        nbCover.value = "";
+        nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
+        nbCoverClear.hidden = true;
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+    }
+
+    nbCover.addEventListener("change", () => {
+        const f = nbCover.files && nbCover.files[0];
+        if (!f) { resetCover(); return; }
+        coverFile = f;
+        coverUrl = null;
+        nbCoverClear.hidden = false;
+        nbCoverHint.textContent = f.name;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            nbCoverPreview.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = ev.target.result;
+            nbCoverPreview.appendChild(img);
+        };
+        reader.readAsDataURL(f);
+    });
+
+    nbCoverClear.addEventListener("click", resetCover);
+
+    async function uploadCover(file) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/books/upload-cover", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "RequestVerificationToken": kitob.antiforgeryToken()
+            },
+            body: fd
+        });
+        if (res.status === 401) { window.location.href = "/"; return null; }
+        if (!res.ok) {
+            let message = "Rasmni yuklab bo'lmadi.";
+            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+            throw new Error(message);
+        }
+        const data = await res.json();
+        return data.url;
+    }
+
+    nbSave.addEventListener("click", async () => {
+        const genreId = parseInt(document.getElementById("goalNbGenre").value, 10) || 0;
+        const command = {
+            title: document.getElementById("goalNbTitle").value.trim(),
+            author: document.getElementById("goalNbAuthor").value.trim(),
+            totalPages: parseInt(document.getElementById("goalNbPages").value, 10) || 0,
+            genreId: genreId || null
+        };
+        if (!command.title || !command.author || command.totalPages <= 0) {
+            alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
+            return;
+        }
+        if (command.title.length < 3 || command.title.length > 100) {
+            alert("Kitob nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (command.author.length < 3 || command.author.length > 100) {
+            alert("Muallif nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (!genreId) {
+            alert("Kitob kategoriyasini tanlang.");
+            return;
+        }
+        nbSave.disabled = true;
+        try {
+            if (coverFile && !coverUrl) {
+                coverUrl = await uploadCover(coverFile);
+            }
+            if (coverUrl) command.coverUrl = coverUrl;
+
+            const book = await kitob.apiPost("/books/create", command);
+            if (book) pickBook(book);
+            newBookForm.hidden = true;
+            resetCover();
+        } catch (err) { alert(err.message); }
+        finally { nbSave.disabled = false; }
+    });
+
+    // --- "Betlarni yangilash" ochish/yopish ---
+    document.querySelectorAll(".goal-log-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const log = btn.closest(".book-row-progress").querySelector(".goal-log");
+            log.hidden = !log.hidden;
+            if (!log.hidden) log.querySelector(".goal-pages-input").focus();
+        });
+    });
+
+    // --- Progress qo'shish ---
+    document.querySelectorAll(".goal-log-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const row = btn.closest(".book-row");
+            const input = row.querySelector(".goal-pages-input");
+            const pages = parseInt(input.value, 10);
+            if (!pages || pages <= 0) { alert("Sahifa sonini kiriting."); return; }
+            try {
+                const goal = await kitob.apiPost("/reading-books/progress", { readingGoalId: parseInt(btn.dataset.goal, 10), pagesRead: pages });
+                if (!goal) return;
+                const fill = row.querySelector(".rb-track-fill");
+                if (fill) fill.style.width = goal.progressPercent + "%";
+                const track = row.querySelector(".rb-track");
+                if (track) track.setAttribute("aria-valuenow", goal.progressPercent);
+                row.querySelectorAll(".goal-pct").forEach(el => { el.textContent = goal.progressPercent; });
+                row.querySelector(".today-pages").textContent = goal.pagesReadToday;
+                row.querySelector(".read-pages").textContent = goal.currentPage;
+                input.value = "";
+                if (goal.progressPercent >= 100) {
+                    row.classList.add("is-done");
+                    row.querySelector(".goal-log").hidden = true;
+                    const toggle = row.querySelector(".goal-log-toggle");
+                    if (toggle) {
+                        const pill = document.createElement("span");
+                        pill.className = "rb-done-pill";
+                        pill.innerHTML = '<span class="material-symbols-outlined">task_alt</span> Tugallandi';
+                        toggle.replaceWith(pill);
+                    }
+                }
+            } catch (err) { alert(err.message); }
+        });
+    });
+
+    // --- Kitobni o'chirish (tasdiq bilan) — faol va tugatilgan kitoblar uchun ---
+    document.querySelectorAll(".goal-delete-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const title = btn.dataset.title || "bu kitob";
+            if (!confirm(`"${title}" kitobini ro'yxatdan o'chirib tashlaysizmi? Bu amalni qaytarib bo'lmaydi.`)) return;
+            const id = parseInt(btn.dataset.goal, 10);
+            btn.disabled = true;
+            try {
+                await kitob.apiPost(`/reading-books/${id}/delete`);
+                const isFinished = !!btn.closest(".finished-book");
+                const card = btn.closest(".book-row, .finished-book");
+                const container = card.parentElement;
+                card.remove();
+                if (container && container.children.length === 0) {
+                    container.outerHTML = isFinished
+                        ? '<div class="card text-center muted">Hali tugatilgan kitobingiz yo\'q.</div>'
+                        : '<div class="card text-center muted">Hali faol kitobingiz yo\'q. Yuqoridan yangi kitob qo\'shing!</div>';
+                }
+            } catch (err) {
+                alert(err.message);
+                btn.disabled = false;
+            }
+        });
+    });
+
+    refreshState();
+})();
+</script>
+}

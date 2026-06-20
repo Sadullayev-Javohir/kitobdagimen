@@ -1,0 +1,150 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model KitobdaGimen.Application.Features.Stories.Dtos.StoryDto
+@{
+    var isAuth = CurrentUser.IsAuthenticated;
+    var profileSegment = string.IsNullOrWhiteSpace(Model.Author.Username) ? Model.Author.Id.ToString() : Model.Author.Username;
+    var profileUrl = isAuth ? $"/profile/{profileSegment}" : $"/u/{profileSegment}";
+}
+
+@if (!isAuth)
+{
+    <header class="public-bar">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+            <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+        </a>
+        <a class="btn btn-accent btn-sm" href="/auth/google-login">Kirish</a>
+    </header>
+}
+
+<div class="container page">
+    <div class="story-detail">
+        <a class="story-detail-back" href="@profileUrl">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Profilga qaytish
+        </a>
+
+        <article class="story-detail-card" data-story-id="@Model.Id">
+            <a class="story-detail-author" href="@profileUrl">
+                @if (!string.IsNullOrEmpty(Model.Author.AvatarUrl))
+                {
+                    <img class="avatar sm" src="@Model.Author.AvatarUrl" alt="@Model.Author.FullName" />
+                }
+                else
+                {
+                    <span class="avatar sm">@KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName)</span>
+                }
+                <span class="story-detail-author-meta">
+                    <span class="name">@Model.Author.FullName</span>
+                    <span class="time">@Model.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy, HH:mm")</span>
+                </span>
+            </a>
+
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <div class="story-detail-image">
+                    <img src="@Model.ImageUrl" alt="@Model.Title" />
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Title))
+            {
+                <h1 class="story-detail-title">@Model.Title</h1>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Text))
+            {
+                <p class="story-detail-text">@Model.Text</p>
+            }
+
+            <div class="story-detail-footer">
+                <span class="story-detail-stat" title="Ko'rishlar">
+                    <span class="material-symbols-outlined">visibility</span>
+                    <span data-view-count>@Model.ViewCount</span>
+                </span>
+
+                @if (isAuth)
+                {
+                    <button type="button" class="story-detail-stat story-detail-like @(Model.IsLikedByCurrentUser ? "liked" : "")" data-like-btn aria-label="Yoqtirish">
+                        <span class="material-symbols-outlined">favorite</span>
+                        <span data-like-count>@Model.LikeCount</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="story-detail-stat" title="Yoqtirishlar">
+                        <span class="material-symbols-outlined">favorite</span>
+                        <span data-like-count>@Model.LikeCount</span>
+                    </span>
+                }
+
+                @if (Model.IsMine)
+                {
+                    <form method="post" action="/stories/@Model.Id/delete" data-delete-form style="margin-left:auto">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="story-detail-stat danger-text" title="O'chirish" aria-label="O'chirish">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    </form>
+                }
+            </div>
+        </article>
+
+        @if (!isAuth)
+        {
+            <div class="story-detail-cta card text-center">
+                <p>kitobdagimen.uz — o'zbek kitobxonlari jamiyati.</p>
+                <a class="btn btn-accent" href="/auth/google-login">Bepul qo'shilish</a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const card = document.querySelector(".story-detail-card");
+    if (!card) return;
+    const storyId = card.getAttribute("data-story-id");
+    const isAuth = document.body.dataset.authenticated === "true";
+
+    // Ko'rishni yozib qo'yamiz (faqat ro'yxatdan o'tganlar uchun) va sanagichni yangilaymiz.
+    if (isAuth) {
+        kitob.apiPost(`/stories/${storyId}/view`).then((r) => {
+            if (r && typeof r.viewCount === "number") {
+                const el = card.querySelector("[data-view-count]");
+                if (el) el.textContent = r.viewCount;
+            }
+        }).catch(() => { /* jim o'tkazamiz */ });
+    }
+
+    // Yoqtirish
+    const likeBtn = card.querySelector("[data-like-btn]");
+    likeBtn?.addEventListener("click", async () => {
+        try {
+            const r = await kitob.apiPost(`/stories/${storyId}/like`);
+            if (r) {
+                likeBtn.classList.toggle("liked", !!r.isLiked);
+                const c = likeBtn.querySelector("[data-like-count]");
+                if (c) c.textContent = r.likeCount;
+            }
+        } catch { /* jim o'tkazamiz */ }
+    });
+
+    // O'chirish — tasdiqdan keyin profilga qaytamiz
+    const delForm = card.closest(".story-detail")?.querySelector("[data-delete-form]");
+    delForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!confirm("Story o'chirilsinmi?")) return;
+        try {
+            const res = await fetch(delForm.action, {
+                method: "POST",
+                headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": kitob.antiforgeryToken() }
+            });
+            if (res.ok) window.location.href = "/profile";
+        } catch { /* jim o'tkazamiz */ }
+    });
+})();
+</script>
+}

@@ -1,0 +1,59 @@
+@model ReadingGoalDetailDto
+@{
+    var g = Model.Goal;
+    ViewData["Title"] = g.Book.Title;
+}
+
+<div class="container page">
+    <div class="feed">
+        <a class="btn btn-ghost btn-sm" href="/reading-books" style="margin-bottom:12px">← Kitoblarim</a>
+
+        <div class="card">
+            <div class="goal-top">
+                <div class="goal-cover"><span class="material-symbols-outlined">menu_book</span></div>
+                <div>
+                    <h1 style="font-size:24px;margin:0">@g.Book.Title</h1>
+                    <div class="muted">@g.Book.Author</div>
+                </div>
+            </div>
+
+            <div class="progress-bar"><span style="width:@(g.ProgressPercent)%"></span></div>
+            <div class="goal-meta">
+                <span>@g.CurrentPage / @g.TotalPages bet (@g.ProgressPercent%)</span>
+                <span>Kunlik maqsad: @g.DailyPageGoal bet</span>
+            </div>
+            @if (!g.IsActive)
+            {
+                <p class="badge badge-accent" style="margin-top:12px">Tugatilgan 🎉</p>
+            }
+        </div>
+
+        <div class="card">
+            <h3 class="section-title" style="margin-top:0">O'qish tarixi</h3>
+            @if (Model.History.Count == 0)
+            {
+                <p class="muted">Hali yozuvlar yo'q.</p>
+            }
+            else
+            {
+                <table style="width:100%; border-collapse:collapse">
+                    <thead>
+                        <tr style="text-align:left; color:var(--text-secondary); font-size:14px">
+                            <th style="padding:8px 0">Sana</th>
+                            <th style="padding:8px 0">O'qilgan sahifalar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in Model.History)
+                        {
+                            <tr style="border-top:1px solid var(--border)">
+                                <td style="padding:10px 0">@h.Date.ToString("dd.MM.yyyy")</td>
+                                <td style="padding:10px 0">@h.PagesReadToday bet</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

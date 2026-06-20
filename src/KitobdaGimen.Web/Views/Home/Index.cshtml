@@ -1,0 +1,257 @@
+@inject KitobdaGimen.Application.Common.Interfaces.ICurrentUserService CurrentUser
+@{
+    ViewData["Title"] = "Kitobxonlar uchun ijtimoiy platforma";
+    ViewData["HideChrome"] = true;
+
+    var isAuth = CurrentUser.IsAuthenticated;
+    // Auth holatига qarab asosiy harakat: kirgan foydalanuvchi tasmaга, anonim — Google login.
+    var primaryHref = isAuth ? "/feed" : "/auth/google-login";
+    var primaryLabel = isAuth ? "Tasmaga o'tish" : "Kirish";
+}
+
+<div class="lp">
+    <header class="lp-nav">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+            <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+        </a>
+        <nav class="lp-nav-links">
+            <a href="#imkoniyatlar">Imkoniyatlar</a>
+            <a href="#qanday">Qanday ishlaydi</a>
+            <a href="/qollanma">Qo'llanma</a>
+            <a href="#savol">Savollar</a>
+            <a class="btn btn-accent btn-sm" href="@primaryHref">@primaryLabel</a>
+        </nav>
+    </header>
+
+    @if (Context.Request.Query.ContainsKey("xato"))
+    {
+        <div class="lp-alert">Kirishda xatolik yuz berdi. Qaytadan urinib ko'ring.</div>
+    }
+
+    <section class="lp-hero">
+        <span class="lp-eyebrow">O'zbek kitobxonlari uchun ijtimoiy platforma</span>
+        <h1>O'qigan kitoblaringiz bilan yashaydigan jamiyat</h1>
+        <p class="lp-sub">
+            kitobdagimen.uz — fikrlaringizni ulashing, o'qish maqsadlaringizni belgilang,
+            sevimli iqtiboslaringizni saqlang va boshqa kitobxonlar bilan suhbatlashing.
+            Hammasi bitta joyda, o'zbek tilida.
+        </p>
+        <div class="lp-hero-actions">
+            @if (isAuth)
+            {
+                <a class="btn btn-accent lp-cta-btn" href="/feed">
+                    <span class="material-symbols-outlined">dynamic_feed</span>
+                    Tasmaga o'tish
+                </a>
+            }
+            else
+            {
+                <a class="google-btn lp-google" href="/auth/google-login">
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                    Google orqali bepul boshlash
+                </a>
+            }
+            <a class="btn btn-outline lp-secondary-btn" href="#imkoniyatlar">Imkoniyatlarni ko'rish</a>
+        </div>
+        <p class="lp-terms">
+            @if (isAuth)
+            {
+                <text>Siz allaqachon tizimdasiz — istalgan vaqtda tasmangizga qayting.</text>
+            }
+            else
+            {
+                <text>Davom etish orqali siz foydalanish shartlariga rozilik bildirasiz</text>
+            }
+        </p>
+
+        <ul class="lp-trust">
+            <li><span class="material-symbols-outlined">verified</span> 100% bepul</li>
+            <li><span class="material-symbols-outlined">bolt</span> Bir bosishda kirish</li>
+            <li><span class="material-symbols-outlined">forum</span> Real vaqt suhbat</li>
+            <li><span class="material-symbols-outlined">language</span> O'zbek tilida</li>
+        </ul>
+    </section>
+
+    <section class="lp-section" id="imkoniyatlar">
+        <div class="lp-section-head">
+            <h2>Platforma imkoniyatlari</h2>
+            <p class="muted">Kitobxonlik tajribangizni boyitadigan barcha vositalar — bir joyda</p>
+        </div>
+        <div class="lp-grid">
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">rate_review</span></span>
+                <h3>Kitob taqrizlari</h3>
+                <p>O'qigan kitoblaringiz haqida fikr-mulohazangizni yozing, baholang va boshqalar bilan ulashing.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">target</span></span>
+                <h3>O'qish maqsadlari</h3>
+                <p>Yillik kitob maqsadingizni belgilang, o'qilgan betlarni kuzating va rivojlanishingizni ko'ring.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">format_quote</span></span>
+                <h3>Iqtiboslar</h3>
+                <p>Eng yoqqan satrlarni saqlang, shaxsiy to'plamingizni yarating va do'stlaringizga ulashing.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">forum</span></span>
+                <h3>Real vaqt xabarlar</h3>
+                <p>Boshqa kitobxonlar bilan jonli suhbatlashing, online holatni ko'ring va tavsiyalar almashing.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">auto_stories</span></span>
+                <h3>Storylar</h3>
+                <p>Hozir nima o'qiyotganingizni qisqa story ko'rinishida — 24 soatlik lahzalarda bo'lishing.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">group</span></span>
+                <h3>Kitobxonlar jamiyati</h3>
+                <p>Qiziqishlaringizga mos kitobxonlarni kuzating, yangi do'stlar toping va jamiyatga qo'shiling.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lp-section lp-showcase-wrap">
+        <div class="lp-section-head">
+            <h2>Kitobxonlik — endi ijtimoiy tajriba</h2>
+            <p class="muted">Har bir o'qilgan kitob jamiyat bilan boyitiladi</p>
+        </div>
+        <div class="lp-showcase">
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">menu_book</span></span>
+                <div>
+                    <h3>Shaxsiy kutubxona</h3>
+                    <p>O'qiyotgan, o'qigan va o'qimoqchi bo'lgan kitoblaringizni tartibga soling. Har bir kitob bo'yicha jarayoningiz avtomatik saqlanadi.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">insights</span></span>
+                <div>
+                    <h3>Aqlli tasma</h3>
+                    <p>Siz kuzatadigan kitobxonlar va qiziqishlaringizga mos postlar tasmangizda eng yangi tartibida chiqadi.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">notifications_active</span></span>
+                <div>
+                    <h3>Jonli bildirishnomalar</h3>
+                    <p>Yoqtirishlar, izohlar, yangi obunachilar va xabarlardan real vaqtda xabardor bo'lib turing.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">dark_mode</span></span>
+                <div>
+                    <h3>Kun va tun rejimi</h3>
+                    <p>Ko'zingizga qulay rejimni tanlang — istalgan vaqtda kunduzgi yoki tungi ko'rinishga o'ting.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lp-section lp-steps" id="qanday">
+        <div class="lp-section-head">
+            <h2>Qanday boshlash mumkin</h2>
+            <p class="muted">Uch oddiy qadamda jamiyatga qo'shiling</p>
+        </div>
+        <div class="lp-grid lp-grid-3">
+            <div class="lp-step">
+                <span class="lp-step-num">1</span>
+                <h3>Google orqali kiring</h3>
+                <p>Bir bosishda ro'yxatdan o'ting — alohida parol kerak emas.</p>
+            </div>
+            <div class="lp-step">
+                <span class="lp-step-num">2</span>
+                <h3>Qiziqishlaringizni tanlang</h3>
+                <p>Yoqtirgan janrlaringizni belgilang, biz sizga mos kontentni ko'rsatamiz.</p>
+            </div>
+            <div class="lp-step">
+                <span class="lp-step-num">3</span>
+                <h3>Ulashishni boshlang</h3>
+                <p>Fikr yozing, maqsad qo'ying va kitobxonlar bilan tanishing.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="lp-section" id="savol">
+        <div class="lp-section-head">
+            <h2>Ko'p so'raladigan savollar</h2>
+            <p class="muted">Boshlashdan oldin bilishingiz kerak bo'lgan narsalar</p>
+        </div>
+        <div class="lp-faq">
+            <details class="lp-faq-item">
+                <summary>Platformadan foydalanish pullikmi?</summary>
+                <p>Yo'q. kitobdagimen.uz to'liq bepul — barcha imkoniyatlar hech qanday to'lovsiz ochiq.</p>
+            </details>
+            <details class="lp-faq-item">
+                <summary>Qanday ro'yxatdan o'taman?</summary>
+                <p>Faqat Google hisobingiz orqali bir bosishda kirasiz. Alohida parol o'ylab topish yoki email tasdiqlash shart emas.</p>
+            </details>
+            <details class="lp-faq-item">
+                <summary>Kitoblarimni qanday qo'shaman?</summary>
+                <p>Tasma yoki kutubxona sahifasida kitobni qidiring; agar topilmasa, nom, muallif va muqova bilan yangi kitob qo'shasiz.</p>
+            </details>
+            <details class="lp-faq-item">
+                <summary>Boshqalar bilan qanday bog'lanaman?</summary>
+                <p>Foydalanuvchilarni qidirib, ularni kuzatasiz va ulanish so'rovi yuborib real vaqtda xabar almashasiz.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="lp-section lp-guide-promo">
+        <div class="lp-guide-promo-inner">
+            <span class="lp-guide-promo-icon"><span class="material-symbols-outlined">menu_book</span></span>
+            <div class="lp-guide-promo-text">
+                <h2>Dasturdan foydalanish qo'llanmasi</h2>
+                <p>
+                    Birinchi marta kiryapsizmi? Kirishdan tortib post yozish, kitob qo'shish,
+                    o'qish maqsadi belgilash, iqtibos saqlash, story joylash va kitobxonlar bilan
+                    real vaqtda suhbatlashishgacha — har bir imkoniyatni bosqichma-bosqich
+                    tushuntiruvchi to'liq qo'llanmani o'qib chiqing.
+                </p>
+            </div>
+            <a class="btn btn-accent lp-cta-btn" href="/qollanma">
+                <span class="material-symbols-outlined">auto_stories</span>
+                To'liq qo'llanmani o'qish
+            </a>
+        </div>
+    </section>
+
+    <section class="lp-cta">
+        <h2>Bugun o'qish sayohatingizni boshlang</h2>
+        <p>kitobdagimen.uz bilan har bir o'qilgan kitob unutilmas bo'ladi.</p>
+        <a class="btn btn-accent lp-cta-btn-lg" href="@primaryHref">
+            @if (isAuth)
+            {
+                <text>Tasmaga o'tish</text>
+            }
+            else
+            {
+                <text>Bepul qo'shilish</text>
+            }
+        </a>
+    </section>
+
+    <footer class="lp-footer">
+        <div class="lp-footer-brand">
+            <div class="brand">
+                <img class="brand-logo" src="~/img/logo.svg" alt="" />
+                <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+            </div>
+            <p class="muted">O'zbek kitobxonlari uchun ijtimoiy platforma.</p>
+        </div>
+        <nav class="lp-footer-links">
+            <a href="#imkoniyatlar">Imkoniyatlar</a>
+            <a href="#qanday">Qanday ishlaydi</a>
+            <a href="/qollanma">Qo'llanma</a>
+            <a href="#savol">Savollar</a>
+            <a href="@primaryHref">@primaryLabel</a>
+        </nav>
+        <p class="lp-copy muted">© 2026 kitobdagimen.uz</p>
+    </footer>
+</div>

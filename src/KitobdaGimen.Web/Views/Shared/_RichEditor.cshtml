@@ -1,0 +1,41 @@
+@model KitobdaGimen.Web.Models.RichEditorModel
+
+<div class="rich-editor" data-rich-editor data-rich-min="@Model.MinLength" data-rich-max="@Model.MaxLength">
+    <div class="rich-toolbar" role="toolbar" aria-label="Matn formatlash">
+        <button type="button" class="rich-btn" data-cmd="bold" title="Qalin (Ctrl+B)" aria-label="Qalin">
+            <span class="material-symbols-outlined">format_bold</span>
+        </button>
+        <button type="button" class="rich-btn" data-cmd="italic" title="Kursiv (Ctrl+I)" aria-label="Kursiv">
+            <span class="material-symbols-outlined">format_italic</span>
+        </button>
+        <button type="button" class="rich-btn" data-cmd="underline" title="Tagchiziq (Ctrl+U)" aria-label="Tagchiziq">
+            <span class="material-symbols-outlined">format_underlined</span>
+        </button>
+        <button type="button" class="rich-btn rich-btn-mark" data-cmd="highlight" title="Marker bilan ajratish" aria-label="Marker">
+            <span class="material-symbols-outlined">ink_highlighter</span>
+        </button>
+        <span class="rich-sep" aria-hidden="true"></span>
+        <button type="button" class="rich-btn" data-cmd="clear" title="Formatni tozalash" aria-label="Formatni tozalash">
+            <span class="material-symbols-outlined">format_clear</span>
+        </button>
+    </div>
+
+    <div class="rich-content" contenteditable="true" data-rich-content
+         data-placeholder="@Model.Placeholder" role="textbox" aria-multiline="true">@Html.Raw(Model.Html)</div>
+
+    @if (Model.MaxLength > 0)
+    {
+        <div class="rich-counter" data-rich-counter aria-live="polite">
+            <span data-rich-count>0</span> / @Model.MaxLength
+        </div>
+    }
+
+    @if (Model.Edit)
+    {
+        <input type="hidden" data-rich-output data-edit-text data-original-text="@Model.Html" />
+    }
+    else
+    {
+        <input type="hidden" name="@Model.Name" data-rich-output />
+    }
+</div>

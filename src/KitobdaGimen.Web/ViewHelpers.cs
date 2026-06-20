@@ -1,0 +1,93 @@
+using KitobdaGimen.Application.Common;
+using Microsoft.AspNetCore.Html;
+
+namespace KitobdaGimen.Web;
+
+/// <summary>Small view-side formatting helpers (Uzbek UI strings).</summary>
+public static class ViewHelpers
+{
+    /// <summary>
+    /// The single founder account. Only this username carries the "Asoschi" badge,
+    /// shown to every visitor wherever the name appears (profil/feed/chat). Mijoz tomoni
+    /// (chat qidiruvi) uchun ayni shu qiymat <c>site.js</c> dagi <c>FOUNDER_USERNAME</c> bilan mos.
+    /// </summary>
+    public const string FounderUsername = "javohirsadullayev";
+
+    /// <summary>True when the username belongs to the platform founder (regdan mustaqil, katta-kichik harfsiz).</summary>
+    public static bool IsFounder(string? username)
+        => !string.IsNullOrWhiteSpace(username)
+           && string.Equals(username.Trim(), FounderUsername, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Renders the gold "Asoschi" badge if the username is the founder; otherwise nothing.
+    /// `@Html.Raw(ViewHelpers.FounderBadge(username))` shaklida ism yonida ishlatiladi.
+    /// </summary>
+    public static IHtmlContent FounderBadge(string? username)
+        => IsFounder(username)
+            ? new HtmlString("<span class=\"badge founder-badge\" title=\"kitobdagimen.uz asoschisi\"><span class=\"material-symbols-outlined\">verified</span>Asoschi</span>")
+            : HtmlString.Empty;
+
+    /// <summary>Compact icon-only founder badge for tight spots (mas. chat suhbatlar ro'yxati).</summary>
+    public static IHtmlContent FounderBadgeMini(string? username)
+        => IsFounder(username)
+            ? new HtmlString("<span class=\"founder-badge-mini material-symbols-outlined\" title=\"kitobdagimen.uz asoschisi\">verified</span>")
+            : HtmlString.Empty;
+
+    /// <summary>
+    /// Renders post text as a safe HTML subset (qalin/kursiv/tagchiziq/marker).
+    /// `Html.Raw(RichText(...))` shaklida ishlatiladi. Sanitizer idempotent va eski
+    /// (sanitize qilinmagan) postlarni ham xavfsiz encode qiladi.
+    /// </summary>
+    public static IHtmlContent RichText(string? text)
+        => new HtmlString(RichTextSanitizer.Sanitize(text));
+
+    /// <summary>Returns a short relative time in Uzbek, e.g. "5 daqiqa oldin".</summary>
+    public static string RelativeTime(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+
+        if (span.TotalSeconds < 60) return "hozirgina";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} daqiqa oldin";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} soat oldin";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays} kun oldin";
+        if (span.TotalDays < 30) return $"{(int)(span.TotalDays / 7)} hafta oldin";
+
+        return utc.ToLocalTime().ToString("dd.MM.yyyy");
+    }
+
+    /// <summary>First letter of a name, upper-cased, for avatar fallbacks.</summary>
+    public static string Initial(string? name)
+        => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();
+
+    /// <summary>Presence text for a chat header/card: "online" or "oxirgi marta ...".</summary>
+    public static string Presence(bool isOnline, DateTime? lastSeenAt)
+    {
+        if (isOnline) return "online";
+        if (lastSeenAt is null) return "oflayn";
+        return $"oxirgi marta {LastSeen(lastSeenAt.Value)}";
+    }
+
+    /// <summary>
+    /// Aniq oxirgi faollik vaqti: bugun bo'lsa soatni ("09:10:12 da"), kecha bo'lsa
+    /// "kecha 09:10:12 da", undan oldin bo'lsa sanani ("18.06.26") ko'rsatadi.
+    /// O'zbekiston vaqti (UTC+5, DSTsiz) bo'yicha hisoblanadi.
+    /// </summary>
+    private static string LastSeen(DateTime utc)
+    {
+        var local = utc.AddHours(5);
+        var nowLocal = DateTime.UtcNow.AddHours(5);
+        var time = local.ToString("HH:mm:ss");
+
+        if (local.Date == nowLocal.Date) return $"{time} da";
+        if (local.Date == nowLocal.Date.AddDays(-1)) return $"kecha {time} da";
+        return local.ToString("dd.MM.yy");
+    }
+
+    /// <summary>Canonical, shareable post URL: /post/{username}/{slug}. Falls back to the user id if a username is missing.</summary>
+    public static string PostUrl(string? authorUsername, int authorId, string slug)
+        => $"/post/{(string.IsNullOrWhiteSpace(authorUsername) ? authorId.ToString() : authorUsername)}/{slug}";
+
+    /// <summary>Profile URL: /profile/{username}, falling back to /profile/{id} when no username is set.</summary>
+    public static string ProfileUrl(string? username, int id)
+        => $"/profile/{(string.IsNullOrWhiteSpace(username) ? id.ToString() : username)}";
+}
