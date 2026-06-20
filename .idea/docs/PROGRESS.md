@@ -70,6 +70,21 @@ test). (A)+(B) frontend; (D) backend+frontend.
 
 ## Oxirgi sessiya yozuvi
 
+**2026-06-20 — PRODUCTIONGA DEPLOY QILINDI: https://kitobdagimen.uz JONLI ishlayapti (Hetzner + nginx + HTTPS + Google login).**
+
+- **Server:** Hetzner CX23 (Ubuntu, 4 GB), IP **204.168.192.197**, Helsinki. SSH: `ssh root@204.168.192.197` (kalit `~/.ssh/id_kitobdagimen`).
+- **Stack o'rnatildi:** .NET 8 SDK (Microsoft `dotnet-install.sh` orqali — Ubuntu repo'da `dotnet-sdk-8.0` yo'q edi; `/usr/share/dotnet` + symlink `/usr/local/bin/dotnet`), PostgreSQL 18, Redis 8 (parol bilan), nginx 1.28. 2 GB swap.
+- **DB:** `kitobdagimen` bazasi + kam huquqli `kitobdagimen` user (superuser EMAS). Migratsiyalar startup'da avtomatik (DbInitializer).
+- **Ilova:** `/var/www/kitobdagimen` (git clone), publish → `/var/www/kitobdagimen/publish`. systemd service **`kitobdagimen`** (User=`kitobapp`, kam huquqli), Kestrel `127.0.0.1:5000`. Env: **`/etc/kitobdagimen/kitobdagimen.env`** (chmod 600) — Jwt__Key, DB/Redis parollar, AllowedHosts, Google, Hangfire admin email. Maxfiy qiymatlar nusxasi: `/root/kitobdagimen-secrets.txt`.
+- **nginx:** `/etc/nginx/sites-available/kg` → reverse proxy `127.0.0.1:5000`, `client_max_body_size 12M`, X-Forwarded-* + WebSocket. Let's Encrypt sertifikat (certbot --nginx, auto-renew). HTTP→HTTPS redirect.
+- **Google OAuth:** redirect URI **`https://kitobdagimen.uz/signin-google`** (`/auth/google-callback` EMAS — .NET Google moduli standart `/signin-google` ishlatadi; `redirect_uri_mismatch` shu sababli edi). JS origin `https://kitobdagimen.uz`.
+- **global.json:** `rollForward` `latestPatch`→`latestFeature` (server 8.0.422 SDK bilan build bo'lishi uchun).
+- **YANGILASH (redeploy) tartibi:** `cd /var/www/kitobdagimen && git pull && dotnet publish src/KitobdaGimen.Web -c Release -o publish && chown -R kitobapp:kitobapp publish && systemctl restart kitobdagimen`.
+- **Foydali buyruqlar:** loglar `journalctl -u kitobdagimen -f`; holat `systemctl status kitobdagimen`; AllowedHosts tufayli lokal test `curl -H "Host: kitobdagimen.uz" http://127.0.0.1:5000/`.
+- **MUHIM (terminal paste):** foydalanuvchining SSH paste'i UZUN qatorlarni (~80+ belgi) yoki `<<EOF` heredoc / `\n` printf / `{ }` guruhlarni BUZADI (qator o'rtasiga newline qo'shadi, heredoc'da osilib qoladi). ISHLAYDIGAN usul: faqat QISQA, mustaqil `echo "k=$VAR" >> fayl` qatorlari; uzun qiymatlar uchun `read -r VAR` (qiymat alohida qatorga paste qilinadi). Fayllarni heredoc bilan yaratmaslik.
+
+---
+
 **2026-06-20 — DEPLOYGA TAYYORGARLIK: xavfsizlik auditi + hardening (public repo + Hetzner). Build 0/0, test 71/71.**
 
 Talab: serverga (Hetzner) qo'yishdan oldin loyihani xavfsizlik nuqtai nazaridan ko'rib chiqish, kiberhujumlarga qarshi qattiqlashtirish; repo PUBLIC bo'lgani uchun maxfiy fayllar GitHub'ga ketmasligini ta'minlash. (Git ishlatilmadi — foydalanuvchi o'zi push qiladi.)
