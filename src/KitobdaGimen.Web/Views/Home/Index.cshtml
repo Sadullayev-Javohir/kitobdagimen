@@ -1,7 +1,14 @@
 @inject KitobdaGimen.Application.Common.Interfaces.ICurrentUserService CurrentUser
 @{
-    ViewData["Title"] = "Kitobxonlar uchun ijtimoiy platforma";
+    ViewData["Title"] = "O'zbek kitobxonlari uchun ijtimoiy platforma";
     ViewData["HideChrome"] = true;
+
+    // --- SEO ---
+    var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    ViewData["Description"] = "kitobdagimen.uz — o'zbek kitobxonlari uchun bepul ijtimoiy platforma. Kitob taqrizlari yozing, sevimli iqtiboslarni ulashing, o'qish maqsadlari qo'ying, storylar joylang va boshqa kitobsevarlar bilan real vaqtda suhbatlashing.";
+    // Barcha landing manzillari (/, /landing, /Home/Landing) bitta kanonik URL'ga birlashtiriladi.
+    ViewData["Canonical"] = seoBase + "/";
+    ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.Website(seoBase);
 
     var isAuth = CurrentUser.IsAuthenticated;
     // Auth holatига qarab asosiy harakat: kirgan foydalanuvchi tasmaга, anonim — Google login.

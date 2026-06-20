@@ -22,6 +22,25 @@
         || string.Equals(currentController, "ReadingGoals", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Quotes", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase);
+
+    // --- SEO (Google'da yuqori chiqish uchun) ---
+    // Har bir sahifa ViewData orqali o'z tavsifini/rasmini/robots holatini bera oladi;
+    // berilmasa quyidagi standart qiymatlar ishlatiladi.
+    var seoReq = Context.Request;
+    var seoBase = $"{seoReq.Scheme}://{seoReq.Host}";
+    var seoCanonical = ViewData["Canonical"] as string ?? $"{seoBase}{seoReq.Path}";
+    var seoDescription = ViewData["Description"] as string
+        ?? "kitobdagimen.uz — o'zbek kitobxonlari uchun ijtimoiy platforma. Kitob taqrizlari yozing, sevimli iqtiboslarni ulashing, o'qish maqsadlari qo'ying va kitobsevarlar bilan tanishing. 100% bepul, o'zbek tilida.";
+    var seoImage = ViewData["OgImage"] as string ?? $"{seoBase}/img/og-image.png";
+    var seoOgType = ViewData["OgType"] as string ?? "website";
+    var seoTitle = ViewData["Title"] != null
+        ? ViewData["Title"] + " — kitobdagimen.uz"
+        : "kitobdagimen.uz — o'zbek kitobxonlari ijtimoiy platformasi";
+    // Maxfiy (auth ortidagi) sahifalar Google indeksiga tushmasin — robots.txt + bu meta birga himoya qiladi.
+    var seoNoindexControllers = new[] { "Feed", "Chat", "Profile", "ReadingGoals", "Quotes", "Onboarding", "Notifications", "Stories", "Books", "Auth", "App" };
+    var seoRobots = ViewData["Robots"] as string
+        ?? (seoNoindexControllers.Contains(currentController, StringComparer.OrdinalIgnoreCase) ? "noindex, follow" : "index, follow, max-image-preview:large");
+    var seoJsonLd = ViewData["JsonLd"] as string;
 }
 <!DOCTYPE html>
 <html lang="uz">
@@ -40,7 +59,36 @@
             } catch (e) { }
         })();
     </script>
-    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — kitobdagimen.uz" : "kitobdagimen.uz")</title>
+    <title>@seoTitle</title>
+    <meta name="description" content="@seoDescription" />
+    <meta name="robots" content="@seoRobots" />
+    <meta name="googlebot" content="@seoRobots" />
+    <link rel="canonical" href="@seoCanonical" />
+    <meta name="theme-color" content="#E8703A" />
+    <meta name="author" content="kitobdagimen.uz" />
+    <meta name="keywords" content="kitob, kitobxonlar, o'zbek kitoblari, kitob taqrizlari, kitob sharhlari, iqtiboslar, o'qish, kutubxona, kitobsevarlar, kitob o'qish, kitobdagimen" />
+
+    @* Open Graph — Telegram/Facebook/LinkedInda ulashilganda chiroyli kartochka *@
+    <meta property="og:type" content="@seoOgType" />
+    <meta property="og:site_name" content="kitobdagimen.uz" />
+    <meta property="og:locale" content="uz_UZ" />
+    <meta property="og:title" content="@seoTitle" />
+    <meta property="og:description" content="@seoDescription" />
+    <meta property="og:url" content="@seoCanonical" />
+    <meta property="og:image" content="@seoImage" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    @* Twitter Card *@
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@seoTitle" />
+    <meta name="twitter:description" content="@seoDescription" />
+    <meta name="twitter:image" content="@seoImage" />
+
+    @if (!string.IsNullOrEmpty(seoJsonLd))
+    {
+        <script type="application/ld+json">@Html.Raw(seoJsonLd)</script>
+    }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />

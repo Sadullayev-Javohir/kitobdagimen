@@ -1,0 +1,21 @@
+# kitobdagimen.uz — robots.txt
+# Ommaviy (ulashiladigan) sahifalar indekslanadi: landing, qo'llanma, postlar, public profillar.
+# Maxfiy (kirish talab qiladigan) sahifalar va xizmat yo'llari indeksdan chiqariladi.
+
+User-agent: *
+Allow: /
+
+Disallow: /feed
+Disallow: /chat
+Disallow: /profile
+Disallow: /reading-books
+Disallow: /quotes
+Disallow: /onboarding
+Disallow: /notifications
+Disallow: /stories
+Disallow: /auth
+Disallow: /hangfire
+Disallow: /books
+Disallow: /app
+
+Sitemap: https://kitobdagimen.uz/sitemap.xml

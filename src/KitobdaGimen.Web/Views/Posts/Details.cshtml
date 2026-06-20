@@ -2,7 +2,7 @@
 @inject ICurrentUserService CurrentUser
 @model PostDetailDto
 @{
-    ViewData["Title"] = Model.Post.Book.Title;
+    ViewData["Title"] = $"{Model.Post.Book.Title} — {Model.Post.Author.FullName} taqrizi";
     var heroUrl = !string.IsNullOrEmpty(Model.Post.ImageUrl) ? Model.Post.ImageUrl : Model.Post.Book.CoverUrl;
     var isAuth = CurrentUser.IsAuthenticated;
     var postUrl = KitobdaGimen.Web.ViewHelpers.PostUrl(Model.Post.Author.Username, Model.Post.Author.Id, Model.Post.Slug);
@@ -11,6 +11,34 @@
     var reviewHtml = KitobdaGimen.Application.Common.RichTextSanitizer.Sanitize(Model.Post.ReviewText);
     // The post owner may delete any comment on their post — let the comment partial show the delete button.
     ViewData["ViewerIsPostOwner"] = Model.Post.IsAuthor;
+
+    // --- SEO: bu sahifa Google'da indekslanadi (ommaviy, ulashiladigan post) ---
+    var seoScheme = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    // Taqriz matnidan toza (HTMLsiz) qisqa parcha — meta description uchun.
+    var seoPlain = System.Text.RegularExpressions.Regex.Replace(reviewHtml, "<[^>]+>", " ");
+    seoPlain = System.Net.WebUtility.HtmlDecode(seoPlain);
+    seoPlain = System.Text.RegularExpressions.Regex.Replace(seoPlain, "\\s+", " ").Trim();
+    var seoExcerpt = seoPlain.Length > 160 ? seoPlain.Substring(0, 157).TrimEnd() + "…" : seoPlain;
+    var seoDesc = string.IsNullOrWhiteSpace(seoExcerpt)
+        ? $"{Model.Post.Author.FullName}ning \"{Model.Post.Book.Title}\" ({Model.Post.Book.Author}) kitobiga taqrizi — kitobdagimen.uz da o'qing."
+        : seoExcerpt;
+    string? seoImg = heroUrl;
+    if (!string.IsNullOrEmpty(seoImg) && seoImg.StartsWith("/")) seoImg = seoScheme + seoImg;
+    var seoAuthorUrl = $"{seoScheme}/u/{(string.IsNullOrWhiteSpace(Model.Post.Author.Username) ? Model.Post.Author.Id.ToString() : Model.Post.Author.Username)}";
+    ViewData["Description"] = seoDesc;
+    ViewData["Canonical"] = postShareUrl;
+    ViewData["OgType"] = "article";
+    if (!string.IsNullOrEmpty(seoImg)) { ViewData["OgImage"] = seoImg; }
+    ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.BlogPosting(
+        url: postShareUrl,
+        headline: (string)ViewData["Title"]!,
+        description: seoDesc,
+        imageUrl: seoImg,
+        authorName: Model.Post.Author.FullName,
+        authorUrl: seoAuthorUrl,
+        datePublishedIso: Model.Post.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+        bookTitle: Model.Post.Book.Title,
+        bookAuthor: Model.Post.Book.Author);
 }
 
 <div class="container page pd-page">

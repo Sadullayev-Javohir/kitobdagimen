@@ -13,6 +13,24 @@
     var shareSegment = string.IsNullOrWhiteSpace(p.Username) ? p.Id.ToString() : p.Username;
     var shareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/u/{shareSegment}";
 
+    // --- SEO: ommaviy profil (/u/...) Google'da indekslanadi; maxfiy /profile EMAS (layout uni noindex qiladi) ---
+    var isPublicProfileView = string.Equals(
+        ViewContext.RouteData.Values["controller"] as string, "PublicProfile", StringComparison.OrdinalIgnoreCase);
+    if (isPublicProfileView)
+    {
+        var bioText = string.IsNullOrWhiteSpace(p.Bio) ? null : p.Bio.Trim();
+        string? avatarAbs = string.IsNullOrEmpty(p.AvatarUrl)
+            ? null
+            : (p.AvatarUrl!.StartsWith("/") ? $"{Context.Request.Scheme}://{Context.Request.Host}{p.AvatarUrl}" : p.AvatarUrl);
+        ViewData["Description"] = string.IsNullOrEmpty(bioText)
+            ? $"{p.FullName} — kitobdagimen.uz dagi kitobxon. {p.PostCount} ta taqriz, {p.FollowerCount} obunachi. Taqrizlari, iqtiboslari va o'qiyotgan kitoblarini ko'ring."
+            : $"{p.FullName} — {bioText}";
+        ViewData["Canonical"] = shareUrl;
+        ViewData["OgType"] = "profile";
+        if (avatarAbs is not null) { ViewData["OgImage"] = avatarAbs; }
+        ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.ProfilePage(shareUrl, p.FullName, avatarAbs, bioText);
+    }
+
     var avatarInner = !string.IsNullOrEmpty(p.AvatarUrl)
         ? Html.Raw($"<img class=\"avatar lg\" src=\"{p.AvatarUrl}\" alt=\"{Html.Encode(p.FullName)}\" />")
         : Html.Raw($"<span class=\"avatar lg\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(p.FullName))}</span>");

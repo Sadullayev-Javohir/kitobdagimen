@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Foydalanish qo'llanmasi";
     ViewData["HideChrome"] = true;
+    ViewData["Description"] = "kitobdagimen.uz dan qanday foydalanish bo'yicha to'liq qo'llanma: Google orqali kirish, janr tanlash, kitob taqrizi yozish, kitob qo'shish, iqtiboslar, storylar, kutubxona va o'qish maqsadlari, chat va bildirishnomalar.";
 
     var isAuth = CurrentUser.IsAuthenticated;
     var primaryHref = isAuth ? "/feed" : "/auth/google-login";
