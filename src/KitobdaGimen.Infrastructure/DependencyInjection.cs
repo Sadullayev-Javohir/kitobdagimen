@@ -35,11 +35,26 @@ public static class DependencyInjection
         //
         // asaxiy.uz Cloudflare ortida turadi va xorijiy data-markaz IP'larini (mas.
         // Hetzner Helsinki) 403 bilan bloklaydi. Shu sabab serverdan to'g'ridan-to'g'ri
-        // so'rov ishlamaydi. Yechim: O'zbekiston IP'sidagi proksi orqali yo'naltirish —
-        // "Asaxiy:ProxyUrl" sozlamasi (env: Asaxiy__ProxyUrl) berilsa, so'rovlar shu
-        // proksi orqali o'tadi. Bo'sh bo'lsa — to'g'ridan-to'g'ri (lokal ish uchun).
+        // so'rov ishlamaydi. Ikki muqobil bepul yechim bor (ikkalasi ham ixtiyoriy):
+        //
+        //   1) "Asaxiy:WorkerUrl" (env: Asaxiy__WorkerUrl) — bepul Cloudflare Worker
+        //      reverse-proxy. asaxiy O'ZI Cloudflare ortida, shuning uchun Worker'dan
+        //      chiqqan so'rov Cloudflare tarmog'idan ketadi (Hetzner ASN emas) va blokka
+        //      tushmaydi. Worker HAR DOIM yoniq — uy kompyuteriga bog'liq emas. Tavsiya
+        //      etiladigan yo'l. (Skript: deploy/asaxiy-proxy-worker.js)
+        //      Ixtiyoriy "Asaxiy:WorkerSecret" (env: Asaxiy__WorkerSecret) bilan himoyalanadi.
+        //
+        //   2) "Asaxiy:ProxyUrl" (env: Asaxiy__ProxyUrl) — O'zbekiston IP'sidagi SOCKS/HTTP
+        //      proksi (uy SSH tunnel). Faqat uy kompyuteri yoniq bo'lganda ishlaydi.
+        //
+        // WorkerUrl berilsa, u ustun (proksi e'tiborsiz). Hech biri bo'lmasa —
+        // to'g'ridan-to'g'ri (lokal ish uchun).
+        var asaxiyWorkerUrl = configuration["Asaxiy:WorkerUrl"];
+        var asaxiyWorkerSecret = configuration["Asaxiy:WorkerSecret"];
         var asaxiyProxyUrl = configuration["Asaxiy:ProxyUrl"];
-        services.AddHttpClient<IAsaxiyBookService, AsaxiyBookService>(client =>
+        var useWorker = !string.IsNullOrWhiteSpace(asaxiyWorkerUrl);
+
+        var asaxiyHttp = services.AddHttpClient<IAsaxiyBookService, AsaxiyBookService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(
@@ -50,13 +65,20 @@ public static class DependencyInjection
         .ConfigurePrimaryHttpMessageHandler(() =>
         {
             var handler = new HttpClientHandler { AllowAutoRedirect = true };
-            if (!string.IsNullOrWhiteSpace(asaxiyProxyUrl))
+            // SOCKS proksi faqat Worker ishlatilmaganda qo'llanadi.
+            if (!useWorker && !string.IsNullOrWhiteSpace(asaxiyProxyUrl))
             {
                 handler.Proxy = new System.Net.WebProxy(asaxiyProxyUrl);
                 handler.UseProxy = true;
             }
             return handler;
         });
+
+        if (useWorker)
+        {
+            asaxiyHttp.AddHttpMessageHandler(() =>
+                new AsaxiyWorkerProxyHandler(asaxiyWorkerUrl!, asaxiyWorkerSecret));
+        }
 
         services.AddIdentityServices(configuration);
         services.AddCaching(configuration);

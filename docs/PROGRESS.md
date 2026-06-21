@@ -1756,6 +1756,18 @@ qidiruvda chetlab o'tiladi):
 - **Holat**: Build 0/0. DTO yo'llari (`SearchUsers`, `GetConversations`, `GetPendingRequests`,
   `Respond/SendConnection`) hammasi `Username` ni allaqachon to'ldiradi — backend o'zgartirilmadi.
 
+## /feed post card — "Manba:" krediti bilan layout tuzatishi (BAJARILDI 2026-06-21)
+
+- **Muammo**: asaxiy.uz dan import qilingan kitob bilan yozilgan post `_PostCard` da
+  buzilib ko'rinardi. `.post-book-author` margin-bottom 10px + `.book-source` o'z margini
+  2px stacklanib, "Manba:" qatori ustida katta, ostida juda kichik bo'shliq bo'lib,
+  vertikal ritmni buzardi.
+- **Yechim** (`wwwroot/css/site.css`, faqat `.post-body-main` ga scoped):
+  `.post-body-main .book-source { display:block; margin:0 0 10px }` +
+  `.post-book-author:has(+ .book-source) { margin-bottom:4px }`.
+  Natija: sarlavha→muallif 2px, muallif→Manba 4px, Manba→matn 10px. Manbasiz postlar
+  o'zgarmaydi (muallif→matn 10px), shuning uchun ikkala holat ham bir xil ko'rinadi.
+
 ## asaxiy.uz kitob qidiruv + import (BAJARILDI 2026-06-21)
 
 - **Talab**: lokal katalogda kitob kam. "Kitobni qidiring" oynasida asaxiy.uz kitoblarini ham
@@ -1836,6 +1848,37 @@ qidiruvda chetlab o'tiladi):
   - **MUHIM (user qilishi kerak)**: (1) `DependencyInjection.cs` o'zgarishini git'ga commit+push
     qilish — aks holda keyingi `git pull && dotnet publish` redeploy'da DLL patch yo'qoladi.
     (2) Desktop login'siz ham boot'da ishlashi uchun: `sudo loginctl enable-linger javohir`.
+
+### asaxiy egress — BEPUL, DOIM-YONIQ MUQOBIL: Cloudflare Worker proksi (QO'SHILDI 2026-06-21)
+
+- **Sabab**: SSH SOCKS tunnel faqat desktop yoniq bo'lganda ishlaydi. Desktopga bog'liq
+  bo'lmagan, bepul, always-on yo'l kerak edi.
+- **Tahlil**: asaxiy mobil API (`api.asaxiy.uz`) Yii2 REST ekan, lekin endpointlar APK'siz
+  topilmadi (probing 404). Sayt to'liq server-rendered (pjax/jQuery), XHR API ishlatmaydi —
+  shuning uchun mavjud JSON-LD scraping yagona yo'l. Qidiruv sahifasi hozir ham `ItemList`
+  JSON-LD qaytaradi (servis regex'i 24 ta kitobni to'g'ri ajratdi — pipeline butun).
+- **YECHIM**: asaxiy O'ZI Cloudflare ortida → Cloudflare **Worker** `fetch()` Cloudflare
+  tarmog'idan chiqadi (Hetzner ASN emas), demak asaxiy'ning IP/ASN blok qoidasiga tushmaydi.
+  Free plan 100k req/kun. Serverless — uy kompyuteriga bog'liq EMAS.
+  - **Worker skript**: `deploy/asaxiy-proxy-worker.js` — faqat `*.asaxiy.uz` hostga ruxsat
+    (SSRF himoya), `PROXY_SECRET` header bilan himoyalangan, javobni o'zgartirmasdan o'tkazadi
+    (HTML + muqova rasmi).
+  - **Deploy yo'riqnomasi**: `deploy/ASAXIY-PROXY-WORKER.md` (Dashboard yoki Wrangler).
+  - **Kod**: yangi `AsaxiyWorkerProxyHandler` (DelegatingHandler) — asaxiy URL'larni
+    `{WorkerUrl}?url=...` ga qayta yozadi + `X-Proxy-Secret` qo'shadi. `DependencyInjection.cs`
+    da ulandi. Config: `Asaxiy:WorkerUrl` (+ ixtiyoriy `Asaxiy:WorkerSecret`), env:
+    `Asaxiy__WorkerUrl` / `Asaxiy__WorkerSecret`.
+  - **Ustunlik tartibi**: `WorkerUrl` berilsa u ishlatiladi va SOCKS `ProxyUrl` e'tiborsiz
+    qoldiriladi; WorkerUrl bo'sh bo'lsa — eski SOCKS tunnel; ikkalasi ham bo'sh bo'lsa —
+    to'g'ridan-to'g'ri (lokal). SOCKS tunnel zaxira sifatida qoladi.
+  - **Holat**: Build 0/0. Worker fetch simulyatsiyasi (UZ mashinadan) JSON-LD'ni qaytardi.
+    Yakuniy Worker→asaxiy hop'ni user CF account'da deploy qilib tasdiqlashi kerak.
+  - **MUHIM (user qilishi kerak)**: (1) Worker'ni deploy qilish (`deploy/ASAXIY-PROXY-WORKER.md`),
+    `PROXY_SECRET` o'rnatish. (2) Hetzner env'ga `Asaxiy__WorkerUrl` + `Asaxiy__WorkerSecret`
+    qo'shib `systemctl restart kitobdagimen`. (3) Yangi fayllar (`AsaxiyWorkerProxyHandler.cs`,
+    `DependencyInjection.cs`, `deploy/`) ni git'ga commit+push — aks holda redeploy'da yo'qoladi.
+  - **Zaxira reja**: agar asaxiy Worker subrequest'larini ham bloklasa (kamdan-kam),
+    WorkerUrl env'dan olib tashlanadi → SSH SOCKS tunnelga qaytiladi.
 
 ## Ma'lum muammolar / eslatmalar
 

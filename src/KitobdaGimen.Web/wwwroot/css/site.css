@@ -739,6 +739,9 @@ textarea.input { resize: vertical; min-height: 90px; }
 .post-body-main { min-width: 0; }
 .post-book-title { font-size: 20px; margin: 0 0 2px; color: var(--primary); }
 .post-book-author { font-size: 13px; color: var(--text-secondary); margin: 0 0 10px; }
+/* Manba krediti tana ichida bo'lsa, kartaning vertikal ritmiga moslash */
+.post-body-main .book-source { display: block; margin: 0 0 10px; }
+.post-book-author:has(+ .book-source) { margin-bottom: 4px; }
 .post-text {
     color: var(--text); white-space: pre-wrap; word-break: break-word; margin: 0;
     display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
