@@ -1807,6 +1807,36 @@ qidiruvda chetlab o'tiladi):
 - **Holat**: Build 0/0, migratsiya lokal DB'da apply bo'ldi, yangi endpointlar 401 (auth) bilan
   to'g'ri marshrutlandi.
 
+### asaxiy qidiruvi PRODUKSIYADA ishlamaydi — Cloudflare IP blok (ANIQLANDI 2026-06-21)
+
+- **Simptom**: "qo'rqma" (va boshqa) kitoblar asaxiy.uz da bor, lekin **live saytda** qidiruvda
+  chiqmaydi. Lokalda va ishlab chiqaruvchi mashinada ishlaydi.
+- **Sabab**: asaxiy.uz Cloudflare ortida. Hetzner **Helsinki** server IP'siga (ASN) butun
+  asaxiy.uz **403 Forbidden** qaytaradi (homepage ham 403). To'liq brauzer header'lari ham
+  yordam bermaydi — bu IP/ASN bloki, JS-challenge emas. Server'dan `curl https://asaxiy.uz/`
+  → `HTTP 403`, `server: cloudflare`. Lokal/UZ IP'dan → 200, JSON-LD bor (regex 24 ta moslik).
+  Demak **kod to'g'ri**; muammo — chiqish (egress) IP bloklangan.
+- **YECHIM — bepul UZ-egress SSH tunnel orqali (HAL QILINDI 2026-06-21):** Hetzner serverni
+  ko'chirmasdan, qo'shimcha server olmasdan, foydalanuvchining **uy UZ internetini** (Uzbektelekom,
+  Toshkent — asaxiy ruxsat beradi) chiqish nuqtasi sifatida ishlatamiz:
+  - **Kod**: `AsaxiyBookService` HttpClient'iga ixtiyoriy proksi qo'shildi — `Asaxiy:ProxyUrl`
+    (env: `Asaxiy__ProxyUrl`). `ConfigurePrimaryHttpMessageHandler` da `WebProxy` o'rnatiladi.
+    `.NET 8` `socks5://` sxemasini qo'llab-quvvatlaydi (serverda tasdiqlandi).
+  - **Desktop**: `~/.config/systemd/user/asaxiy-tunnel.service` — `ssh -N -R 1080 root@HETZNER`
+    (remote dynamic SOCKS5). Hetzner'da `127.0.0.1:1080` SOCKS proksi paydo bo'ladi, trafik
+    desktop'ning UZ internetidan chiqadi. `enable --now` qilingan, `Restart=always`.
+  - **Hetzner env**: `Asaxiy__ProxyUrl=socks5://127.0.0.1:1080` (`/etc/kitobdagimen/kitobdagimen.env`).
+  - **Hetzner sshd**: `/etc/ssh/sshd_config.d/10-asaxiy-tunnel.conf` (ClientAliveInterval 30,
+    ClientAliveCountMax 2) — tunnel uzilganda port 1080 tez bo'shaydi, qayta ulanish ishlaydi.
+  - **Deploy**: yangi `KitobdaGimen.Infrastructure.dll` serverga ko'chirildi (eski `.bak-asaxiy`
+    zaxira), `systemctl restart kitobdagimen`. Tekshirildi: asaxiy HTTP 200, "Qo‘rqma" topildi.
+  - **CHEKLOV**: import faqat desktop YONIQ va internetda bo'lganda ishlaydi. Allaqachon import
+    qilingan kitoblar har doim ishlaydi (lokal DB'da). Desktop o'chiq bo'lsa — yangi import vaqtincha
+    ishlamaydi.
+  - **MUHIM (user qilishi kerak)**: (1) `DependencyInjection.cs` o'zgarishini git'ga commit+push
+    qilish — aks holda keyingi `git pull && dotnet publish` redeploy'da DLL patch yo'qoladi.
+    (2) Desktop login'siz ham boot'da ishlashi uchun: `sudo loginctl enable-linger javohir`.
+
 ## Ma'lum muammolar / eslatmalar
 
 - **Google OAuth haqiqiy kalitlari YO'Q.** `IdentityServiceExtensions`'da bo'sh bo'lsa `placeholder-client-id`/`placeholder-client-secret` ishlatiladi — real Google login ishlamaydi. 12-bosqichda `appsettings.json`'ga `Authentication:Google:ClientId`/`ClientSecret` qo'yiladi (yoki user secrets/env). Haqiqiy kalitlarni Google Cloud Console'dan olish kerak.
