@@ -643,7 +643,60 @@ function founderBadge(username) {
         : "";
 }
 
-window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge };
+// ===== asaxiy.uz kitob qidiruvi (kitob tanlash oynalarida ishlatiladi) =====
+// Lokal katalogda kitob kam bo'lgani uchun, qidiruvga mos asaxiy.uz kitoblarini
+// ham ko'rsatamiz. Foydalanuvchi birini bossa — u lokal katalogga import qilinib
+// (muqovasi bilan), tanlangan kitob sifatida qaytariladi (pickBook orqali).
+async function renderAsaxiyBooks(query, suggestions, pickBook) {
+    let items;
+    try {
+        const res = await fetch(`/books/asaxiy-search?q=${encodeURIComponent(query)}`,
+            { headers: { "X-Requested-With": "XMLHttpRequest" } });
+        if (!res.ok) return;
+        items = await res.json();
+    } catch { return; }
+
+    // Foydalanuvchi shu orada boshqa narsa yozgan bo'lsa — eski natijani chiqarmaymiz.
+    if (suggestions.dataset.q !== query || !Array.isArray(items) || !items.length) return;
+
+    const head = document.createElement("div");
+    head.className = "book-suggest__src";
+    head.textContent = "asaxiy.uz dan:";
+    suggestions.appendChild(head);
+
+    items.forEach(it => {
+        const div = document.createElement("div");
+        div.className = "book-suggest__asaxiy";
+        if (it.coverUrl) {
+            const img = document.createElement("img");
+            img.src = it.coverUrl;
+            img.alt = "";
+            img.loading = "lazy";
+            div.appendChild(img);
+        }
+        const span = document.createElement("span");
+        span.textContent = `${it.title} — ${it.author}`;
+        div.appendChild(span);
+        div.addEventListener("click", async () => {
+            if (div.dataset.loading) return;
+            div.dataset.loading = "1";
+            const original = span.textContent;
+            span.textContent = "Yuklanmoqda…";
+            try {
+                const book = await window.kitob.apiPost("/books/import-asaxiy", { url: it.url });
+                if (book) pickBook(book);
+            } catch (e) {
+                span.textContent = original;
+                delete div.dataset.loading;
+                alert(e.message || "Kitobni import qilib bo'lmadi.");
+            }
+        });
+        suggestions.appendChild(div);
+    });
+    suggestions.hidden = false;
+}
+
+window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks };
 
 initNotifications();
 

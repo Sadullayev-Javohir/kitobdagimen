@@ -231,6 +231,7 @@
         clearTimeout(searchTimer);
         const q = bookSearch.value.trim();
         if (q.length < 2) { suggestions.hidden = true; suggestions.innerHTML = ""; return; }
+        suggestions.dataset.q = q;
         searchTimer = setTimeout(async () => {
             try {
                 const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
@@ -245,6 +246,7 @@
                     suggestions.appendChild(div);
                 });
                 suggestions.hidden = books.length === 0;
+                window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
             } catch { /* ignore */ }
         }, 300);
     });

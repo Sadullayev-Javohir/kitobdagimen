@@ -11,6 +11,7 @@
         <div class="quote-foot">
             <div class="quote-source">
                 <strong>@q.Book.Title</strong><br />@q.Book.Author
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(q.Book.Source))
             </div>
             <div class="flex items-center gap-8">
                 <button class="action-btn @(q.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@q.Id" title="Saqlash">

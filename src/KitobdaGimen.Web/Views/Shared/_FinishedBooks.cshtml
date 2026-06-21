@@ -21,6 +21,7 @@
                 <div class="finished-title">@goal.Book.Title</div>
                 <div class="muted finished-author">@goal.Book.Author</div>
                 <div class="muted finished-pages">@goal.TotalPages bet</div>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(goal.Book.Source))
             </a>
             <button type="button" class="finished-delete-btn goal-delete-btn" data-goal="@goal.Id" data-title="@goal.Book.Title" title="O'chirish">
                 <span class="material-symbols-outlined">delete</span>

@@ -27,6 +27,14 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
 
         if (existing is not null)
         {
+            // Avval qo'lda kiritilgan kitob endi tashqi manbadan import qilinsa,
+            // manbani (attribution) to'ldiramiz — mavjud yozuvni qaytadan yaratmaymiz.
+            if (existing.Source is null && request.Source is not null)
+            {
+                existing.Source = request.Source;
+                await _db.SaveChangesAsync(cancellationToken);
+            }
+
             return existing.Adapt<BookDto>();
         }
 
@@ -36,7 +44,8 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
             Author = author,
             TotalPages = request.TotalPages,
             CoverUrl = request.CoverUrl,
-            GenreId = request.GenreId
+            GenreId = request.GenreId,
+            Source = request.Source
         };
 
         _db.Books.Add(book);

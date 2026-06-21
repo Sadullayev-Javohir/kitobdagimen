@@ -8,4 +8,6 @@ public record BookDto
     public string? CoverUrl { get; init; }
     public int TotalPages { get; init; }
     public int? GenreId { get; init; }
+    /// <summary>Kitob olingan tashqi manba (masalan "asaxiy.uz"); qo'lda kiritilganda null.</summary>
+    public string? Source { get; init; }
 }

@@ -32,7 +32,8 @@ internal static class PostQueryableExtensions
                 Title = p.Book.Title,
                 Author = p.Book.Author,
                 CoverUrl = p.Book.CoverUrl,
-                GenreName = p.Book.Genre != null ? p.Book.Genre.Name : null
+                GenreName = p.Book.Genre != null ? p.Book.Genre.Name : null,
+                Source = p.Book.Source
             },
             LikeCount = p.Likes.Count,
             CommentCount = p.Comments.Count,

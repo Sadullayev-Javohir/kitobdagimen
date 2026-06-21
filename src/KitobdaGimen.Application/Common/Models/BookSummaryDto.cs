@@ -8,4 +8,6 @@ public record BookSummaryDto
     public string Author { get; init; } = null!;
     public string? CoverUrl { get; init; }
     public string? GenreName { get; init; }
+    /// <summary>Kitob olingan tashqi manba (masalan "asaxiy.uz"); qo'lda kiritilganda null.</summary>
+    public string? Source { get; init; }
 }

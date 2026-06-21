@@ -700,6 +700,16 @@ textarea.input { resize: vertical; min-height: 90px; }
 .book-suggestions { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 6px; overflow: hidden; }
 .book-suggestions div { padding: 9px 12px; cursor: pointer; font-size: 14px; }
 .book-suggestions div:hover { background: var(--primary-soft); }
+/* asaxiy.uz dan kelgan natijalar */
+.book-suggestions .book-suggest__src { padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .03em; cursor: default; background: var(--bg, transparent); border-top: 1px solid var(--border); }
+.book-suggestions .book-suggest__src:hover { background: transparent; }
+.book-suggestions .book-suggest__asaxiy { display: flex; align-items: center; gap: 10px; }
+.book-suggestions .book-suggest__asaxiy img { width: 32px; height: 44px; object-fit: cover; border-radius: 3px; flex: 0 0 auto; background: var(--primary-soft); }
+.book-suggestions .book-suggest__asaxiy span { flex: 1 1 auto; }
+/* Import qilingan kitob manbasi (attribution) — kitob ko'ringan joylarda */
+.book-source { display: inline-block; margin: 2px 0; font-size: 12px; color: var(--text-secondary); }
+.book-source a { color: inherit; text-decoration: underline; }
+.book-source a:hover { color: var(--primary); }
 
 /* Empty state */
 .empty-state { text-align: center; color: var(--text-secondary); padding: 48px 24px; }

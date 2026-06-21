@@ -17,7 +17,8 @@ internal static class ReadingGoalQueryableExtensions
                 Id = g.Book.Id,
                 Title = g.Book.Title,
                 Author = g.Book.Author,
-                CoverUrl = g.Book.CoverUrl
+                CoverUrl = g.Book.CoverUrl,
+                Source = g.Book.Source
             },
             TotalPages = g.Book.TotalPages,
             DailyPageGoal = g.DailyPageGoal,

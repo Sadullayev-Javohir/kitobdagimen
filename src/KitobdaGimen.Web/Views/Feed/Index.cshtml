@@ -401,6 +401,7 @@
         clearTimeout(searchTimer);
         const q = search.value.trim();
         if (q.length < 2) { suggestions.hidden = true; return; }
+        suggestions.dataset.q = q;
         searchTimer = setTimeout(async () => {
             try {
                 const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
@@ -414,6 +415,7 @@
                     suggestions.appendChild(div);
                 });
                 suggestions.hidden = books.length === 0;
+                window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
             } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
         }, 250);
     });

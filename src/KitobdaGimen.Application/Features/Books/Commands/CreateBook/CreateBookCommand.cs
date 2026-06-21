@@ -11,4 +11,6 @@ public record CreateBookCommand : IRequest<BookDto>
     public int TotalPages { get; init; }
     public string? CoverUrl { get; init; }
     public int? GenreId { get; init; }
+    /// <summary>Tashqi manba nomi (masalan "asaxiy.uz"); qo'lda qo'shilganda null.</summary>
+    public string? Source { get; init; }
 }

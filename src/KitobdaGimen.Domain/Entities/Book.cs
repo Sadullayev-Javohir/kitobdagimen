@@ -12,6 +12,12 @@ public class Book : BaseEntity
     public string? CoverUrl { get; set; }
     public int TotalPages { get; set; }
 
+    /// <summary>
+    /// Kitob ma'lumoti olingan tashqi manba (masalan, "asaxiy.uz"). Foydalanuvchi qo'lda
+    /// kiritgan kitoblarda null bo'ladi. Webda manba ko'rsatish (attribution) uchun ishlatiladi.
+    /// </summary>
+    public string? Source { get; set; }
+
     public int? GenreId { get; set; }
     public Genre? Genre { get; set; }
 

@@ -115,6 +115,7 @@
                         <div class="rb-head">
                             <a class="rb-title" href="/reading-books/@goal.Id">@goal.Book.Title</a>
                             <div class="rb-author">@goal.Book.Author</div>
+                            @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(goal.Book.Source))
                         </div>
 
                         <div class="rb-track" role="progressbar" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100">
@@ -216,6 +217,7 @@
         clearTimeout(timer);
         const q = search.value.trim();
         if (q.length < 2) { suggestions.hidden = true; return; }
+        suggestions.dataset.q = q;
         timer = setTimeout(async () => {
             try {
                 const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
@@ -229,6 +231,7 @@
                     suggestions.appendChild(div);
                 });
                 suggestions.hidden = books.length === 0;
+                window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
             } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
         }, 250);
     });

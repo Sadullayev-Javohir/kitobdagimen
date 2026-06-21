@@ -1756,6 +1756,57 @@ qidiruvda chetlab o'tiladi):
 - **Holat**: Build 0/0. DTO yo'llari (`SearchUsers`, `GetConversations`, `GetPendingRequests`,
   `Respond/SendConnection`) hammasi `Username` ni allaqachon to'ldiradi — backend o'zgartirilmadi.
 
+## asaxiy.uz kitob qidiruv + import (BAJARILDI 2026-06-21)
+
+- **Talab**: lokal katalogda kitob kam. "Kitobni qidiring" oynasida asaxiy.uz kitoblarini ham
+  ko'rsatish va birini bossa — muqovasi bilan birga lokal katalogga import qilish.
+- **asaxiy ochiq API bermaydi** (Yii2 server-rendered sayt). Yechim: ularning sahifalariga
+  joylangan **schema.org JSON-LD** (ItemList / Product) ni o'qib, strukturali natijaga aylantirish.
+  - Qidiruv: `GET https://asaxiy.uz/uz/product/knigi?key=<so'rov>` → 24 ta natija, har birida
+    `name` ("Muallif: Sarlavha"), `image` (muqova CDN), `url`.
+  - Detal: kitob sahifasidagi Product JSON-LD (nom+rasm) + xususiyatlar jadvalidagi
+    **"Betlar soni"** → `TotalPages`.
+- **Backend**:
+  - `Application/Common/Interfaces/IAsaxiyBookService.cs` — `SearchAsync`, `GetDetailsAsync`,
+    `DownloadCoverAsync` + `AsaxiyBookResult`/`AsaxiyBookDetails` modellari.
+  - `Infrastructure/External/AsaxiyBookService.cs` — `HttpClient` + regex parsing. **SSRF himoyasi**:
+    faqat `*.asaxiy.uz` domeniga so'rov. `DependencyInjection.cs` da brauzer User-Agent bilan
+    `AddHttpClient` (asaxiy bo'sh UA ni rad etadi).
+  - `BooksController`: `GET /books/asaxiy-search?q=` (yengil natijalar) + `POST /books/import-asaxiy`
+    (`{url}` → detal olib, muqovani yuklab WebP qilib saqlaydi, `CreateBookCommand` orqali yaratadi).
+    Muqova saqlash mantig'i `SaveCoverImageAsync` helperiga ajratildi (upload-cover bilan birga
+    ishlatiladi — rasm WebP'ga qayta-kodlanadi, polyglot xavfi yo'q).
+  - Validator `TotalPages > 0` talab qiladi — asaxiy'da betlar soni topilmasa fallback `1`.
+- **Frontend**: `site.js` ga `window.kitob.renderAsaxiyBooks(q, suggestions, pickBook)` umumiy
+  helperi qo'shildi (asaxiy natijalarini "asaxiy.uz dan:" sarlavhasi ostida muqova thumbnail bilan
+  chiqaradi, bosilganda import qiladi). Uchala kitob tanlash oynasiga ulandi: `Feed/Index.cshtml`,
+  `Quotes/Index.cshtml`, `ReadingGoals/Index.cshtml` (lokal qidiruvdan keyin chaqiriladi;
+  `suggestions.dataset.q` race-guard). CSS: `site.css` da `.book-suggest__src`/`.book-suggest__asaxiy`.
+- **Tekshiruv**: vaqtinchalik konsol orqali live asaxiy'ga qarshi end-to-end test —
+  qidiruv 5 natija (muallif/sarlavha toza ajratilgan), detal `pages=300`, muqova 77 KB yuklandi,
+  SSRF guard evil domenni `null` qaytardi. Build 0/0.
+- **Eslatma**: asaxiy HTML strukturasi o'zgarsa faqat `AsaxiyBookService.cs` dagi 3 regex
+  yangilanadi. Import qilingan kitobga `GenreId` berilmaydi (null) — asaxiy janrini olmaymiz.
+
+### Manba (attribution) — "asaxiy.uz" webda ko'rsatish (BAJARILDI 2026-06-21)
+
+- **Talab**: import qilingan kitobda manba "asaxiy.uz" saqlanib, webda ko'rinsin.
+- **DB**: `Book.Source` (nullable, `varchar(100)`) qo'shildi — `BookConfiguration` + migratsiya
+  `20260621062538_AddBookSource`. Lokal DB'ga `DbInitializer.MigrateAsync` (startup) orqali
+  qo'llandi va tasdiqlandi (`information_schema` da `Source varchar(100)`). Prod'da ham startup'da
+  avtomatik qo'llanadi.
+- **Oqim**: import endpoint `Source = "asaxiy.uz"` beradi → `CreateBookCommand.Source` →
+  `CreateBookCommandHandler` yozadi. Avval qo'lda kiritilgan ayni kitob keyin import qilinsa,
+  `Source` null bo'lsa to'ldiriladi (mavjud yozuv qayta yaratilmaydi).
+- **DTO**: `BookDto.Source` (Mapster `ProjectToType` avtomatik) + `BookSummaryDto.Source`
+  (qo'lda projeksiya — `Post/Quote/ReadingGoal QueryableExtensions` ga `Source` qo'shildi).
+- **Ko'rsatish**: `ViewHelpers.SourceCredit(source)` → `<span class="book-source">Manba:
+  <a asaxiy.uz>...</a></span>` (HTML-encode + `rel="noopener nofollow"`). Qo'yilgan joylar:
+  `_PostCard`, `Posts/Details`, `Quotes/_QuoteCards`, `ReadingGoals/Index` & `Details`,
+  `_FinishedBooks`. CSS: `.book-source` (muted, havola tagchiziq). Manbasiz kitoblarda hech nima.
+- **Holat**: Build 0/0, migratsiya lokal DB'da apply bo'ldi, yangi endpointlar 401 (auth) bilan
+  to'g'ri marshrutlandi.
+
 ## Ma'lum muammolar / eslatmalar
 
 - **Google OAuth haqiqiy kalitlari YO'Q.** `IdentityServiceExtensions`'da bo'sh bo'lsa `placeholder-client-id`/`placeholder-client-secret` ishlatiladi — real Google login ishlamaydi. 12-bosqichda `appsettings.json`'ga `Authentication:Google:ClientId`/`ClientSecret` qo'yiladi (yoki user secrets/env). Haqiqiy kalitlarni Google Cloud Console'dan olish kerak.

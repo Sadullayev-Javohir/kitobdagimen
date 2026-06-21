@@ -87,6 +87,7 @@
             <div class="pd-bookhead">
                 <h1>@Model.Post.Book.Title</h1>
                 <p class="pd-book-author">@Model.Post.Book.Author</p>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Post.Book.Source))
                 @if (!string.IsNullOrEmpty(Model.Post.Book.GenreName))
                 {
                     <div class="pd-genres">

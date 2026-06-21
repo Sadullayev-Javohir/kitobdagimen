@@ -25,7 +25,8 @@ internal static class QuoteQueryableExtensions
                 Id = q.Book.Id,
                 Title = q.Book.Title,
                 Author = q.Book.Author,
-                CoverUrl = q.Book.CoverUrl
+                CoverUrl = q.Book.CoverUrl,
+                Source = q.Book.Source
             },
             SaveCount = q.SavedBy.Count,
             IsSavedByCurrentUser = currentUserId != null && q.SavedBy.Any(s => s.UserId == currentUserId)

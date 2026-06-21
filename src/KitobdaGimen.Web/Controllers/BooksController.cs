@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Books.Commands.CreateBook;
 using KitobdaGimen.Application.Features.Books.Queries.GetBooks;
 using Microsoft.AspNetCore.Authorization;
@@ -23,10 +24,12 @@ public class BooksController : AppController
     private const int MaxCoverDimension = 1200;
 
     private readonly IWebHostEnvironment _env;
+    private readonly IAsaxiyBookService _asaxiy;
 
-    public BooksController(IWebHostEnvironment env)
+    public BooksController(IWebHostEnvironment env, IAsaxiyBookService asaxiy)
     {
         _env = env;
+        _asaxiy = asaxiy;
     }
 
     /// <summary>Book search used by post/quote/goal pickers (JSON).</summary>
@@ -41,6 +44,77 @@ public class BooksController : AppController
     [HttpPost("create")]
     public async Task<IActionResult> Create([FromBody] CreateBookCommand command)
     {
+        var book = await Mediator.Send(command);
+        return Json(book);
+    }
+
+    /// <summary>
+    /// Searches the asaxiy.uz book catalogue (live). Returns lightweight results the
+    /// picker shows below local matches; the actual book is created only on import.
+    /// </summary>
+    [HttpGet("asaxiy-search")]
+    public async Task<IActionResult> AsaxiySearch(string? q)
+    {
+        var results = await _asaxiy.SearchAsync(q ?? string.Empty);
+        return Json(results.Select(r => new
+        {
+            title = r.Title,
+            author = r.Author,
+            coverUrl = r.CoverUrl,
+            url = r.Url
+        }));
+    }
+
+    /// <summary>
+    /// Imports a book from asaxiy.uz into the local catalogue: fetches its details,
+    /// downloads and re-encodes the cover, then creates (or reuses) the book.
+    /// Returns the local <see cref="Application.Features.Books.Dtos.BookDto"/> (JSON).
+    /// </summary>
+    [HttpPost("import-asaxiy")]
+    public async Task<IActionResult> ImportAsaxiy([FromBody] ImportAsaxiyRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Url))
+        {
+            return BadRequest(new { message = "Kitob manzili ko'rsatilmadi." });
+        }
+
+        var details = await _asaxiy.GetDetailsAsync(request.Url);
+        if (details is null)
+        {
+            return BadRequest(new { message = "Kitob ma'lumotlarini asaxiy.uz dan olishning iloji bo'lmadi." });
+        }
+
+        // Muqova rasmini asaxiy CDN'dan yuklab, o'zimizda WebP qilib saqlaymiz —
+        // tashqi havolaga bog'lanib qolmaymiz. Yuklab bo'lmasa, muqovasiz davom etamiz.
+        string? coverUrl = null;
+        if (!string.IsNullOrEmpty(details.CoverUrl))
+        {
+            var bytes = await _asaxiy.DownloadCoverAsync(details.CoverUrl);
+            if (bytes is not null && bytes.Length > 0 && bytes.Length <= MaxCoverBytes)
+            {
+                try
+                {
+                    await using var ms = new MemoryStream(bytes);
+                    coverUrl = await SaveCoverImageAsync(ms);
+                }
+                catch (UnknownImageFormatException)
+                {
+                    // asaxiy rasm formatini taniy olmadik — muqovasiz import qilamiz.
+                }
+            }
+        }
+
+        var command = new CreateBookCommand
+        {
+            Title = details.Title,
+            Author = details.Author,
+            // asaxiy sahifasida "Betlar soni" bo'lmasa, validatsiya uchun minimal qiymat.
+            TotalPages = details.TotalPages > 0 ? details.TotalPages : 1,
+            CoverUrl = coverUrl,
+            GenreId = null,
+            Source = "asaxiy.uz"
+        };
+
         var book = await Mediator.Send(command);
         return Json(book);
     }
@@ -65,42 +139,54 @@ public class BooksController : AppController
             return BadRequest(new { message = "Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
         }
 
-        // Faylni rasm sifatida dekod qilamiz (haqiqiy rasm ekanini tasdiqlaydi) va
-        // WebP'ga qayta-kodlaymiz. Shu bilan yuklangan "rasm" ichiga yashiringan
-        // HTML/skript (polyglot) butunlay yo'qoladi — content-type'ga ishonmaymiz.
-        Image image;
         try
         {
             await using var input = file.OpenReadStream();
-            image = await Image.LoadAsync(input);
+            var url = await SaveCoverImageAsync(input);
+            return Json(new { url });
         }
         catch (UnknownImageFormatException)
         {
             return BadRequest(new { message = "Fayl rasm formatida emas." });
         }
+    }
 
-        using (image)
+    /// <summary>
+    /// Dekodes the stream as an image (rejecting non-images / polyglots), downsizes it
+    /// and re-encodes to WebP, returning the saved public URL. Throws
+    /// <see cref="UnknownImageFormatException"/> if the stream isn't a valid image.
+    /// </summary>
+    private async Task<string> SaveCoverImageAsync(Stream input)
+    {
+        // Faylni rasm sifatida dekod qilamiz (haqiqiy rasm ekanini tasdiqlaydi) va
+        // WebP'ga qayta-kodlaymiz. Shu bilan yuklangan "rasm" ichiga yashiringan
+        // HTML/skript (polyglot) butunlay yo'qoladi — content-type'ga ishonmaymiz.
+        using var image = await Image.LoadAsync(input);
+
+        if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
         {
-            if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
+            image.Mutate(x => x.Resize(new ResizeOptions
             {
-                image.Mutate(x => x.Resize(new ResizeOptions
-                {
-                    Mode = ResizeMode.Max,
-                    Size = new Size(MaxCoverDimension, MaxCoverDimension)
-                }));
-            }
-
-            var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-            var uploadDir = Path.Combine(webRoot, "uploads", "covers");
-            Directory.CreateDirectory(uploadDir);
-
-            var fileName = $"{Guid.NewGuid():N}.webp";
-            var fullPath = Path.Combine(uploadDir, fileName);
-
-            await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 82 });
-
-            var url = $"/uploads/covers/{fileName}";
-            return Json(new { url });
+                Mode = ResizeMode.Max,
+                Size = new Size(MaxCoverDimension, MaxCoverDimension)
+            }));
         }
+
+        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+        var uploadDir = Path.Combine(webRoot, "uploads", "covers");
+        Directory.CreateDirectory(uploadDir);
+
+        var fileName = $"{Guid.NewGuid():N}.webp";
+        var fullPath = Path.Combine(uploadDir, fileName);
+
+        await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 82 });
+
+        return $"/uploads/covers/{fileName}";
+    }
+
+    /// <summary>Body of the asaxiy import request.</summary>
+    public record ImportAsaxiyRequest
+    {
+        public string? Url { get; init; }
     }
 }
