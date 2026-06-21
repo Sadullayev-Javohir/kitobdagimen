@@ -48,8 +48,11 @@
     </header>
 
     <div data-view-panel>
-        <!-- Tana: kitob muqovasi + fikr -->
-        <a class="post-body" href="@postUrl">
+        <!-- Tana: kitob muqovasi + fikr. Butun tana havolasi cho'zilgan ko'rinmas <a> orqali
+             beriladi — chunki "Manba: asaxiy.uz" havolasini <a> ichiga <a> qilib joylash
+             noto'g'ri HTML bo'lib, grid'ni buzadi. -->
+        <div class="post-body">
+            <a class="post-body-link" href="@postUrl" aria-label="@Model.Book.Title"></a>
             <div class="post-cover">
                 @if (!string.IsNullOrEmpty(Model.Book.CoverUrl))
                 {
@@ -66,7 +69,7 @@
                 @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Book.Source))
                 <p class="post-text" data-post-text>@KitobdaGimen.Web.ViewHelpers.RichText(Model.ReviewText)</p>
             </div>
-        </a>
+        </div>
 
         <a class="post-image-wrap" href="@postUrl" data-post-image @(string.IsNullOrEmpty(Model.ImageUrl) ? "hidden" : "")>
             <img class="post-image" data-post-image-img src="@Model.ImageUrl" alt="Post rasmi" loading="lazy" />

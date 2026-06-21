@@ -1756,17 +1756,24 @@ qidiruvda chetlab o'tiladi):
 - **Holat**: Build 0/0. DTO yo'llari (`SearchUsers`, `GetConversations`, `GetPendingRequests`,
   `Respond/SendConnection`) hammasi `Username` ni allaqachon to'ldiradi — backend o'zgartirilmadi.
 
-## /feed post card — "Manba:" krediti bilan layout tuzatishi (BAJARILDI 2026-06-21)
+## /feed post card — asaxiy "Manba:" havolasi grid'ni buzishi (BAJARILDI 2026-06-21)
 
-- **Muammo**: asaxiy.uz dan import qilingan kitob bilan yozilgan post `_PostCard` da
-  buzilib ko'rinardi. `.post-book-author` margin-bottom 10px + `.book-source` o'z margini
-  2px stacklanib, "Manba:" qatori ustida katta, ostida juda kichik bo'shliq bo'lib,
-  vertikal ritmni buzardi.
-- **Yechim** (`wwwroot/css/site.css`, faqat `.post-body-main` ga scoped):
-  `.post-body-main .book-source { display:block; margin:0 0 10px }` +
-  `.post-book-author:has(+ .book-source) { margin-bottom:4px }`.
-  Natija: sarlavha→muallif 2px, muallif→Manba 4px, Manba→matn 10px. Manbasiz postlar
-  o'zgarmaydi (muallif→matn 10px), shuning uchun ikkala holat ham bir xil ko'rinadi.
+- **Asl sabab (HTML xatosi)**: `_PostCard` da butun tana `<a class="post-body">` havola edi.
+  asaxiy uchun `SourceCredit` ichida `<a href="asaxiy.uz">` chiqadi → `<a>` ichida `<a>` =
+  noto'g'ri HTML. Brauzer parseri tashqi `<a>` ni o'sha joyda majburan yopib, `.post-body`
+  grid'ini buzardi (muqova tepada yolg'iz, sarlavha/muallif siqilib qolardi). FAQAT asaxiy
+  postlarida (havolali manba) buzilardi; oddiy post yoki havolasiz manba — joyida edi.
+  Avvalgi "spacing" tuzatishi (margin/:has) muammoni ushlamagandi.
+- **Yechim**:
+  - `_PostCard.cshtml`: `<a class="post-body">` → `<div class="post-body">` + ichida
+    cho'zilgan ko'rinmas `<a class="post-body-link" href="@postUrl">`. asaxiy havolasi endi
+    ichma-ich emas.
+  - `site.css`: `.post-body{position:relative}`,
+    `.post-body-link{position:absolute;inset:0;z-index:1}`,
+    `.post-body .book-source a{position:relative;z-index:2}` (Manba havolasi bosiladigan
+    bo'lib qoladi). Plus oldingi spacing qoidalari saqlandi.
+- **Tekshirildi**: haqiqiy site.css bilan standalone karta headless Chrome'da render qilindi —
+  asaxiy va oddiy karta endi bir xil to'g'ri grid. Build 0/0.
 
 ## asaxiy.uz kitob qidiruv + import (BAJARILDI 2026-06-21)
 

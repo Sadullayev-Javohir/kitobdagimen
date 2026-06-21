@@ -727,8 +727,12 @@ textarea.input { resize: vertical; min-height: 90px; }
 .post-follow-btn { margin-left: auto; flex-shrink: 0; }
 .badge-author { background: rgba(232,112,58,.16); color: var(--accent-dark); font-size: 12px; padding: 2px 9px; }
 
-.post-body { display: grid; grid-template-columns: 96px 1fr; gap: 18px; padding: 20px; color: inherit; }
+.post-body { position: relative; display: grid; grid-template-columns: 96px 1fr; gap: 18px; padding: 20px; color: inherit; }
 .post-body:hover { text-decoration: none; background: rgba(27,77,62,.02); }
+/* Butun tanani bosish mumkin qiladigan cho'zilgan ko'rinmas havola */
+.post-body-link { position: absolute; inset: 0; z-index: 1; border-radius: var(--radius-sm); }
+/* "Manba" havolasi cho'zilgan havoladan ustun turishi kerak (bosiladigan bo'lsin) */
+.post-body .book-source a { position: relative; z-index: 2; }
 .post-cover {
     aspect-ratio: 2 / 3; border-radius: var(--radius-sm); overflow: hidden;
     border: 1px solid var(--border); background: var(--primary-soft);
