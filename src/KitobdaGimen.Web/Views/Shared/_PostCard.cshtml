@@ -129,6 +129,13 @@
                     <span class="material-symbols-outlined">delete</span>
                 </button>
             }
+            else if (ViewData["IsAdmin"] as bool? ?? false)
+            {
+                <button type="button" class="action-btn danger" data-admin-delete-post="@Model.Id"
+                        title="Admin: postni o'chirish" aria-label="Admin: o'chirish">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            }
         </span>
     </footer>
 </article>

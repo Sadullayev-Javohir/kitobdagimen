@@ -121,6 +121,23 @@
         } catch (err) { alert(err.message); }
     });
 
+    // Admin moderatsiyasi — istalgan post/iqtibosni o'chirish (admin/super admin uchun).
+    document.addEventListener("click", async (e) => {
+        const pBtn = e.target.closest("[data-admin-delete-post]");
+        const qBtn = e.target.closest("[data-admin-delete-quote]");
+        if (!pBtn && !qBtn) return;
+        e.preventDefault();
+        const isPost = !!pBtn;
+        const id = (pBtn || qBtn).getAttribute(isPost ? "data-admin-delete-post" : "data-admin-delete-quote");
+        if (!confirm(isPost ? "Bu postni o'chirishni tasdiqlaysizmi? (admin)" : "Bu iqtibosni o'chirishni tasdiqlaysizmi? (admin)")) return;
+        try {
+            await apiPost(`/admin/${isPost ? "posts" : "quotes"}/${id}/delete`);
+            const card = (pBtn || qBtn).closest(".post-card, .quote-card, .pd-article");
+            if (card) { card.style.transition = "opacity .2s"; card.style.opacity = "0"; setTimeout(() => card.remove(), 200); }
+            showToast(isPost ? "Post o'chirildi." : "Iqtibos o'chirildi.");
+        } catch (err) { alert(err.message); }
+    });
+
     // Post tahrirlash/o'chirish — "[data-post-scope]" ichida ham feed kartasi (.post-card),
     // ham post detali sahifasi (.pd-article) bir xil belgilar bilan ishlaydi.
     function setEditing(scope, editing) {

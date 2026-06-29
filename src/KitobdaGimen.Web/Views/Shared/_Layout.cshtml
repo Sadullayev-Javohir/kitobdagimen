@@ -14,9 +14,9 @@
     var hideChrome = ViewData["HideChrome"] as bool? ?? false;
     var currentController = ViewContext.RouteData.Values["controller"] as string ?? "";
     var isChatPage = string.Equals(currentController, "Chat", StringComparison.OrdinalIgnoreCase);
-    // Mobil pastki navigatsiya: kirgan foydalanuvchida va chrome ko'rinadigan sahifalarda.
-    // Chat sahifasi to'liq ekran (o'z input paneli pastda) bo'lgani uchun u yerda ko'rsatilmaydi.
-    var showBottomNav = isAuth && !hideChrome && !isChatPage;
+    // Mobil pastki navigatsiya: kirgan foydalanuvchida va chrome ko'rinadigan barcha sahifalarda
+    // (chat sahifasida ham — input pastki nav ustida turadi, balandlik shунга moslashtirilgan).
+    var showBottomNav = isAuth && !hideChrome;
     var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
     // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Iqtiboslar va post detali sahifalarida ko'rsatilmaydi.
     // (/feed va /quotes da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
@@ -61,6 +61,37 @@
                 }
                 document.documentElement.setAttribute('data-theme', t);
             } catch (e) { }
+        })();
+    </script>
+    @* Rasm xatolarini global hal qilish: (1) Google avatar (lh3.googleusercontent.com) Referer
+       yuborilganda bloklanadi — xato bo'lsa referrerpolicy=no-referrer bilan QAYTA urinamiz;
+       (2) baribir yuklanmasa — avatarni bosh harfga, kitob muqovasini placeholder ikonga almashtiramiz.
+       Capture fazasi kerak, chunki <img> error hodisasi "bubble" qilmaydi. *@
+    <script>
+        (function () {
+            function onImgError(e) {
+                var img = e.target;
+                if (!img || img.tagName !== 'IMG') return;
+                if (!img.dataset.imgRetry) {
+                    img.dataset.imgRetry = '1';
+                    try { img.referrerPolicy = 'no-referrer'; } catch (_) { }
+                    var s = img.src; img.src = ''; img.src = s;
+                    return;
+                }
+                if (img.dataset.imgFailed) return;
+                img.dataset.imgFailed = '1';
+                if (img.classList.contains('avatar')) {
+                    var name = (img.getAttribute('alt') || '?').trim();
+                    var span = document.createElement('span');
+                    span.className = img.className;
+                    span.textContent = name ? name.charAt(0).toUpperCase() : '?';
+                    if (img.parentNode) img.parentNode.replaceChild(span, img);
+                } else if (img.closest) {
+                    var wrap = img.closest('.post-cover') || img.closest('.quote-feed-cover') || img.closest('.rb-cover');
+                    if (wrap) { wrap.innerHTML = '<span class="material-symbols-outlined">menu_book</span>'; }
+                }
+            }
+            document.addEventListener('error', onImgError, true);
         })();
     </script>
     <title>@seoTitle</title>
@@ -166,6 +197,12 @@
                             </div>
                         </div>
                     </div>
+                    @if (me != null && me.Role >= KitobdaGimen.Domain.Enums.UserRole.Admin)
+                    {
+                        <a class="nav-icon-btn" href="/admin" title="Admin panel" aria-label="Admin panel">
+                            <span class="material-symbols-outlined">shield_person</span>
+                        </a>
+                    }
                     <a href="/profile" title="Profil" aria-label="Profil">
                         @if (!string.IsNullOrEmpty(me?.AvatarUrl))
                         {
@@ -216,6 +253,13 @@
                 <span class="material-symbols-outlined">person</span>
                 <span class="bn-label">Profil</span>
             </a>
+            @if (me != null && me.Role >= KitobdaGimen.Domain.Enums.UserRole.Admin)
+            {
+                <a href="/admin" class="@(mobilePath.StartsWith("/admin") ? "active" : "")">
+                    <span class="material-symbols-outlined">shield_person</span>
+                    <span class="bn-label">Admin</span>
+                </a>
+            }
         </nav>
     }
 

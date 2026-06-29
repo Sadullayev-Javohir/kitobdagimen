@@ -1,0 +1,111 @@
+@using KitobdaGimen.Application.Features.Admin.Dtos
+@using KitobdaGimen.Domain.Enums
+@model IReadOnlyList<AdminUserDto>
+@{
+    ViewData["Title"] = "Admin panel";
+    ViewData["Robots"] = "noindex, nofollow";
+    var myRole = (UserRole)(ViewData["MyRole"] ?? UserRole.User);
+    var isSuper = myRole == UserRole.SuperAdmin;
+
+    string RoleLabel(UserRole r) => r switch
+    {
+        UserRole.SuperAdmin => "Super admin",
+        UserRole.Admin => "Admin",
+        _ => "Foydalanuvchi"
+    };
+    string RoleClass(UserRole r) => r switch
+    {
+        UserRole.SuperAdmin => "role-super",
+        UserRole.Admin => "role-admin",
+        _ => "role-user"
+    };
+}
+
+<div class="container page">
+    <div class="admin-head">
+        <h1>Admin panel</h1>
+        <p class="muted">Jami @Model.Count foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
+    </div>
+
+    <div class="card admin-card">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Foydalanuvchi</th>
+                        <th>Rol</th>
+                        <th>Ro'yxatdan o'tgan</th>
+                        <th>Oxirgi kirgan</th>
+                        <th>Post / Iqtibos</th>
+                        <th>Amallar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="admin-user">
+                                    @if (!string.IsNullOrEmpty(u.AvatarUrl))
+                                    {
+                                        <img class="avatar sm" src="@u.AvatarUrl" alt="@u.FullName" referrerpolicy="no-referrer" />
+                                    }
+                                    else
+                                    {
+                                        <span class="avatar sm">@KitobdaGimen.Web.ViewHelpers.Initial(u.FullName)</span>
+                                    }
+                                    <div class="admin-user-meta">
+                                        <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(u.Username, u.Id)">@u.FullName</a>
+                                        <span class="muted">@u.Email</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="role-badge @RoleClass(u.Role)">@RoleLabel(u.Role)</span></td>
+                            <td class="admin-time">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.CreatedAt)</td>
+                            <td class="admin-time">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.LastSeenAt)</td>
+                            <td>@u.PostCount / @u.QuoteCount</td>
+                            <td>
+                                @if (isSuper && u.Role != UserRole.SuperAdmin)
+                                {
+                                    <div class="admin-actions">
+                                        @if (u.Role == UserRole.Admin)
+                                        {
+                                            <form method="post" action="/admin/users/@u.Id/role" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="makeAdmin" value="false" />
+                                                <button type="submit" class="btn btn-outline btn-sm">Adminlikdan olish</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" action="/admin/users/@u.Id/role" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="makeAdmin" value="true" />
+                                                <button type="submit" class="btn btn-primary btn-sm">Admin qilish</button>
+                                            </form>
+                                        }
+                                        <form method="post" action="/admin/users/@u.Id/delete" style="display:inline"
+                                              onsubmit="return confirm('@u.FullName ni va uning barcha kontentini butunlay o\'chirishni tasdiqlaysizmi?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-danger btn-sm">O'chirish</button>
+                                        </form>
+                                    </div>
+                                }
+                                else if (u.Role == UserRole.SuperAdmin)
+                                {
+                                    <span class="muted">—</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="muted admin-note">
+        Postlar va iqtiboslarni o'chirish: tasma (<a href="/feed">/feed</a>) sahifasidagi har bir
+        post yoki iqtibos ustidagi <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">delete</span>
+        tugmasi orqali (admin va super admin uchun ko'rinadi).
+    </p>
+</div>

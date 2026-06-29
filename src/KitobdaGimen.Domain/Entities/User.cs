@@ -15,6 +15,9 @@ public class User : BaseEntity
     public string? Bio { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>Authorization role (User / Admin / SuperAdmin). Defaults to User.</summary>
+    public KitobdaGimen.Domain.Enums.UserRole Role { get; set; } = KitobdaGimen.Domain.Enums.UserRole.User;
+
     /// <summary>Last time the user was seen online. Updated on SignalR disconnect; null if never connected.</summary>
     public DateTime? LastSeenAt { get; set; }
 

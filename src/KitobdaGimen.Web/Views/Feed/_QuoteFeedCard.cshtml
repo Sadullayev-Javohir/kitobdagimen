@@ -4,7 +4,7 @@
 @{
     var meId = CurrentUser.UserId;
     var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
-        ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" />")
+        ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")
         : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName))}</span>");
 }
 
@@ -23,12 +23,26 @@
         </div>
     </header>
 
-    <blockquote class="quote-feed-text">@Model.Text</blockquote>
-
-    <div class="quote-feed-book">
-        <span class="material-symbols-outlined">menu_book</span>
-        <span><strong>@Model.Book.Title</strong> — @Model.Book.Author</span>
-        @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Book.Source))
+    <div class="quote-feed-body">
+        <div class="quote-feed-cover">
+            @if (!string.IsNullOrEmpty(Model.Book.CoverUrl))
+            {
+                <img src="@Model.Book.CoverUrl" alt="@Model.Book.Title" loading="lazy" referrerpolicy="no-referrer" />
+            }
+            else
+            {
+                <span class="material-symbols-outlined">menu_book</span>
+            }
+        </div>
+        <div class="quote-feed-main">
+            <span class="quote-feed-mark material-symbols-outlined" aria-hidden="true">format_quote</span>
+            <blockquote class="quote-feed-text">@Model.Text</blockquote>
+            <div class="quote-feed-book">
+                <span class="qfb-title">@Model.Book.Title</span>
+                <span class="qfb-author">@Model.Book.Author</span>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Book.Source))
+            </div>
+        </div>
     </div>
 
     <footer class="post-actions">
@@ -36,7 +50,7 @@
             <span class="material-symbols-outlined">bookmark</span>
             <span class="save-count">@Model.SaveCount</span>
         </button>
-        <a class="action-btn" href="/quotes" aria-label="Iqtiboslar">
+        <a class="action-btn" href="/quotes" aria-label="Barcha iqtiboslar" title="Iqtiboslar">
             <span class="material-symbols-outlined">format_quote</span>
         </a>
         @if (meId != null && Model.Author.Id == meId)
@@ -48,6 +62,15 @@
                         <span class="material-symbols-outlined">delete</span>
                     </button>
                 </form>
+            </span>
+        }
+        else if (ViewData["IsAdmin"] as bool? ?? false)
+        {
+            <span class="post-actions-end">
+                <button type="button" class="action-btn danger" data-admin-delete-quote="@Model.Id"
+                        title="Admin: iqtibosni o'chirish" aria-label="Admin: o'chirish">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
             </span>
         }
     </footer>

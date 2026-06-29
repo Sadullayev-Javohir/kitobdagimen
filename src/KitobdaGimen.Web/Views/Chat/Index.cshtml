@@ -526,9 +526,16 @@
     async function respondRequest(id, accept) {
         try {
             await api.apiPost(`/chat/connect/${id}/respond`, { accept });
-            if (accept) { api.showToast("Yangi suhbatdosh qo'shildi!"); owl && owl.happy(); setTimeout(() => location.reload(), 700); }
-            else { await loadRequests(); }
-        } catch (err) { alert(err.message); }
+        } catch (err) { alert(err.message); return; }
+        if (accept) {
+            api.showToast("Yangi suhbatdosh qo'shildi!");
+            // Boyo'g'li (owl) animatsiyasi IXTIYORIY — u xato bersa ham sahifa qayta
+            // yuklanishini (va yangi suhbatdosh paydo bo'lishini) bloklamasligi kerak.
+            try { if (owl && owl.happy) owl.happy(); } catch (e) { /* e'tiborsiz */ }
+            setTimeout(() => location.reload(), 700);
+        } else {
+            loadRequests();
+        }
     }
 
     if (requestsList) {

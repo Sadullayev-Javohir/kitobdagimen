@@ -79,6 +79,11 @@ public static class ViewHelpers
     public static string Initial(string? name)
         => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();
 
+    /// <summary>Exact local date+time (O'zbekiston, UTC+5) with seconds, e.g. "29.06.2026 18:05:23".
+    /// Returns "—" for null (never seen).</summary>
+    public static string ExactLocal(DateTime? utc)
+        => utc is null ? "—" : utc.Value.AddHours(5).ToString("dd.MM.yyyy HH:mm:ss");
+
     /// <summary>Presence text for a chat header/card: "online" or "oxirgi marta ...".</summary>
     public static string Presence(bool isOnline, DateTime? lastSeenAt)
     {

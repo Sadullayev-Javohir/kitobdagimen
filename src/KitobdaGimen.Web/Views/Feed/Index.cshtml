@@ -48,18 +48,30 @@
         <!-- Post yaratish — qidiruvda yashiriladi, qidiruv tugagach qaytadi -->
         @if (string.IsNullOrEmpty(search))
         {
-        <div class="card composer">
-            <div class="composer-head">
-                @if (!string.IsNullOrEmpty(me?.AvatarUrl))
-                {
-                    <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" />
-                }
-                else
-                {
-                    <span class="avatar">@meInitial</span>
-                }
-                <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
-            </div>
+        <!-- Yopiq holatdagi tugma (bosilganda modal ochiladi) -->
+        <button type="button" class="card composer-trigger" id="composerTrigger">
+            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+            {
+                <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+            }
+            else
+            {
+                <span class="avatar">@meInitial</span>
+            }
+            <span class="composer-trigger-text">Qaysi kitob haqida fikr bildirasiz?</span>
+            <span class="material-symbols-outlined composer-trigger-ico">edit_square</span>
+        </button>
+
+        <!-- Modal oyna -->
+        <div class="composer-modal" id="composerModal" hidden>
+            <div class="composer-modal-backdrop" data-composer-close></div>
+            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi post">
+                <div class="composer-modal-head">
+                    <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
+                    <button type="button" class="composer-close" data-composer-close aria-label="Yopish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
 
             <form id="postForm" method="post" action="/posts/create">
                 @Html.AntiForgeryToken()
@@ -133,6 +145,7 @@
                     <button type="submit" class="btn btn-primary" id="postSubmit" disabled>Joylash</button>
                 </div>
             </form>
+            </div>
         </div>
         }
 
@@ -174,6 +187,26 @@
 
 @section Scripts {
 <script>
+// --- Post yaratish modali: yopiq tugma bosilganda ochiladi, close/Escape/backdrop yopadi ---
+(function () {
+    const trigger = document.getElementById("composerTrigger");
+    const modal = document.getElementById("composerModal");
+    if (!trigger || !modal) return;
+    function openModal() {
+        modal.hidden = false;
+        document.body.classList.add("modal-open");
+        const focusTarget = document.getElementById("bookSearch");
+        if (focusTarget) setTimeout(() => focusTarget.focus(), 50);
+    }
+    function closeModal() {
+        modal.hidden = true;
+        document.body.classList.remove("modal-open");
+    }
+    trigger.addEventListener("click", openModal);
+    modal.querySelectorAll("[data-composer-close]").forEach((el) => el.addEventListener("click", closeModal));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+})();
+
 // --- Qidiruv: ikona bosilganda qidiruv maydonini ochish/yopish ---
 (function () {
     const searchForm = document.getElementById("feedSearchForm");

@@ -4,6 +4,7 @@
 @model ReadingBooksPageViewModel
 @{
     ViewData["Title"] = "Kutubxona";
+    ViewData["FinishedBooksOwner"] = true;
     var genres = await Mediator.Send(new GetGenresQuery());
     var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 }

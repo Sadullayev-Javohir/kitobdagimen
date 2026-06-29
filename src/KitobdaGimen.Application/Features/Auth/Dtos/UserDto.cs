@@ -10,4 +10,7 @@ public record UserDto
     public string? AvatarUrl { get; init; }
     public string? Bio { get; init; }
     public DateTime CreatedAt { get; init; }
+
+    /// <summary>Authorization role (User / Admin / SuperAdmin).</summary>
+    public KitobdaGimen.Domain.Enums.UserRole Role { get; init; }
 }

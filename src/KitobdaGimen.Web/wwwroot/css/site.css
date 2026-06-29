@@ -1559,6 +1559,11 @@ textarea.input { resize: vertical; min-height: 90px; }
 
     /* Chat: mobil ko'rinishda ro'yxat yoki suhbatdan biri ko'rinadi */
     .chat { grid-template-columns: 1fr; height: calc(100vh - var(--navbar-h)); }
+    /* Mobilда: dinamik viewport (dvh) — brauzer paneli input'ni pastga itarmaydi; va pastki
+       5-tugmali navigatsiya uchun joy qoldiramiz, shunda chat input aynan nav ustida turadi. */
+    body[data-bottomnav="true"] .chat {
+        height: calc(100dvh - var(--navbar-h) - 58px - env(safe-area-inset-bottom, 0px));
+    }
     .chat.has-active .chat-sidebar { display: none; }
     .chat:not(.has-active) .chat-main { display: none; }
     .chat-sidebar { border-right: none; }
@@ -2569,3 +2574,90 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 .login-download { margin-top: 4px; }
 .login-terms { margin-top: 18px; font-size: 12px; }
 .nav-logout-form { display: inline-flex; margin: 0; padding: 0; }
+
+
+/* ===== /feed — Iqtibos (quote) kartasi: kitob muqovasi + chiroyli iqtibos ===== */
+.badge-quote { background: rgba(232, 112, 58, .12); color: var(--accent-dark); gap: 3px; }
+.badge-quote .material-symbols-outlined { font-size: 15px; line-height: 1; }
+
+.quote-feed-card .quote-feed-body {
+    display: grid; grid-template-columns: 88px 1fr; gap: 16px;
+    padding: 4px 20px 18px;
+}
+.quote-feed-cover {
+    width: 88px; height: 124px; border-radius: 10px; overflow: hidden;
+    background: var(--primary-soft); display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow); flex-shrink: 0;
+}
+.quote-feed-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.quote-feed-cover .material-symbols-outlined { font-size: 38px; color: var(--primary); opacity: .55; }
+
+.quote-feed-main { position: relative; min-width: 0; padding-left: 8px; }
+.quote-feed-mark {
+    position: absolute; top: -8px; left: -8px; font-size: 32px; color: var(--accent);
+    opacity: .22; font-variation-settings: 'FILL' 1;
+}
+.quote-feed-text {
+    margin: 0 0 12px; padding: 0; border: 0;
+    font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--text);
+    font-style: italic;
+}
+.quote-feed-book { display: flex; flex-direction: column; gap: 1px; font-size: 13.5px; }
+.quote-feed-book .qfb-title { font-weight: 700; color: var(--primary); }
+.quote-feed-book .qfb-author { color: var(--text-secondary); }
+.quote-feed-book .book-source { margin-top: 2px; }
+
+@media (max-width: 480px) {
+    .quote-feed-card .quote-feed-body { grid-template-columns: 66px 1fr; gap: 12px; padding: 4px 16px 16px; }
+    .quote-feed-cover { width: 66px; height: 94px; }
+    .quote-feed-text { font-size: 15.5px; }
+}
+
+
+/* ===== Admin panel ===== */
+.admin-head { margin-bottom: 18px; }
+.admin-head h1 { font-family: var(--serif); color: var(--primary); margin: 0 0 4px; }
+.admin-card { padding: 0; overflow: hidden; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th, .admin-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.admin-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); background: var(--primary-soft); }
+.admin-table tbody tr:last-child td { border-bottom: none; }
+.admin-table tbody tr:hover { background: rgba(0, 0, 0, .02); }
+.admin-user { display: flex; align-items: center; gap: 10px; }
+.admin-user-meta { display: flex; flex-direction: column; line-height: 1.25; }
+.admin-user-meta .name { font-weight: 600; color: var(--text); }
+.admin-time { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.role-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.role-super { background: linear-gradient(135deg, #f7cf5a, #e3a128); color: #4a2e00; }
+.role-admin { background: var(--primary-soft); color: var(--primary); }
+.role-user { background: rgba(0, 0, 0, .06); color: var(--text-secondary); }
+.admin-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-note { margin-top: 14px; font-size: 13px; }
+
+
+/* ===== Feed composer — yopiq tugma + modal oyna ===== */
+.composer-trigger {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 16px 20px; cursor: pointer; text-align: left;
+    border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius);
+    box-shadow: var(--shadow); transition: background .15s;
+}
+.composer-trigger:hover { background: var(--primary-soft); }
+.composer-trigger .composer-trigger-text { flex: 1; color: var(--text-secondary); font-size: 15px; font-weight: 500; }
+.composer-trigger .composer-trigger-ico { color: var(--accent); }
+
+.composer-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+.composer-modal[hidden] { display: none; }
+.composer-modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .5); }
+.composer-modal-box { position: relative; z-index: 1; width: 100%; max-width: 600px; margin: auto; }
+.composer-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.composer-modal-head h3 { margin: 0; font-size: 18px; font-family: var(--serif); color: var(--primary); }
+.composer-close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--primary-soft); color: var(--primary); cursor: pointer; flex-shrink: 0; }
+.composer-close:hover { background: var(--border); }
+body.modal-open { overflow: hidden; }
+
+@media (max-width: 480px) {
+    .composer-modal { padding: 0; }
+    .composer-modal-box { max-width: none; min-height: 100dvh; border-radius: 0; padding-bottom: 90px; }
+}

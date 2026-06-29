@@ -1,4 +1,9 @@
 @model IReadOnlyList<KitobdaGimen.Application.Features.ReadingGoals.Dtos.ReadingGoalDto>
+@{
+    // O'chirish (trash) tugmasi faqat kitob egasiga ko'rinadi — boshqa foydalanuvchi
+    // profilida ko'rinmasligi kerak.
+    var finishedOwner = (ViewData["FinishedBooksOwner"] as bool?) ?? false;
+}
 
 <div class="finished-books">
     @foreach (var goal in Model)
@@ -23,9 +28,12 @@
                 <div class="muted finished-pages">@goal.TotalPages bet</div>
                 @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(goal.Book.Source))
             </a>
-            <button type="button" class="finished-delete-btn goal-delete-btn" data-goal="@goal.Id" data-title="@goal.Book.Title" title="O'chirish">
-                <span class="material-symbols-outlined">delete</span>
-            </button>
+            @if (finishedOwner)
+            {
+                <button type="button" class="finished-delete-btn goal-delete-btn" data-goal="@goal.Id" data-title="@goal.Book.Title" title="O'chirish">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            }
         </div>
     }
 </div>
