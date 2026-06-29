@@ -80,7 +80,10 @@ app.Use(async (context, next) =>
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
-    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    // no-referrer: tashqi rasmlar (Google avatar lh3.googleusercontent.com, kitob muqovalari)
+    // Referer yuborilganda bloklanadi/429 qaytaradi. Referersiz so'rov ularni hamma qurilmada
+    // (laptop ham) muammosiz yuklaydi. Bizning resurslarimiz same-origin — referer kerak emas.
+    headers["Referrer-Policy"] = "no-referrer";
     headers["X-Permitted-Cross-Domain-Policies"] = "none";
     headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
     headers["Content-Security-Policy"] =
