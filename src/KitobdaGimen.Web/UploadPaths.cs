@@ -17,10 +17,23 @@ public static class UploadPaths
     public static void Configure(IWebHostEnvironment env, IConfiguration config)
     {
         var configured = config["Uploads:RootPath"];
-        var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
-        Root = string.IsNullOrWhiteSpace(configured)
-            ? Path.Combine(webRoot, "uploads")
-            : configured;
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            Root = configured;
+        }
+        else if (env.IsDevelopment())
+        {
+            // Lokalda — odatdagi wwwroot/uploads.
+            var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
+            Root = Path.Combine(webRoot, "uploads");
+        }
+        else
+        {
+            // Productionда — publish'dan TASHQARIDA (ContentRoot = .../publish, uning ota
+            // papkasi = .../kitobdagimen). `rm -rf publish` buni o'chirmaydi, shuning uchun
+            // yuklamalar har deployda saqlanadi. Env (Uploads__RootPath) bilan ham bekor qilsa bo'ladi.
+            Root = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "uploads"));
+        }
 
         // Ensure the sub-folders exist so the first upload never fails.
         foreach (var sub in new[] { "covers", "avatars", "posts" })

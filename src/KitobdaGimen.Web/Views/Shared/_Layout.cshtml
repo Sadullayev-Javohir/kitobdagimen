@@ -87,8 +87,9 @@
                     span.textContent = name ? name.charAt(0).toUpperCase() : '?';
                     if (img.parentNode) img.parentNode.replaceChild(span, img);
                 } else if (img.closest) {
-                    var wrap = img.closest('.post-cover') || img.closest('.quote-feed-cover') || img.closest('.rb-cover');
+                    var wrap = img.closest('[class*="cover"]');
                     if (wrap) { wrap.innerHTML = '<span class="material-symbols-outlined">menu_book</span>'; }
+                    else { img.style.visibility = 'hidden'; }
                 }
             }
             document.addEventListener('error', onImgError, true);

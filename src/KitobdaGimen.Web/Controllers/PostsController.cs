@@ -1,3 +1,5 @@
+using KitobdaGimen.Application.Common.Exceptions;
+using KitobdaGimen.Application.Features.Notifications.Commands.MarkNotificationsReadByUrl;
 using KitobdaGimen.Application.Features.Posts.Commands.AddComment;
 using KitobdaGimen.Application.Features.Posts.Commands.CreatePost;
 using KitobdaGimen.Application.Features.Posts.Commands.DeleteComment;
@@ -5,6 +7,7 @@ using KitobdaGimen.Application.Features.Posts.Commands.DeletePost;
 using KitobdaGimen.Application.Features.Posts.Commands.RecordPostView;
 using KitobdaGimen.Application.Features.Posts.Commands.ToggleLike;
 using KitobdaGimen.Application.Features.Posts.Commands.UpdatePost;
+using KitobdaGimen.Application.Features.Posts.Dtos;
 using KitobdaGimen.Application.Features.Posts.Queries.GetPostById;
 using KitobdaGimen.Application.Features.Posts.Queries.GetPostBySlug;
 using Microsoft.AspNetCore.Authorization;
@@ -61,7 +64,23 @@ public class PostsController : AppController
     [AllowAnonymous]
     public async Task<IActionResult> DetailsBySlug(string username, string slug)
     {
-        var detail = await Mediator.Send(new GetPostBySlugQuery(slug));
+        PostDetailDto detail;
+        try
+        {
+            detail = await Mediator.Send(new GetPostBySlugQuery(slug));
+        }
+        catch (NotFoundException)
+        {
+            // Post o'chirilgan — notification orqali kelgan foydalanuvchiga chiroyli xabar
+            // ko'rsatamiz va o'sha (endi eskirgan) bildirishnomani o'qilgan deb belgilaymiz.
+            if (IsAuthenticatedUser)
+            {
+                await Mediator.Send(new MarkNotificationsReadByUrlCommand(Request.Path));
+            }
+            Response.StatusCode = StatusCodes.Status404NotFound;
+            return View("PostDeleted");
+        }
+
         if (IsAuthenticatedUser)
         {
             await Mediator.Send(new RecordPostViewCommand(detail.Post.Id));
