@@ -469,17 +469,19 @@ function initNotifications() {
     }
 
     // ── Navbar "Xabarlar" unread-message badge (separate from the activity bell) ──
-    const msgBadge = document.querySelector("[data-msg-badge]");
+    // Bir nechta joyda bo'lishi mumkin: yuqori navbar + mobil pastki navigatsiya.
+    const msgBadges = document.querySelectorAll("[data-msg-badge]");
     let unreadMsgs = 0;
     function renderMsgBadge() {
-        if (!msgBadge) return;
-        if (unreadMsgs > 0) {
-            msgBadge.textContent = unreadMsgs > 99 ? "99+" : String(unreadMsgs);
-            msgBadge.hidden = false;
-        } else {
-            msgBadge.textContent = "";
-            msgBadge.hidden = true;
-        }
+        msgBadges.forEach((b) => {
+            if (unreadMsgs > 0) {
+                b.textContent = unreadMsgs > 99 ? "99+" : String(unreadMsgs);
+                b.hidden = false;
+            } else {
+                b.textContent = "";
+                b.hidden = true;
+            }
+        });
     }
     function bumpMsgBadge() { unreadMsgs += 1; renderMsgBadge(); }
     function setMsgBadge(count) { unreadMsgs = Math.max(0, count | 0); renderMsgBadge(); }

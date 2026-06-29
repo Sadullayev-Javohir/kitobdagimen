@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release imzo ma'lumotlari keystore.properties faylidan o'qiladi (repozitoriyga
+// KOMMIT QILINMAYDI). Fayl bo'lmasa, release build imzosiz quriladi (faqat ishlab
+// chiqish uchun) — Play Protect uchun MUTLAQO imzolangan APK/AAB kerak.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def hasKeystore = keystorePropsFile.exists()
+def keystoreProps = new Properties()
+if (hasKeystore) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
+android {
+    namespace 'uz.kitobdagimen.twa'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "uz.kitobdagimen.twa"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        if (hasKeystore) {
+            release {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // TWA da o'z kodimiz yo'q — minify shart emas, va R8 androidbrowserhelper
+            // bilan muammosiz. Stale-siz, sodda qilib o'chiramiz.
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Google'ning rasmiy TWA yordamchisi — LauncherActivity, splash, deep-link
+    // va asset-link tekshiruvini o'z ichiga oladi. Bizga Java/Kotlin kod yozish
+    // shart emas.
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

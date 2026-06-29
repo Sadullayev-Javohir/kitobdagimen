@@ -1,0 +1,14 @@
+# Gradle
+.gradle/
+build/
+app/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+
+# Imzo maxfiy ma'lumotlari — HECH QACHON kommit qilinmasin!
+keystore.properties
+*.keystore
+*.jks

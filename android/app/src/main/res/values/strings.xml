@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">kitobdagimen</string>
+
+    <!-- TWA ochadigan sayt -->
+    <string name="launch_url" translatable="false">https://kitobdagimen.uz/</string>
+    <string name="host" translatable="false">kitobdagimen.uz</string>
+
+    <!-- FileProvider authority (paket nomiga mos) -->
+    <string name="file_provider_authority" translatable="false">uz.kitobdagimen.twa.fileprovider</string>
+
+    <!-- Ilova -> web ishonch bayonoti. assetlinks.json (web -> ilova) bilan juftlik
+         hosil qiladi. "site" qiymati domen bilan TO'LIQ mos bo'lishi shart. -->
+    <string name="asset_statements" translatable="false">
+        [{
+            \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+            \"target\": {
+                \"namespace\": \"web\",
+                \"site\": \"https://kitobdagimen.uz\"
+            }
+        }]
+    </string>
+</resources>

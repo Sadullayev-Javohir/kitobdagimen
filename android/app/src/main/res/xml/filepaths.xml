@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- androidbrowserhelper splash rasmni shu papkada Chrome bilan ulashadi -->
+    <cache-path name="twa_splash" path="twa_splash/" />
+    <files-path name="twa_files" path="." />
+</paths>

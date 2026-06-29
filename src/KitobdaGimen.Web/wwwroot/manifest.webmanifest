@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "kitobdagimen.uz — kitobxonlar platformasi",
+  "short_name": "kitobdagimen",
+  "description": "O'zbek kitobxonlari uchun ijtimoiy platforma: kitob taqrizlari, iqtiboslar, o'qish maqsadlari va real vaqtdagi suhbat.",
+  "lang": "uz",
+  "dir": "ltr",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF6EE",
+  "theme_color": "#E8703A",
+  "categories": ["books", "social", "education"],
+  "icons": [
+    {
+      "src": "/img/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LauncherActivity qisqa umrli va shaffof bo'lishi kerak: splash undan
+         keyin androidbrowserhelper tomonidan ko'rsatiladi. Framework mavzusidan
+         foydalanamiz — qo'shimcha AppCompat bog'liqligi shart emas. -->
+    <style name="Theme.App" parent="@android:style/Theme.Translucent.NoTitleBar" />
+</resources>

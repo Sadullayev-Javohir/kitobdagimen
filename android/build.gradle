@@ -1,0 +1,6 @@
+// Top-level build file. The Android Gradle Plugin is declared here but applied
+// in the :app module. Kotlin/Java plugins are not needed — this TWA contains no
+// custom source code (it reuses Google's androidbrowserhelper LauncherActivity).
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}

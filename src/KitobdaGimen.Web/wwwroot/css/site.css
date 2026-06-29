@@ -2501,3 +2501,50 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 @media (max-width: 860px) {
     .theme-fab { width: 42px; height: 42px; top: 12px; right: 12px; }
 }
+
+
+/* ===== Mobil pastki navigatsiya (bottom nav) =====
+   Telefon/planshetда (<=768px) menyu bo'limlari pastda ikonlar bilan ko'rsatiladi —
+   native ilova (TWA) tuyg'usi uchun. Desktopда yashirin. */
+.bottom-nav { display: none; }
+.bottom-nav a {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 8px 2px 0;
+    color: var(--text-secondary); font-size: 11px; font-weight: 600;
+    text-decoration: none; position: relative;
+    transition: color .15s;
+}
+.bottom-nav a:hover { text-decoration: none; }
+.bottom-nav a .material-symbols-outlined { font-size: 24px; line-height: 1; }
+.bottom-nav a .bn-label {
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bottom-nav a.active { color: var(--primary); }
+.bottom-nav a.active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.bottom-nav .bn-badge {
+    position: absolute; top: 4px; left: 50%; margin-left: 4px;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 999px; background: var(--accent); color: #fff;
+    font-size: 10px; font-weight: 700; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.bottom-nav .bn-badge[hidden] { display: none; }
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex; align-items: stretch;
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+        height: calc(58px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        background: var(--surface); border-top: 1px solid var(--border);
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, .06);
+    }
+    /* Pastki nav bor sahifalarda burger menyu ortiqcha */
+    body[data-bottomnav="true"] .burger { display: none !important; }
+    body[data-bottomnav="true"] .nav-links.open { display: none !important; }
+    /* Kontent pastki nav ortida qolib ketmasligi uchun joy qoldiramiz */
+    body[data-bottomnav="true"] main {
+        padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    }
+}

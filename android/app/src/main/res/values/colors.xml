@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brend ranglari (web sayt dizayn tizimiga mos) -->
+    <color name="colorPrimary">#1B4D3E</color>
+    <color name="colorAccent">#E8703A</color>
+    <color name="backgroundColor">#FAF6EE</color>
+    <color name="navigationColor">#FFFDF8</color>
+    <color name="ic_launcher_background">#FAF6EE</color>
+</resources>

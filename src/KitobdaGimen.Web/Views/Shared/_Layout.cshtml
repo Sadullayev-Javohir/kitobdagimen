@@ -14,6 +14,10 @@
     var hideChrome = ViewData["HideChrome"] as bool? ?? false;
     var currentController = ViewContext.RouteData.Values["controller"] as string ?? "";
     var isChatPage = string.Equals(currentController, "Chat", StringComparison.OrdinalIgnoreCase);
+    // Mobil pastki navigatsiya: kirgan foydalanuvchida va chrome ko'rinadigan sahifalarda.
+    // Chat sahifasi to'liq ekran (o'z input paneli pastda) bo'lgani uchun u yerda ko'rsatilmaydi.
+    var showBottomNav = isAuth && !hideChrome && !isChatPage;
+    var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
     // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Iqtiboslar va post detali sahifalarida ko'rsatilmaydi.
     // (/feed va /quotes da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
     var hideSearch = isChatPage
@@ -46,7 +50,7 @@
 <html lang="uz">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     @* Kun/tun rejimini bo'yashdan OLDIN o'rnatamiz — "miltillash" (FOUC) bo'lmasligi uchun *@
     <script>
         (function () {
@@ -95,10 +99,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
     <link rel="icon" href="~/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="~/img/logo.svg" />
-    <link rel="apple-touch-icon" href="~/img/logo.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="~/img/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="~/img/icons/icon-512.png" />
+    <link rel="apple-touch-icon" href="~/img/icons/apple-touch-icon.png" />
+
+    @* PWA — Android (TWA) va telefon "bosh ekranga qo'shish" uchun *@
+    <link rel="manifest" href="~/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="kitobdagimen" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body data-authenticated="@(isAuth ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
+<body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
 
     @* Sahifa yuklanish loaderi — barcha resurslar yuklangach JS uni yashiradi *@
@@ -169,6 +182,34 @@
                 </div>
             </div>
         </header>
+    }
+
+    @* ===== Mobil pastki navigatsiya (faqat telefon/planshet, CSS orqali) ===== *@
+    @if (showBottomNav)
+    {
+        <nav class="bottom-nav" aria-label="Asosiy navigatsiya">
+            <a href="/Feed" class="@(mobilePath.StartsWith("/feed") ? "active" : "")">
+                <span class="material-symbols-outlined">dynamic_feed</span>
+                <span class="bn-label">Tasma</span>
+            </a>
+            <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")">
+                <span class="material-symbols-outlined">menu_book</span>
+                <span class="bn-label">Kutubxona</span>
+            </a>
+            <a href="/quotes" class="@(mobilePath.StartsWith("/quotes") ? "active" : "")">
+                <span class="material-symbols-outlined">format_quote</span>
+                <span class="bn-label">Iqtiboslar</span>
+            </a>
+            <a href="/chat" class="@(mobilePath.StartsWith("/chat") ? "active" : "")">
+                <span class="material-symbols-outlined">forum</span>
+                <span class="bn-badge" data-msg-badge hidden></span>
+                <span class="bn-label">Xabarlar</span>
+            </a>
+            <a href="/profile" class="@(mobilePath.StartsWith("/profile") ? "active" : "")">
+                <span class="material-symbols-outlined">person</span>
+                <span class="bn-label">Profil</span>
+            </a>
+        </nav>
     }
 
     @* Navbar ko'rinmaydigan sahifalarda (landing/onboarding/anonim) suzuvchi kun/tun tugmasi *@
@@ -280,5 +321,15 @@
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    @* PWA service worker — "bosh ekranga qo'shish"/o'rnatish va Android TWA sifati uchun.
+       Tarmoq-birinchi strategiya: hech qachon eski (stale) sahifani ko'rsatmaydi. *@
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function () { /* jim: ixtiyoriy */ });
+            });
+        }
+    </script>
 </body>
 </html>
