@@ -27,6 +27,24 @@ public class AuthController : AppController
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
+    /// <summary>
+    /// "Boshqa akkaunt bilan kirish" — joriy sessiyani tozalaydi va Google'da akkaunt
+    /// tanlash oynasini (prompt=select_account) majburlaydi, shunda foydalanuvchi boshqa
+    /// Google akkaunti bilan kira oladi.
+    /// </summary>
+    [HttpGet("switch-account")]
+    public IActionResult SwitchAccount(string? returnUrl = null)
+    {
+        Response.Cookies.Delete(AuthConstants.AccessTokenCookie);
+        var redirectUrl = Url.Action(nameof(GoogleCallback), "Auth", new { returnUrl });
+        var properties = new GoogleChallengeProperties
+        {
+            RedirectUri = redirectUrl,
+            Prompt = "select_account"
+        };
+        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+    }
+
     /// <summary>Handles the Google callback: signs the user in and stores the JWT in an HttpOnly cookie.</summary>
     [HttpGet("google-callback")]
     public async Task<IActionResult> GoogleCallback(string? returnUrl = null)

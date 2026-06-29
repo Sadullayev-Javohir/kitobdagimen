@@ -2548,3 +2548,24 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
         padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     }
 }
+
+
+/* ===== Login sahifasi (mobil) + navbar logout ===== */
+.login-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+}
+.login-card {
+    width: 100%; max-width: 380px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 32px 24px; text-align: center;
+}
+.login-logo { width: 72px; height: 72px; margin-bottom: 12px; }
+.login-title { font-family: var(--serif); font-size: 26px; margin: 0 0 8px; color: var(--primary); }
+.login-sub { color: var(--text-secondary); margin: 0 0 24px; font-size: 15px; }
+.login-google { width: 100%; justify-content: center; margin-bottom: 14px; }
+.login-switch { display: inline-block; margin-bottom: 20px; font-size: 14px; color: var(--accent-dark); }
+.login-download { margin-top: 4px; }
+.login-terms { margin-top: 18px; font-size: 12px; }
+.nav-logout-form { display: inline-flex; margin: 0; padding: 0; }

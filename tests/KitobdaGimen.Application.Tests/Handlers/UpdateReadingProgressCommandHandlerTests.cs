@@ -23,7 +23,7 @@ public class UpdateReadingProgressCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedGoalAsync(db);
-        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1));
+        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
 
         var dto = await handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 1, PagesRead = 30 }, CancellationToken.None);
 
@@ -38,7 +38,7 @@ public class UpdateReadingProgressCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedGoalAsync(db);
-        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1));
+        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
 
         await handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 1, PagesRead = 20 }, CancellationToken.None);
         var dto = await handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 1, PagesRead = 15 }, CancellationToken.None);
@@ -53,7 +53,7 @@ public class UpdateReadingProgressCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedGoalAsync(db, totalPages: 100, currentPage: 90);
-        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1));
+        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
 
         var dto = await handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 1, PagesRead = 50 }, CancellationToken.None);
 
@@ -67,7 +67,7 @@ public class UpdateReadingProgressCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedGoalAsync(db, userId: 1);
-        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 2));
+        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 2), new SpyNotificationService());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 1, PagesRead = 10 }, CancellationToken.None));
@@ -78,7 +78,7 @@ public class UpdateReadingProgressCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedGoalAsync(db, userId: 1);
-        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1));
+        var handler = new UpdateReadingProgressCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.Handle(new UpdateReadingProgressCommand { ReadingGoalId = 999, PagesRead = 10 }, CancellationToken.None));

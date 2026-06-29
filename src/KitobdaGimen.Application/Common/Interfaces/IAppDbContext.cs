@@ -29,6 +29,7 @@ public interface IAppDbContext
     DbSet<StoryView> StoryViews { get; }
     DbSet<StoryLike> StoryLikes { get; }
     DbSet<Notification> Notifications { get; }
+    DbSet<PushSubscription> PushSubscriptions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

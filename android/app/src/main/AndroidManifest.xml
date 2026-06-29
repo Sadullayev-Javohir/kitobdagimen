@@ -3,6 +3,8 @@
 
     <!-- TWA shunchaki saytni Chrome (Custom Tabs) orqali ochadi: yagona ruxsat -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ uchun bildirishnoma ruxsati (web push -> tizim bildirishnomasi) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -73,6 +75,18 @@
         <activity
             android:name="com.google.androidbrowserhelper.trusted.FocusActivity"
             android:exported="false" />
+
+        <!-- Saytning web push bildirishnomalarini Android tizim bildirishnomasiga
+             aylantiruvchi xizmat (Telegram kabi). androidbrowserhelper taqdim etadi. -->
+        <service
+            android:name="com.google.androidbrowserhelper.trusted.DelegationService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
 
         <!-- Splash rasmni Chrome bilan ulashish uchun FileProvider -->
         <provider

@@ -1,9 +1,16 @@
-@model IReadOnlyList<PostDto>
+@model IReadOnlyList<FeedItemDto>
 @{
     // Feed kartalari bilan bir xil amallarni ko'rsatish (kuzatish/tahrir tugmalari).
     ViewData["ShowAuthorActions"] = true;
 }
-@foreach (var post in Model)
+@foreach (var item in Model)
 {
-    <partial name="_PostCard" model="post" />
+    if (item.Kind == "quote" && item.Quote is not null)
+    {
+        <partial name="_QuoteFeedCard" model="item.Quote" />
+    }
+    else if (item.Post is not null)
+    {
+        <partial name="_PostCard" model="item.Post" />
+    }
 }

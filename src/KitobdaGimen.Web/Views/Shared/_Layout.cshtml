@@ -176,6 +176,13 @@
                             <span class="avatar">@initial</span>
                         }
                     </a>
+                    <form method="post" action="/auth/logout" class="nav-logout-form"
+                          onsubmit="try{window.kitobPush&&window.kitobPush.disable();}catch(e){}">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="nav-icon-btn" title="Chiqish" aria-label="Chiqish">
+                            <span class="material-symbols-outlined">logout</span>
+                        </button>
+                    </form>
                     <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
@@ -331,5 +338,9 @@
             });
         }
     </script>
+    @if (isAuth)
+    {
+        <script src="~/js/push.js" asp-append-version="true"></script>
+    }
 </body>
 </html>

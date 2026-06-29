@@ -37,6 +37,7 @@ public class TestDbContext : DbContext, IAppDbContext
     public DbSet<StoryView> StoryViews => Set<StoryView>();
     public DbSet<StoryLike> StoryLikes => Set<StoryLike>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

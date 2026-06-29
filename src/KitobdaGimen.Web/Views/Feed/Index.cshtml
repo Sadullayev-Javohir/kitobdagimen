@@ -3,7 +3,7 @@
 @using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres
 @using MediatR
 @inject ISender Mediator
-@model PagedResult<PostDto>
+@model PagedResult<FeedItemDto>
 @{
     ViewData["Title"] = "Asosiy";
     var me = await Mediator.Send(new GetCurrentUserQuery());
@@ -150,9 +150,16 @@
         }
         else
         {
-            @foreach (var post in Model.Items)
+            @foreach (var item in Model.Items)
             {
-                <partial name="_PostCard" model="post" />
+                if (item.Kind == "quote" && item.Quote is not null)
+                {
+                    <partial name="_QuoteFeedCard" model="item.Quote" />
+                }
+                else if (item.Post is not null)
+                {
+                    <partial name="_PostCard" model="item.Post" />
+                }
             }
         }
 

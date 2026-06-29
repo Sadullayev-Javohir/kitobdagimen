@@ -17,6 +17,7 @@ internal static class QuoteQueryableExtensions
             Author = new UserSummaryDto
             {
                 Id = q.User.Id,
+                Username = q.User.Username,
                 FullName = q.User.FullName,
                 AvatarUrl = q.User.AvatarUrl
             },

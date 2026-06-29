@@ -30,6 +30,10 @@ public static class DependencyInjection
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
+        // Web Push (VAPID) — real device push notifications (TWA delegates them to the
+        // Android notification tray).
+        services.AddScoped<IPushSender, KitobdaGimen.Infrastructure.Push.WebPushSender>();
+
         // asaxiy.uz kitoblar katalogini o'qiydigan HTTP-servis. Brauzerga o'xshash
         // User-Agent kerak, aks holda asaxiy bo'sh UA so'rovlarni rad etishi mumkin.
         //

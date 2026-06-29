@@ -160,10 +160,10 @@ public class PostsHandlerTests : TestBase
 
         // Non-followed authors are now part of the feed too (the 40% share).
         Assert.Equal(3, page.TotalCount);
-        var authorIds = page.Items.Select(p => p.Author.Id).OrderBy(x => x).ToArray();
+        var authorIds = page.Items.Select(p => p.Post!.Author.Id).OrderBy(x => x).ToArray();
         Assert.Equal(new[] { 1, 2, 3 }, authorIds);
         // Followed (+ own) posts lead; the stranger comes after them.
-        Assert.Equal(3, page.Items[^1].Author.Id);
+        Assert.Equal(3, page.Items[^1].Post!.Author.Id);
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class PostsHandlerTests : TestBase
         Assert.True(page.HasNext);
         Assert.False(page.HasPrevious);
         // newest first
-        Assert.Equal("p5", page.Items[0].ReviewText);
+        Assert.Equal("p5", page.Items[0].Post!.ReviewText);
     }
 
     [Fact]
@@ -231,19 +231,19 @@ public class PostsHandlerTests : TestBase
 
         Assert.Equal(20, page1.TotalCount);
         // 3 followed : 2 non-followed on a 5-item page.
-        Assert.Equal(3, page1.Items.Count(p => p.Author.Id == 2));
-        Assert.Equal(2, page1.Items.Count(p => p.Author.Id == 3));
+        Assert.Equal(3, page1.Items.Count(p => p.Post!.Author.Id == 2));
+        Assert.Equal(2, page1.Items.Count(p => p.Post!.Author.Id == 3));
 
         var page2 = await handler.Handle(new GetFeedQuery { Page = 2, PageSize = 5 }, CancellationToken.None);
         // No item appears on both pages.
-        var ids1 = page1.Items.Select(p => p.Id).ToHashSet();
-        var ids2 = page2.Items.Select(p => p.Id).ToHashSet();
+        var ids1 = page1.Items.Select(p => p.Post!.Id).ToHashSet();
+        var ids2 = page2.Items.Select(p => p.Post!.Id).ToHashSet();
         Assert.Empty(ids1.Intersect(ids2));
         // Scrolling deeper shows older items within each bucket (followed and non-followed).
         foreach (var authorId in new[] { 2, 3 })
         {
-            var newestOnPage2 = page2.Items.Where(p => p.Author.Id == authorId).Max(p => p.CreatedAt);
-            var oldestOnPage1 = page1.Items.Where(p => p.Author.Id == authorId).Min(p => p.CreatedAt);
+            var newestOnPage2 = page2.Items.Where(p => p.Post!.Author.Id == authorId).Max(p => p.CreatedAt);
+            var oldestOnPage1 = page1.Items.Where(p => p.Post!.Author.Id == authorId).Min(p => p.CreatedAt);
             Assert.True(oldestOnPage1 >= newestOnPage2);
         }
     }

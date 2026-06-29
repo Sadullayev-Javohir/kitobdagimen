@@ -1,0 +1,54 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model QuoteDto
+@{
+    var meId = CurrentUser.UserId;
+    var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
+        ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" />")
+        : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName))}</span>");
+}
+
+<article class="card post-card quote-feed-card" data-quote-id="@Model.Id">
+    <header class="post-head">
+        <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
+            @avatarBody
+        </a>
+        <div class="meta">
+            <div class="name-row">
+                <a class="name" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">@Model.Author.FullName</a>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(Model.Author.Username))
+                <span class="badge badge-quote"><span class="material-symbols-outlined">format_quote</span>Iqtibos</span>
+            </div>
+            <div class="time">@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)</div>
+        </div>
+    </header>
+
+    <blockquote class="quote-feed-text">@Model.Text</blockquote>
+
+    <div class="quote-feed-book">
+        <span class="material-symbols-outlined">menu_book</span>
+        <span><strong>@Model.Book.Title</strong> — @Model.Book.Author</span>
+        @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Book.Source))
+    </div>
+
+    <footer class="post-actions">
+        <button class="action-btn @(Model.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@Model.Id" aria-label="Saqlash" title="Saqlash">
+            <span class="material-symbols-outlined">bookmark</span>
+            <span class="save-count">@Model.SaveCount</span>
+        </button>
+        <a class="action-btn" href="/quotes" aria-label="Iqtiboslar">
+            <span class="material-symbols-outlined">format_quote</span>
+        </a>
+        @if (meId != null && Model.Author.Id == meId)
+        {
+            <span class="post-actions-end">
+                <form method="post" action="/quotes/@Model.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="action-btn danger" aria-label="O'chirish" title="O'chirish">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                </form>
+            </span>
+        }
+    </footer>
+</article>

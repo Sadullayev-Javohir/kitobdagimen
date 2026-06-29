@@ -16,13 +16,15 @@ public class SignalRNotificationService : INotificationService
 {
     private readonly IHubContext<NotificationHub> _hub;
     private readonly IAppDbContext _db;
+    private readonly IPushSender _push;
     private readonly ILogger<SignalRNotificationService> _logger;
 
     public SignalRNotificationService(
-        IHubContext<NotificationHub> hub, IAppDbContext db, ILogger<SignalRNotificationService> logger)
+        IHubContext<NotificationHub> hub, IAppDbContext db, IPushSender push, ILogger<SignalRNotificationService> logger)
     {
         _hub = hub;
         _db = db;
+        _push = push;
         _logger = logger;
     }
 
@@ -94,6 +96,23 @@ public class SignalRNotificationService : INotificationService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Bildirishnomani real-time yuborib bo'lmadi (recipient {RecipientId}).", recipientUserId);
+        }
+
+        // Real qurilma push (TWA -> Android bildirishnoma tovoqchasi). Best-effort.
+        try
+        {
+            await _push.SendAsync(recipientUserId, new PushNotificationPayload
+            {
+                Title = string.IsNullOrWhiteSpace(payload.ActorName) ? "kitobdagimen.uz" : payload.ActorName,
+                Body = payload.Message,
+                Url = payload.Url,
+                Icon = string.IsNullOrWhiteSpace(payload.ActorAvatarUrl) ? "/img/icons/icon-192.png" : payload.ActorAvatarUrl,
+                Tag = payload.Type
+            }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Qurilma push yuborib bo'lmadi (recipient {RecipientId}).", recipientUserId);
         }
     }
 }
