@@ -109,6 +109,15 @@ if (!app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging();
 app.UseStaticFiles();
 
+// Foydalanuvchi yuklamalari (avatar, muqova, post rasmlari) — publish'dan TASHQARIDAGI
+// doimiy papkadan serve qilinadi, shunda deploy (rm -rf publish) ularni o'chirmaydi.
+KitobdaGimen.Web.UploadPaths.Configure(app.Environment, app.Configuration);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(KitobdaGimen.Web.UploadPaths.Root),
+    RequestPath = "/uploads"
+});
+
 app.UseRouting();
 
 app.UseRateLimiter();

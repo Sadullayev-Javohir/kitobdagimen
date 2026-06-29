@@ -166,9 +166,7 @@ public class ProfileController : AppController
                 }));
             }
 
-            var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-            var uploadDir = Path.Combine(webRoot, "uploads", "avatars");
-            Directory.CreateDirectory(uploadDir);
+            var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("avatars");
 
             var fileName = $"{Guid.NewGuid():N}.webp";
             var fullPath = Path.Combine(uploadDir, fileName);
@@ -196,8 +194,7 @@ public class ProfileController : AppController
             return;
         }
 
-        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-        var fullPath = Path.Combine(webRoot, "uploads", "avatars", fileName);
+        var fullPath = Path.Combine(KitobdaGimen.Web.UploadPaths.Dir("avatars"), fileName);
         try
         {
             if (System.IO.File.Exists(fullPath))

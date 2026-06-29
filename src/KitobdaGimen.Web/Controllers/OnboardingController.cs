@@ -97,9 +97,7 @@ public class OnboardingController : AppController
                 }));
             }
 
-            var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-            var uploadDir = Path.Combine(webRoot, "uploads", "avatars");
-            Directory.CreateDirectory(uploadDir);
+            var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("avatars");
 
             var fileName = $"{Guid.NewGuid():N}.webp";
             var fullPath = Path.Combine(uploadDir, fileName);

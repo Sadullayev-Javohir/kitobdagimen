@@ -172,9 +172,7 @@ public class BooksController : AppController
             }));
         }
 
-        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-        var uploadDir = Path.Combine(webRoot, "uploads", "covers");
-        Directory.CreateDirectory(uploadDir);
+        var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("covers");
 
         var fileName = $"{Guid.NewGuid():N}.webp";
         var fullPath = Path.Combine(uploadDir, fileName);
