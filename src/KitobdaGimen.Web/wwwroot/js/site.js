@@ -1224,15 +1224,9 @@ initNotifications();
             
             console.log("Story image upload started:", f.name, f.type, f.size);
             
-            // Dastlab base64 preview ko'rsatamiz
-            const reader = new FileReader();
-            reader.onload = (ev) => { 
-                imgPreviewImg.src = ev.target.result; 
-                imgPreview.hidden = false; 
-            };
-            reader.readAsDataURL(f);
-            
+            // Preview'ni faqat server upload tugagandan keyin ko'rsatamiz
             imageUrl.value = "";
+            imgPreview.hidden = true;
             uploading = true;
             refresh();
             try {
