@@ -1211,6 +1211,8 @@ initNotifications();
             const f = imageInput.files && imageInput.files[0];
             if (!f) return;
             
+            console.log("Story image upload started:", f.name, f.type, f.size);
+            
             // Dastlab base64 preview ko'rsatamiz
             const reader = new FileReader();
             reader.onload = (ev) => { 
@@ -1225,22 +1227,40 @@ initNotifications();
             try {
                 const fd = new FormData();
                 fd.append("file", f);
+                
+                const token = antiforgeryToken();
+                console.log("Antiforgery token:", token ? "present" : "MISSING");
+                
                 const res = await fetch("/stories/upload-image", {
                     method: "POST",
-                    headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": antiforgeryToken() },
+                    headers: { 
+                        "X-Requested-With": "XMLHttpRequest", 
+                        "RequestVerificationToken": token 
+                    },
                     body: fd
                 });
+                
+                console.log("Upload response:", res.status, res.statusText);
+                
                 if (res.status === 401) { window.location.href = "/"; return; }
                 if (!res.ok) {
                     let message = "Rasmni yuklab bo'lmadi.";
-                    try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+                    try { 
+                        const d = await res.json(); 
+                        console.error("Upload error response:", d);
+                        message = d.message || message; 
+                    } catch (e) { 
+                        console.error("Failed to parse error:", e);
+                    }
                     throw new Error(message);
                 }
                 const data = await res.json();
+                console.log("Upload success:", data);
                 imageUrl.value = data.url;
                 // Server rasmini preview'da ko'rsatamiz
                 imgPreviewImg.src = data.url;
             } catch (err) {
+                console.error("Story image upload failed:", err);
                 alert(err.message);
                 resetImage();
             } finally {

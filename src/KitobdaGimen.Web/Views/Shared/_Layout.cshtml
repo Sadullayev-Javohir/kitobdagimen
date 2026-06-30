@@ -322,6 +322,8 @@
                 <h3 class="modal-title">Story qo'shish</h3>
                 <p class="muted" style="font-size:13px;margin-top:-6px">Sarlavha va matn kiriting, istasangiz rasm yuklang.</p>
 
+                @Html.AntiForgeryToken()
+
                 <div style="margin-top:12px">
                     <input class="input" id="storyTitleInput" placeholder="Sarlavha" autocomplete="off" maxlength="50" />
                     <div class="muted" style="font-size:12px;text-align:right;margin-top:4px">
