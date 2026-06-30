@@ -1224,9 +1224,15 @@ initNotifications();
             
             console.log("Story image upload started:", f.name, f.type, f.size);
             
-            // Preview'ni faqat server upload tugagandan keyin ko'rsatamiz
+            // Dastlab base64 preview ko'rsatamiz
+            const reader = new FileReader();
+            reader.onload = (ev) => { 
+                imgPreviewImg.src = ev.target.result; 
+                imgPreview.hidden = false; 
+            };
+            reader.readAsDataURL(f);
+            
             imageUrl.value = "";
-            imgPreview.hidden = true;
             uploading = true;
             refresh();
             try {
@@ -1265,6 +1271,7 @@ initNotifications();
                 imageUrl.value = data.url;
                 // Server rasmini preview'da ko'rsatamiz
                 imgPreviewImg.src = data.url;
+                imgPreview.hidden = false;
             } catch (err) {
                 console.error("Story image upload failed:", err);
                 alert(err.message);
