@@ -2683,3 +2683,13 @@ body.modal-open { overflow: hidden; }
     .composer-modal { padding: 0; }
     .composer-modal-box { max-width: none; min-height: 100dvh; border-radius: 0; padding-bottom: 90px; }
 }
+
+/* Brauzer extension'lar (AdBlock, uBlock) rasmlarni visibility:hidden bilan yashirishini bekor qilish */
+img[data-post-image-img],
+img[data-quote-book-cover],
+img#storyImgPreviewImg,
+.post-image,
+.quote-book-cover,
+.pd-hero img {
+    visibility: visible !important;
+}
