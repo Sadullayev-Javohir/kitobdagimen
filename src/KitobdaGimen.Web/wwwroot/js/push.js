@@ -29,7 +29,10 @@
 
     async function getPublicKey() {
         try {
-            var r = await fetch('/push/public-key', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            var r = await fetch('/push/public-key', { 
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'include'
+            });
             if (!r.ok) return '';
             var d = await r.json();
             return d.publicKey || '';
@@ -51,6 +54,7 @@
         await fetch('/push/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token() },
+            credentials: 'include',
             body: JSON.stringify({ endpoint: raw.endpoint, keys: raw.keys })
         });
     }
@@ -73,6 +77,7 @@
                 await fetch('/push/unsubscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token() },
+                    credentials: 'include',
                     body: JSON.stringify({ endpoint: ep })
                 });
             }

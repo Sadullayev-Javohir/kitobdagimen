@@ -205,6 +205,7 @@
             const res = await fetch("/posts/upload-image", {
                 method: "POST",
                 headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": antiforgeryToken() },
+                credentials: "include",
                 body: fd
             });
             if (res.status === 401) { window.location.href = "/"; return; }
@@ -347,6 +348,7 @@ async function apiPost(url, body) {
             "RequestVerificationToken": antiforgeryToken(),
             ...(body ? { "Content-Type": "application/json" } : {})
         },
+        credentials: "include",
         body: body ? JSON.stringify(body) : undefined
     });
     if (res.status === 401) {
@@ -658,7 +660,10 @@ function infiniteScroll(opts) {
             Object.keys(params).forEach((k) => {
                 if (params[k] != null && params[k] !== "") url.searchParams.set(k, params[k]);
             });
-            const res = await fetch(url.toString(), { headers: { "X-Requested-With": "XMLHttpRequest" } });
+            const res = await fetch(url.toString(), { 
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "include"
+            });
             if (res.status === 401) { window.location.href = "/"; return; }
             if (!res.ok) throw new Error("network");
             const html = (await res.text()).trim();
@@ -704,7 +709,10 @@ async function renderAsaxiyBooks(query, suggestions, pickBook) {
     let items;
     try {
         const res = await fetch(`/books/asaxiy-search?q=${encodeURIComponent(query)}`,
-            { headers: { "X-Requested-With": "XMLHttpRequest" } });
+            { 
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "include"
+            });
         if (!res.ok) return;
         items = await res.json();
     } catch { return; }
@@ -1099,7 +1107,10 @@ initNotifications();
             e.preventDefault();
             const userId = trigger.getAttribute("data-open-story");
             try {
-                const res = await fetch(`/stories/user/${userId}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                const res = await fetch(`/stories/user/${userId}`, { 
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "include"
+                });
                 if (!res.ok) return;
                 const list = await res.json();
                 if (!list || list.length === 0) { window.location.href = "/profile/" + userId; return; }
@@ -1237,6 +1248,7 @@ initNotifications();
                         "X-Requested-With": "XMLHttpRequest", 
                         "RequestVerificationToken": token 
                     },
+                    credentials: "include",
                     body: fd
                 });
                 
