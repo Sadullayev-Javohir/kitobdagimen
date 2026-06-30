@@ -129,9 +129,19 @@ public class PostsController : AppController
             return BadRequest(new { message = "Rasm hajmi 8 MB dan oshmasligi kerak." });
         }
 
-        if (!AllowedImageTypes.Contains(file.ContentType))
+        // ContentType tekshiruvini yumshatamiz - ba'zi brauzerlar noto'g'ri type yuboradi.
+        // Asosiy tekshiruv - ImageSharp dekod qila oladimi (pastda).
+        var contentType = file.ContentType?.ToLowerInvariant() ?? "";
+        var isAllowedType = AllowedImageTypes.Contains(contentType);
+        var hasImageExtension = file.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (!isAllowedType && !hasImageExtension)
         {
-            return BadRequest(new { message = "Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
+            return BadRequest(new { message = $"Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin. ({contentType})" });
         }
 
         Image image;
@@ -143,6 +153,10 @@ public class PostsController : AppController
         catch (UnknownImageFormatException)
         {
             return BadRequest(new { message = "Fayl rasm formatida emas." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Rasmni o'qib bo'lmadi: {ex.Message}" });
         }
 
         using (image)
