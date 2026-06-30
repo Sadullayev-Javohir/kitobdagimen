@@ -1208,6 +1208,7 @@ initNotifications();
             imageInput.value = "";
             imageUrl.value = "";
             imgPreviewImg.src = "";
+            imgPreviewImg.style.cssText = ""; // Brauzer extension'lar qo'shgan inline style'larni tozalash
             imgPreview.hidden = true;
             uploading = false;
         }
@@ -1228,6 +1229,7 @@ initNotifications();
             imgPreview.hidden = false;
             imgPreviewImg.src = "";
             imgPreviewImg.style.backgroundColor = "#f0f0f0";
+            imgPreviewImg.style.visibility = "visible"; // Brauzer extension bloklarini bekor qilish
             
             // Base64 preview
             const reader = new FileReader();
