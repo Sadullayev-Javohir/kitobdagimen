@@ -18,7 +18,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        // JSON javoblarni camelCase formatda qaytarish (imageUrl, fullName, ...)
+        // JavaScript'da property nomlari kichik harf bilan boshlanadi.
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
 
 // Reverse-proxy (nginx/Hetzner) ortida to'g'ri ishlash: HTTPS sxemasi va haqiqiy

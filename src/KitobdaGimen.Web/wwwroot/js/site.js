@@ -1033,6 +1033,7 @@ initNotifications();
                 const im = document.createElement("img");
                 im.src = s.author.avatarUrl;
                 im.className = "avatar sm";
+                im.referrerPolicy = "no-referrer"; // Google avatar'lari uchun kerak
                 a.appendChild(im);
             } else {
                 av.textContent = (s.author.fullName || "?").trim().charAt(0).toUpperCase();
