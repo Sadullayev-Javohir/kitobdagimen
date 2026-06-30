@@ -1224,11 +1224,16 @@ initNotifications();
             
             console.log("Story image upload started:", f.name, f.type, f.size);
             
-            // Dastlab base64 preview ko'rsatamiz
+            // Preview'ni darhol ko'rsatamiz (rasm yuklanguncha loading holatida)
+            imgPreview.hidden = false;
+            imgPreviewImg.src = "";
+            imgPreviewImg.style.backgroundColor = "#f0f0f0";
+            
+            // Base64 preview
             const reader = new FileReader();
             reader.onload = (ev) => { 
-                imgPreviewImg.onload = () => { imgPreview.hidden = false; };
-                imgPreviewImg.src = ev.target.result; 
+                imgPreviewImg.src = ev.target.result;
+                imgPreviewImg.style.backgroundColor = "";
             };
             reader.readAsDataURL(f);
             
@@ -1270,7 +1275,6 @@ initNotifications();
                 console.log("Upload success:", data);
                 imageUrl.value = data.url;
                 // Server rasmini preview'da ko'rsatamiz
-                imgPreviewImg.onload = () => { imgPreview.hidden = false; };
                 imgPreviewImg.src = data.url;
             } catch (err) {
                 console.error("Story image upload failed:", err);
