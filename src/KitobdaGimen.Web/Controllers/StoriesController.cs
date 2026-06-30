@@ -65,11 +65,18 @@ public class StoriesController : AppController
 
     /// <summary>Uploads a story image, re-encodes it as WebP and returns its public URL (JSON).</summary>
     [HttpPost("upload-image")]
-    [IgnoreAntiforgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> UploadImage(IFormFile? file)
     {
-        _logger.LogInformation("Story upload-image called. File: {FileName}, Size: {Size}, ContentType: {ContentType}",
-            file?.FileName, file?.Length, file?.ContentType);
+        // Manual auth check - Authorize attribute 401 beradi
+        if (!IsAuthenticatedUser)
+        {
+            _logger.LogWarning("Story upload attempted by unauthenticated user");
+            return Unauthorized(new { message = "Tizimga kirish talab qilinadi." });
+        }
+
+        _logger.LogInformation("Story upload-image called by user {UserId}. File: {FileName}, Size: {Size}, ContentType: {ContentType}",
+            CurrentUserId, file?.FileName, file?.Length, file?.ContentType);
 
         if (file is null || file.Length == 0)
         {
