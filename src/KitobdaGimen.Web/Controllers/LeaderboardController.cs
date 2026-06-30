@@ -36,8 +36,9 @@ public class LeaderboardController : AppController
     private static LeaderboardPeriod ParsePeriod(string? period) => period?.ToLowerInvariant() switch
     {
         "daily" or "kunlik" => LeaderboardPeriod.Daily,
+        "weekly" or "haftalik" => LeaderboardPeriod.Weekly,
         "monthly" or "oylik" => LeaderboardPeriod.Monthly,
         "alltime" or "all-time" or "umrlik" => LeaderboardPeriod.AllTime,
-        _ => LeaderboardPeriod.Weekly // default: haftalik
+        _ => LeaderboardPeriod.Daily // default: kunlik
     };
 }

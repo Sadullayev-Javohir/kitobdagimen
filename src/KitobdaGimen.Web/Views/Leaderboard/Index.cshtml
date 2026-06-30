@@ -3,7 +3,7 @@
 @model IReadOnlyList<LeaderboardUserDto>
 @{
     ViewData["Title"] ??= "Kitobxonlar reytingi";
-    var period = ViewData["Period"] as LeaderboardPeriod? ?? LeaderboardPeriod.Weekly;
+    var period = ViewData["Period"] as LeaderboardPeriod? ?? LeaderboardPeriod.Daily;
 
     string TabClass(LeaderboardPeriod p) => p == period ? "lb-tab is-active" : "lb-tab";
 
