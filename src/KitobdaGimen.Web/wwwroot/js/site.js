@@ -1320,7 +1320,7 @@ initNotifications();
 // Brauzer extension'lar rasmlarni visibility:hidden qilishini oldini olish
 (function() {
     const fixImageVisibility = () => {
-        document.querySelectorAll('img[data-post-image-img], img[data-quote-book-cover], .post-image, .quote-book-cover, .pd-hero img').forEach(img => {
+        document.querySelectorAll('img[data-post-image-img], img[data-quote-book-cover], .post-image, .quote-book-cover, .pd-hero img, .story-image, #storyImage').forEach(img => {
             if (img.style.visibility === 'hidden') {
                 img.style.visibility = 'visible';
             }
