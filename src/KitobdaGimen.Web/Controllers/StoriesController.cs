@@ -65,7 +65,7 @@ public class StoriesController : AppController
 
     /// <summary>Uploads a story image, re-encodes it as WebP and returns its public URL (JSON).</summary>
     [HttpPost("upload-image")]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> UploadImage(IFormFile? file)
     {
         _logger.LogInformation("Story upload-image called. File: {FileName}, Size: {Size}, ContentType: {ContentType}",
