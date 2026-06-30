@@ -68,7 +68,7 @@
                 <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Post.Author.Username, Model.Post.Author.Id)">
                     @if (!string.IsNullOrEmpty(Model.Post.Author.AvatarUrl))
                     {
-                        <img class="avatar" src="@Model.Post.Author.AvatarUrl" alt="@Model.Post.Author.FullName" />
+                        <img class="avatar" src="@Model.Post.Author.AvatarUrl" alt="@Model.Post.Author.FullName" referrerpolicy="no-referrer" />
                     }
                     else
                     {
@@ -286,7 +286,7 @@
     function commentHtml(c, isReply) {
         const initial = (c.author.fullName || "?").trim().charAt(0).toUpperCase();
         const avatar = c.author.avatarUrl
-            ? `<img class="avatar sm" src="${escapeHtml(c.author.avatarUrl)}" alt="" />`
+            ? `<img class="avatar sm" src="${escapeHtml(c.author.avatarUrl)}" alt="" referrerpolicy="no-referrer" />`
             : `<span class="avatar sm">${initial}</span>`;
         const isAuthor = c.author.id === postAuthorId;
         const authorBadge = isAuthor ? `<span class="badge badge-author">Muallif</span>` : "";

@@ -30,6 +30,10 @@ public static class BackgroundJobsServiceExtensions
 
         services.AddHangfireServer();
 
+        // Kunlik "kitob o'qing" eslatma jobi (boyo'g'li yuboradi). Hangfire uni
+        // o'z scope'ida resolve qiladi, shuning uchun scoped (IAppDbContext bog'liq).
+        services.AddScoped<ReadingReminderJob>();
+
         return services;
     }
 }

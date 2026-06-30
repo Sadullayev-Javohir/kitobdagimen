@@ -6,6 +6,9 @@ using KitobdaGimen.Application.Features.Stories.Queries.GetStoryById;
 using KitobdaGimen.Application.Features.Stories.Queries.GetUserStories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 
 namespace KitobdaGimen.Web.Controllers;
 
@@ -13,6 +16,21 @@ namespace KitobdaGimen.Web.Controllers;
 [Route("stories")]
 public class StoriesController : AppController
 {
+    // Allowed story image types — re-encoded to WebP regardless of the original format.
+    private static readonly HashSet<string> AllowedImageTypes = new()
+    {
+        "image/jpeg", "image/png", "image/webp", "image/gif"
+    };
+
+    private const long MaxImageBytes = 8 * 1024 * 1024; // 8 MB
+    private const int MaxImageDimension = 1600;
+
+    private readonly IWebHostEnvironment _env;
+
+    public StoriesController(IWebHostEnvironment env)
+    {
+        _env = env;
+    }
     /// <summary>Returns a user's stories for the viewer (JSON).</summary>
     [HttpGet("user/{userId:int}")]
     public async Task<IActionResult> ForUser(int userId)
@@ -41,6 +59,60 @@ public class StoriesController : AppController
     {
         var story = await Mediator.Send(command);
         return Json(story);
+    }
+
+    /// <summary>Uploads a story image, re-encodes it as WebP and returns its public URL (JSON).</summary>
+    [HttpPost("upload-image")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadImage(IFormFile? file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Rasm tanlanmadi." });
+        }
+
+        if (file.Length > MaxImageBytes)
+        {
+            return BadRequest(new { message = "Rasm hajmi 8 MB dan oshmasligi kerak." });
+        }
+
+        if (!AllowedImageTypes.Contains(file.ContentType))
+        {
+            return BadRequest(new { message = "Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
+        }
+
+        Image image;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            image = await Image.LoadAsync(input);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return BadRequest(new { message = "Fayl rasm formatida emas." });
+        }
+
+        using (image)
+        {
+            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(MaxImageDimension, MaxImageDimension)
+                }));
+            }
+
+            var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("stories");
+
+            var fileName = $"{Guid.NewGuid():N}.webp";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 80 });
+
+            var url = $"/uploads/stories/{fileName}";
+            return Json(new { url });
+        }
     }
 
     /// <summary>Records a view for the current user and returns the new view count (JSON).</summary>

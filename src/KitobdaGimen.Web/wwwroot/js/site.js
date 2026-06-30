@@ -392,6 +392,30 @@ function showToast(message, options) {
     }, 5000);
 }
 
+// Boyo'g'li (🦉) kunlik o'qish eslatmasi — diqqatni jalb qiluvchi maxsus toast.
+// Har sahifada ishlaydi (boyo'g'li paneliga bog'liq emas), bosilganda /reading-books ga olib boradi.
+function showOwlReminder(message, url) {
+    const host = document.getElementById("toastHost");
+    if (!host) { return; }
+    const el = document.createElement("div");
+    el.className = "toast owl-reminder clickable";
+    const owl = document.createElement("span");
+    owl.className = "owl-reminder-emoji";
+    owl.textContent = "🦉";
+    const span = document.createElement("span");
+    span.textContent = message;
+    el.appendChild(owl);
+    el.appendChild(span);
+    el.addEventListener("click", () => { window.location.href = url || "/reading-books"; });
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+    // Eslatma muhim — biroz uzunroq turadi (10s).
+    setTimeout(() => {
+        el.classList.remove("show");
+        setTimeout(() => el.remove(), 300);
+    }, 10000);
+}
+
 // ===== Real-time bildirishnomalar (SignalR) =====
 function initNotifications() {
     if (document.body.dataset.authenticated !== "true" || !window.signalR) return;
@@ -553,6 +577,16 @@ function initNotifications() {
 
         // Let pages (e.g. /chat owl) react to specific notification types first.
         document.dispatchEvent(new CustomEvent("kitob:notification", { detail: n }));
+
+        // Kunlik o'qish eslatmasi — boyo'g'li (🦉) yetkazadi: ajralib turadigan toast.
+        if (n.type === "reading_reminder") {
+            showOwlReminder(n.message || "Bugun hali kitob o'qimadingiz. Bir oz vaqt toping! 🦉📖", n.url || "/reading-books");
+            items.unshift(n);
+            renderList();
+            bumpBadge();
+            return;
+        }
+
         // Connection invites are surfaced by the chat owl, so skip the generic toast for them there.
         const handledByPage = (n.type === "connection_request" || n.type === "connection_accepted")
             && document.getElementById("owlPanel");
@@ -1185,7 +1219,7 @@ initNotifications();
             try {
                 const fd = new FormData();
                 fd.append("file", f);
-                const res = await fetch("/posts/upload-image", {
+                const res = await fetch("/stories/upload-image", {
                     method: "POST",
                     headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": antiforgeryToken() },
                     body: fd

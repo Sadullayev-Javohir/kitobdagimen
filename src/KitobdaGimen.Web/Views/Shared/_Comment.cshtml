@@ -12,7 +12,7 @@
     <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
         @if (!string.IsNullOrEmpty(Model.Author.AvatarUrl))
         {
-            <img class="avatar sm" src="@Model.Author.AvatarUrl" alt="@Model.Author.FullName" />
+            <img class="avatar sm" src="@Model.Author.AvatarUrl" alt="@Model.Author.FullName" referrerpolicy="no-referrer" />
         }
         else
         {

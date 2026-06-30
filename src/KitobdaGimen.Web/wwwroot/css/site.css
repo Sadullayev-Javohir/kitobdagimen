@@ -2214,6 +2214,28 @@ a.notif-item:hover { background: var(--primary-soft); }
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.clickable { cursor: pointer; }
 .toast.clickable:hover { border-color: var(--accent); }
+
+/* Boyo'g'li (🦉) kunlik o'qish eslatmasi — ajralib turadigan toast. */
+.toast.owl-reminder {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--accent, #b88a4a);
+    background: var(--primary-soft, #f6efe2);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    font-size: 14.5px;
+    line-height: 1.4;
+}
+.owl-reminder-emoji {
+    font-size: 26px;
+    line-height: 1;
+    flex-shrink: 0;
+    animation: owl-bob 1.4s ease-in-out infinite;
+}
+@keyframes owl-bob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50% { transform: translateY(-3px) rotate(4deg); }
+}
 .toast-avatar {
     width: 36px;
     height: 36px;

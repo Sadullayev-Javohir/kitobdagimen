@@ -207,7 +207,7 @@
                     <a href="/profile" title="Profil" aria-label="Profil">
                         @if (!string.IsNullOrEmpty(me?.AvatarUrl))
                         {
-                            <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" />
+                            <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
                         }
                         else
                         {

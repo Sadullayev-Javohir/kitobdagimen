@@ -3,6 +3,7 @@ using Hangfire;
 using KitobdaGimen.Application;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Infrastructure;
+using KitobdaGimen.Infrastructure.BackgroundJobs;
 using KitobdaGimen.Infrastructure.Persistence;
 using KitobdaGimen.Web.Hubs;
 using KitobdaGimen.Web.Middleware;
@@ -159,6 +160,14 @@ if (hangfireEnabled)
     {
         Authorization = new[] { new HangfireDashboardAuthFilter(adminEmails) }
     });
+
+    // Kunlik o'qish eslatmasi: O'zbekiston vaqti bilan har kuni 20:00 da (UTC+5 -> 15:00 UTC).
+    // Faol maqsadi bor, lekin bugun o'qimagan foydalanuvchilarga boyo'g'li eslatma yuboradi.
+    RecurringJob.AddOrUpdate<ReadingReminderJob>(
+        ReadingReminderJob.RecurringJobId,
+        job => job.RunAsync(CancellationToken.None),
+        "0 15 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 }
 
 app.Run();

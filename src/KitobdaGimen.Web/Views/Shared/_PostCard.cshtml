@@ -11,7 +11,7 @@
     <header class="post-head">
         @{
             var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
-                ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" />")
+                ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")
                 : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName))}</span>");
         }
         @if (Model.AuthorHasStory)

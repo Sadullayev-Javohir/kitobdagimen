@@ -13,7 +13,12 @@ namespace KitobdaGimen.Infrastructure.External;
 /// </summary>
 public class AsaxiyBookService : IAsaxiyBookService
 {
-    private const string SearchUrl = "https://asaxiy.uz/uz/product/knigi?key=";
+    // MUHIM: kanonik `/product/knigi` ishlatamiz, `/uz/product/knigi` EMAS. asaxiy
+    // `/uz/...` ni 301 bilan `/product/...` ga yo'naltiradi. SOCKS proksi ortida (server
+    // Cloudflare blokini chetlash uchun) .NET'ning RedirectHandler 301'ni qayta-so'rov
+    // qilganda proksi tunneli uzilib, butun qidiruv muvaffaqiyatsiz tugaydi. To'g'ridan
+    // kanonik URL'ni so'rasak — 301 bo'lmaydi, proksi orqali ham ishonchli ishlaydi.
+    private const string SearchUrl = "https://asaxiy.uz/product/knigi?key=";
 
     // JSON-LD ItemList elementi: url + name ("Muallif: Sarlavha") + image (muqova).
     private static readonly Regex ItemRegex = new(
@@ -72,7 +77,7 @@ public class AsaxiyBookService : IAsaxiyBookService
                 continue;
             }
 
-            var url = Decode(m.Groups["url"].Value);
+            var url = NormalizeProductUrl(Decode(m.Groups["url"].Value));
             if (!seen.Add(url))
             {
                 continue;
@@ -96,6 +101,10 @@ public class AsaxiyBookService : IAsaxiyBookService
         {
             return null;
         }
+
+        // 301 redirectni (va u bilan SOCKS proksi uzilishini) oldini olish uchun kanonik
+        // `/product/...` URL'ni so'raymiz (`/uz/product/...` emas).
+        productUrl = NormalizeProductUrl(productUrl);
 
         string html;
         try
@@ -151,6 +160,22 @@ public class AsaxiyBookService : IAsaxiyBookService
             _logger.LogWarning(ex, "asaxiy muqova rasmi yuklanmadi: {Url}", coverUrl);
             return null;
         }
+    }
+
+    /// <summary>
+    /// asaxiy URL'ni kanonik ko'rinishga keltiradi: `/uz/product/...` -> `/product/...`.
+    /// Bu 301 redirectni yo'qotadi (SOCKS proksi ortida redirect butun so'rovni buzadi).
+    /// </summary>
+    private static string NormalizeProductUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return url;
+        }
+
+        // Til prefiksini (/uz/, /ru/, /en/) olib tashlaymiz — asaxiy ularni 301 qiladi.
+        return Regex.Replace(url, @"(https?://[^/]+)/(uz|ru|en)/product/", "$1/product/",
+            RegexOptions.IgnoreCase);
     }
 
     /// <summary>"Muallif: Sarlavha" ko'rinishidagi nomni muallif va sarlavhaga ajratadi.</summary>

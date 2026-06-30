@@ -43,7 +43,7 @@
                         <span class="avatar-wrap">
                             @if (!string.IsNullOrEmpty(c.OtherUser.AvatarUrl))
                             {
-                                <img class="avatar" src="@c.OtherUser.AvatarUrl" alt="@c.OtherUser.FullName" />
+                                <img class="avatar" src="@c.OtherUser.AvatarUrl" alt="@c.OtherUser.FullName" referrerpolicy="no-referrer" />
                             }
                             else
                             {
@@ -679,6 +679,8 @@
             owl && owl.happy();
             loadRequests();
         }
+        // reading_reminder esa global owl-toast (site.js) orqali ko'rsatiladi — bu sahifada
+        // boyo'g'li paneli markup'i yo'q, shuning uchun bu yerda alohida ish qilmaymiz.
     });
 })();
 </script>
