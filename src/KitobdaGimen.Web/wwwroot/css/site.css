@@ -2576,6 +2576,13 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
     }
 }
 
+/* Tor telefon ekranlari: 6–7 ta bo'lim (Reyting + Admin bilan) sig'ishi uchun
+   ikon va matnni biroz ixchamlashtiramiz. */
+@media (max-width: 400px) {
+    .bottom-nav a { gap: 2px; padding: 7px 1px 0; font-size: 10px; }
+    .bottom-nav a .material-symbols-outlined { font-size: 22px; }
+}
+
 
 /* ===== Login sahifasi (mobil) + navbar logout ===== */
 .login-page {

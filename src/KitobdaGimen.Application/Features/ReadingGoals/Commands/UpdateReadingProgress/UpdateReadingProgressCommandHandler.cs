@@ -37,7 +37,7 @@ public class UpdateReadingProgressCommandHandler : IRequestHandler<UpdateReading
             throw new ForbiddenAccessException();
         }
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = KitobdaGimen.Application.Common.UzTime.Today;
 
         var progress = await _db.ReadingProgress
             .FirstOrDefaultAsync(p => p.ReadingGoalId == goal.Id && p.Date == today, cancellationToken);

@@ -38,9 +38,9 @@ public class ReadingReminderJob
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        // Hangfire serveri UTC'da ishlaydi; O'zbekiston UTC+5. "Bugungi" sana shu mintaqada.
-        var uzNow = DateTime.UtcNow.AddHours(5);
-        var today = DateOnly.FromDateTime(uzNow);
+        // Hangfire serveri UTC'da ishlaydi; O'zbekiston UTC+5. "Bugungi" sana shu mintaqada
+        // (o'qish progressi ham shu sana bilan saqlanadi — moslik kafolatlanadi).
+        var today = KitobdaGimen.Application.Common.UzTime.Today;
 
         // Faol o'qish maqsadi (tugatilmagan kitob) bor foydalanuvchilar.
         var usersWithActiveGoals = await _db.ReadingGoals

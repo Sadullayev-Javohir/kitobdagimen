@@ -24,7 +24,7 @@ public class GetFinishedReadingGoalsQueryHandler
             ?? _currentUser.UserId
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = KitobdaGimen.Application.Common.UzTime.Today;
 
         return await _db.ReadingGoals
             .Where(g => g.UserId == userId && !g.IsActive)

@@ -57,7 +57,7 @@ public class CreateReadingGoalCommandHandler : IRequestHandler<CreateReadingGoal
         _db.ReadingGoals.Add(goal);
         await _db.SaveChangesAsync(cancellationToken);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = KitobdaGimen.Application.Common.UzTime.Today;
         return await _db.ReadingGoals
             .Where(g => g.Id == goal.Id)
             .ToReadingGoalDto(today)

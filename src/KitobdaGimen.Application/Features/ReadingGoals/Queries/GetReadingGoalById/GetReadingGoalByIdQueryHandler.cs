@@ -17,7 +17,7 @@ public class GetReadingGoalByIdQueryHandler : IRequestHandler<GetReadingGoalById
 
     public async Task<ReadingGoalDetailDto> Handle(GetReadingGoalByIdQuery request, CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = KitobdaGimen.Application.Common.UzTime.Today;
 
         // Tugatilgan kitoblar profilda ommaviy ko'rinadi, shuning uchun batafsil sahifa
         // (faqat o'qish — tahrirlash boshqaruvlari yo'q) istalgan kishi uchun ochiq.

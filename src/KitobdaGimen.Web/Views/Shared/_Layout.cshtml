@@ -41,7 +41,7 @@
         ? ViewData["Title"] + " — kitobdagimen.uz"
         : "kitobdagimen.uz — o'zbek kitobxonlari ijtimoiy platformasi";
     // Maxfiy (auth ortidagi) sahifalar Google indeksiga tushmasin — robots.txt + bu meta birga himoya qiladi.
-    var seoNoindexControllers = new[] { "Feed", "Chat", "Profile", "ReadingGoals", "Quotes", "Onboarding", "Notifications", "Stories", "Books", "Auth", "App" };
+    var seoNoindexControllers = new[] { "Feed", "Chat", "Profile", "ReadingGoals", "Quotes", "Onboarding", "Notifications", "Stories", "Books", "Auth", "App", "Leaderboard" };
     var seoRobots = ViewData["Robots"] as string
         ?? (seoNoindexControllers.Contains(currentController, StringComparer.OrdinalIgnoreCase) ? "noindex, follow" : "index, follow, max-image-preview:large");
     var seoJsonLd = ViewData["JsonLd"] as string;
@@ -166,6 +166,7 @@
                 <nav class="nav-links" data-nav-links>
                     <a href="/Feed">Tasma</a>
                     <a href="/reading-books">Kutubxona</a>
+                    <a href="/leaderboards">Reyting</a>
                     <a href="/quotes">Iqtiboslar</a>
                     <a href="/chat" class="nav-msg-link">Xabarlar<span class="nav-msg-badge" data-msg-badge hidden></span></a>
                     <a href="/Home/Landing">Bosh sahifa</a>
@@ -240,6 +241,10 @@
             <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")">
                 <span class="material-symbols-outlined">menu_book</span>
                 <span class="bn-label">Kutubxona</span>
+            </a>
+            <a href="/leaderboards" class="@(mobilePath.StartsWith("/leaderboards") ? "active" : "")">
+                <span class="material-symbols-outlined">emoji_events</span>
+                <span class="bn-label">Reyting</span>
             </a>
             <a href="/quotes" class="@(mobilePath.StartsWith("/quotes") ? "active" : "")">
                 <span class="material-symbols-outlined">format_quote</span>
