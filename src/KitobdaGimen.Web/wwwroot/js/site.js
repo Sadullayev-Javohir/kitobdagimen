@@ -1210,9 +1210,15 @@ initNotifications();
         imageInput.addEventListener("change", async () => {
             const f = imageInput.files && imageInput.files[0];
             if (!f) return;
+            
+            // Dastlab base64 preview ko'rsatamiz
             const reader = new FileReader();
-            reader.onload = (ev) => { imgPreviewImg.src = ev.target.result; imgPreview.hidden = false; };
+            reader.onload = (ev) => { 
+                imgPreviewImg.src = ev.target.result; 
+                imgPreview.hidden = false; 
+            };
             reader.readAsDataURL(f);
+            
             imageUrl.value = "";
             uploading = true;
             refresh();
@@ -1232,6 +1238,8 @@ initNotifications();
                 }
                 const data = await res.json();
                 imageUrl.value = data.url;
+                // Server rasmini preview'da ko'rsatamiz
+                imgPreviewImg.src = data.url;
             } catch (err) {
                 alert(err.message);
                 resetImage();
