@@ -12,10 +12,12 @@ namespace KitobdaGimen.Web.Controllers;
 public class AuthController : AppController
 {
     private readonly ITokenService _tokenService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(ITokenService tokenService)
+    public AuthController(ITokenService tokenService, ILogger<AuthController> logger)
     {
         _tokenService = tokenService;
+        _logger = logger;
     }
 
     /// <summary>Starts the Google OAuth challenge.</summary>
@@ -108,7 +110,16 @@ public class AuthController : AppController
     [ValidateAntiForgeryToken]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete(AuthConstants.AccessTokenCookie);
-        return RedirectToAction("Index", "Home");
+        try
+        {
+            _logger.LogInformation("User logging out: {UserId}", CurrentUserId);
+            Response.Cookies.Delete(AuthConstants.AccessTokenCookie);
+            return RedirectToAction("Index", "Home");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Logout failed for user {UserId}", CurrentUserId);
+            throw;
+        }
     }
 }

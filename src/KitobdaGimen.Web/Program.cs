@@ -96,7 +96,7 @@ app.Use(async (context, next) =>
         "font-src 'self' https://fonts.gstatic.com; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com; " +
-        "connect-src 'self'; " +
+        "connect-src 'self' https://cdnjs.cloudflare.com; " +
         "form-action 'self'";
     await next();
 });

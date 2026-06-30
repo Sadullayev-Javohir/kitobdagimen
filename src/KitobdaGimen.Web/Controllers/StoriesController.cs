@@ -26,10 +26,12 @@ public class StoriesController : AppController
     private const int MaxImageDimension = 1600;
 
     private readonly IWebHostEnvironment _env;
+    private readonly ILogger<StoriesController> _logger;
 
-    public StoriesController(IWebHostEnvironment env)
+    public StoriesController(IWebHostEnvironment env, ILogger<StoriesController> logger)
     {
         _env = env;
+        _logger = logger;
     }
     /// <summary>Returns a user's stories for the viewer (JSON).</summary>
     [HttpGet("user/{userId:int}")]
@@ -66,13 +68,18 @@ public class StoriesController : AppController
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UploadImage(IFormFile? file)
     {
+        _logger.LogInformation("Story upload-image called. File: {FileName}, Size: {Size}, ContentType: {ContentType}",
+            file?.FileName, file?.Length, file?.ContentType);
+
         if (file is null || file.Length == 0)
         {
+            _logger.LogWarning("Story upload failed: no file");
             return BadRequest(new { message = "Rasm tanlanmadi." });
         }
 
         if (file.Length > MaxImageBytes)
         {
+            _logger.LogWarning("Story upload failed: file too large ({Size})", file.Length);
             return BadRequest(new { message = "Rasm hajmi 8 MB dan oshmasligi kerak." });
         }
 
@@ -88,7 +95,9 @@ public class StoriesController : AppController
 
         if (!isAllowedType && !hasImageExtension)
         {
-            return BadRequest(new { message = $"Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin. ({contentType})" });
+            _logger.LogWarning("Story upload failed: invalid type. ContentType: {ContentType}, FileName: {FileName}",
+                contentType, file.FileName);
+            return BadRequest(new { message = $"Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
         }
 
         Image image;
@@ -97,12 +106,14 @@ public class StoriesController : AppController
             await using var input = file.OpenReadStream();
             image = await Image.LoadAsync(input);
         }
-        catch (UnknownImageFormatException)
+        catch (UnknownImageFormatException ex)
         {
+            _logger.LogWarning(ex, "Story upload failed: unknown image format");
             return BadRequest(new { message = "Fayl rasm formatida emas." });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Story upload failed: error loading image");
             return BadRequest(new { message = $"Rasmni o'qib bo'lmadi: {ex.Message}" });
         }
 

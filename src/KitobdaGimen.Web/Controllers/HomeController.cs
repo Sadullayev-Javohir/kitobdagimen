@@ -6,49 +6,81 @@ namespace KitobdaGimen.Web.Controllers;
 public class HomeController : AppController
 {
     private readonly IWebHostEnvironment _env;
+    private readonly ILogger<HomeController> _logger;
 
-    public HomeController(IWebHostEnvironment env) => _env = env;
+    public HomeController(IWebHostEnvironment env, ILogger<HomeController> logger)
+    {
+        _env = env;
+        _logger = logger;
+    }
 
     /// <summary>Landing page for anonymous users; authenticated users go straight to the feed.
     /// Mobile visitors get the lightweight login page instead of the marketing landing.</summary>
     public IActionResult Index()
     {
-        if (IsAuthenticatedUser)
+        try
         {
-            return RedirectToAction("Index", "Feed");
-        }
+            var isAuth = IsAuthenticatedUser;
+            _logger.LogInformation("Home/Index: isAuth={IsAuth}, userId={UserId}", isAuth, CurrentUserId);
 
-        if (IsMobile())
+            if (isAuth)
+            {
+                return RedirectToAction("Index", "Feed");
+            }
+
+            if (IsMobile())
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            return View();
+        }
+        catch (Exception ex)
         {
-            return RedirectToAction(nameof(Login));
+            _logger.LogError(ex, "Home/Index failed");
+            throw;
         }
-
-        return View();
     }
 
     /// <summary>Renders the marketing landing page on desktop; mobile is redirected to login/feed.</summary>
     public IActionResult Landing()
     {
-        if (IsMobile())
+        try
         {
-            return IsAuthenticatedUser
-                ? RedirectToAction("Index", "Feed")
-                : RedirectToAction(nameof(Login));
-        }
+            if (IsMobile())
+            {
+                return IsAuthenticatedUser
+                    ? RedirectToAction("Index", "Feed")
+                    : RedirectToAction(nameof(Login));
+            }
 
-        return View("Index");
+            return View("Index");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Home/Landing failed");
+            throw;
+        }
     }
 
     /// <summary>Lightweight login page (Google sign-in + app download). Used on mobile.</summary>
     [HttpGet("/login")]
     public IActionResult Login()
     {
-        if (IsAuthenticatedUser)
+        try
         {
-            return RedirectToAction("Index", "Feed");
-        }
+            if (IsAuthenticatedUser)
+            {
+                return RedirectToAction("Index", "Feed");
+            }
 
-        return View();
+            return View();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Home/Login failed");
+            throw;
+        }
     }
 
     /// <summary>Foydalanish qo'llanmasi — platformadan qanday foydalanishning to'liq bayoni.</summary>

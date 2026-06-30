@@ -139,7 +139,16 @@ public class ProfileController : AppController
             return BadRequest(new { message = "Rasm hajmi 8 MB dan oshmasligi kerak." });
         }
 
-        if (!AllowedImageTypes.Contains(file.ContentType))
+        // ContentType tekshiruvini yumshatamiz - ba'zi brauzerlar noto'g'ri type yuboradi.
+        var contentType = file.ContentType?.ToLowerInvariant() ?? "";
+        var isAllowedType = AllowedImageTypes.Contains(contentType);
+        var hasImageExtension = file.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (!isAllowedType && !hasImageExtension)
         {
             return BadRequest(new { message = "Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
         }
