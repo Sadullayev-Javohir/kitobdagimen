@@ -1227,8 +1227,8 @@ initNotifications();
             // Dastlab base64 preview ko'rsatamiz
             const reader = new FileReader();
             reader.onload = (ev) => { 
+                imgPreviewImg.onload = () => { imgPreview.hidden = false; };
                 imgPreviewImg.src = ev.target.result; 
-                imgPreview.hidden = false; 
             };
             reader.readAsDataURL(f);
             
@@ -1270,8 +1270,8 @@ initNotifications();
                 console.log("Upload success:", data);
                 imageUrl.value = data.url;
                 // Server rasmini preview'da ko'rsatamiz
+                imgPreviewImg.onload = () => { imgPreview.hidden = false; };
                 imgPreviewImg.src = data.url;
-                imgPreview.hidden = false;
             } catch (err) {
                 console.error("Story image upload failed:", err);
                 alert(err.message);
