@@ -1315,3 +1315,30 @@ initNotifications();
         });
     }
 })();
+
+// Brauzer extension'lar rasmlarni visibility:hidden qilishini oldini olish
+(function() {
+    const fixImageVisibility = () => {
+        document.querySelectorAll('img[data-post-image-img], img[data-quote-book-cover], .post-image, .quote-book-cover, .pd-hero img').forEach(img => {
+            if (img.style.visibility === 'hidden') {
+                img.style.visibility = 'visible';
+            }
+        });
+    };
+    
+    // Dastlab tekshirish
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fixImageVisibility);
+    } else {
+        fixImageVisibility();
+    }
+    
+    // MutationObserver - yangi rasmlar yoki style o'zgarishlari uchun
+    const observer = new MutationObserver(fixImageVisibility);
+    observer.observe(document.body, { 
+        childList: true, 
+        subtree: true, 
+        attributes: true, 
+        attributeFilter: ['style'] 
+    });
+})();
