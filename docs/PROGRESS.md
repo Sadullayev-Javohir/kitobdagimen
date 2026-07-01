@@ -70,6 +70,19 @@ test). (A)+(B) frontend; (D) backend+frontend.
 
 ## Oxirgi sessiya yozuvi
 
+**2026-07-02 — MOBIL CHAT UX (Telegram uslubi): ochiq suhbatda pastki nav yashiriladi, klaviatura tuzatishi, header avatar→lightbox, ism→profil havola. Build 0/0, headless Chrome'da jonli tekshirildi.**
+
+Oldingi sessiya (02-iyul 04:12) uzilgan edi — kod yozilgan, lekin build/tekshiruv qilinmagan. Bu sessiyada davom ettirildi: kod ko'rib chiqildi (butun ekan), build va to'liq jonli tekshiruv o'tkazildi. O'zgargan fayllar: `Chat/Index.cshtml`, `Shared/_Layout.cshtml`, `site.css` (hali commit qilinmagan).
+
+- **Ochiq suhbatda pastki nav yashirish (≤768):** `Chat/Index.cshtml` faol suhbat borida `ViewData["BodyClass"]="chat-conv-open"` qo'yadi (layout `<body>` class'ida allaqachon o'qiydi). CSS: `body.chat-conv-open .bottom-nav { display:none }`, `main` padding-bottom 0, `.chat` balandligi `calc(100dvh - var(--navbar-h))` (`100vh` fallback), `.msg-form` ga safe-area padding. Suhbatlar ro'yxatida (suhbat tanlanmaganda) nav odatdagidek qoladi.
+- **Mobil klaviatura tuzatishi:** `_Layout.cshtml` viewport meta faqat Chat sahifasida `interactive-widget=resizes-content` oladi (Android Chrome 108+ — klaviatura ochilganda layout kichrayadi, input klaviatura ustida qoladi). Boshqa sahifalar default (`resizes-visual`) — pastki nav klaviatura ustiga chiqmaydi. iOS Safari / eski brauzerlar uchun `Chat/Index.cshtml` da `visualViewport` fallback: klaviatura balandligi >80px bo'lsa `.chat` balandligi JS bilan moslanadi + `scrollBottom`; textarea focus'da 250ms keyin scrollBottom.
+- **Header avatar → lightbox:** avatarli suhbatdoshda `avatar-wrap` endi `<button class="avatar-zoom" data-avatar-full=...>` — bosilganda mavjud chat lightbox'ida to'liq ochiladi; Google avatari `=s96-c` → `=s512-c` ga kattalashtiriladi. Avatarsizda eski `<span>` qoladi. CSS: `.avatar-zoom` tugma reset.
+- **Header ism → profil:** `.info .name` endi `<a href="/profile/{username yoki id}">` (route `ProfileController [HttpGet("{id?}")]` — Posts/Details dagi bilan bir xil naqsh); rang meros, hover'da primary.
+- **TEKSHIRILDI (Release binar vaqtincha 5299-portda — DLL to'g'ridan-to'g'ri ishga tushirildi, `launchSettings` portni bekor qilmasligi uchun; headless Chrome CDP 9262, dev JWT user 1, suhbat #4, 390×844 mobil):** ochiq suhbatda body class `chat-conv-open`, bottom-nav `display:none`, main padding 0, `.chat` balandligi 772 = 844−72 (aniq `100dvh − navbar`), `.msg-form` ekran tubiga yopishgan (gap 0), overflow 0; avatar BUTTON, bosilganda lightbox ochildi (rasm src to'g'ri); ism havolasi `/profile/javohir`; viewport 500px ga kichraytirilganda chat 428 = 500−72 (dvh moslashdi); suhbatlar ro'yxatida nav `flex` (ko'rinadi), body class yo'q; `/feed` da viewport meta'da `interactive-widget` YO'Q, nav ko'rinadi. Build **0/0**. Temp app (5299) + headless chrome (9262) TOZALANDI, 5261 ga tegilmadi. Eslatma: tekshiruv paytida user 1 sifatida `/chat?conversationId=4` ochilgani suhbat #4 xabarlarini "o'qilgan" qilib belgiladi (lokal dev DB).
+- **Git:** foydalanuvchi o'zi commit+push qiladi (3 fayl: `Views/Chat/Index.cshtml`, `Views/Shared/_Layout.cshtml`, `wwwroot/css/site.css`), keyin serverda redeploy: `cd /var/www/kitobdagimen && git pull && systemctl stop kitobdagimen && dotnet publish src/KitobdaGimen.Web -c Release -o publish && chown -R kitobapp:kitobapp publish && systemctl start kitobdagimen`.
+
+---
+
 **2026-06-20 — TEXNIK SEO POYDEVORI qurildi (Google'da yuqori chiqish uchun). Build 0/0, jonli tekshirildi.**
 
 Talab: kitobdagimen.uz ni Google qidiruvida yuqoriga (top) chiqarish. Bajarilgan ish — to'liq **on-page / texnik SEO poydevori** (bu kod orqali nazorat qilinadigan qism; reyting o'sishi uchun yana KONTENT + TASHQI HAVOLALAR + VAQT kerak, pastdagi "Foydalanuvchi qiladigan qadamlar"ga qarang).

@@ -51,7 +51,10 @@
 <html lang="uz">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    @* Chat sahifasida klaviatura ochilganda layout KICHRAYADI (resizes-content, Android Chrome 108+):
+       xabar yozish paneli klaviatura ustida qoladi, suhbatdosh header'i tepada qotib turadi.
+       Boshqa sahifalarda default (resizes-visual) qoladi — pastki nav klaviatura ustiga chiqmaydi. *@
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover@(isChatPage ? ", interactive-widget=resizes-content" : "")" />
     @* Kun/tun rejimini bo'yashdan OLDIN o'rnatamiz — "miltillash" (FOUC) bo'lmasligi uchun *@
     <script>
         (function () {

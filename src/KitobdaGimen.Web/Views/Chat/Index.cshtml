@@ -3,6 +3,13 @@
 @{
     ViewData["Title"] = "Xabarlar";
     var active = Model.ActiveConversation;
+    // Mobil: suhbat OCHIQ bo'lsa pastki 5-tugmali nav yashiriladi (Telegram uslubi) —
+    // shunda xabar yozish paneli navbar bilan urishmaydi va chatga to'liq balandlik tegadi.
+    // Layout <body> class'ini shu yerdan oladi (body view'dan keyin render bo'ladi).
+    if (active != null) { ViewData["BodyClass"] = "chat-conv-open"; }
+    // Suhbatdosh profiliga havola: username bo'lsa o'sha, bo'lmasa raqamli id.
+    var headerProfileUrl = active == null ? ""
+        : "/profile/" + (string.IsNullOrEmpty(active.OtherUser.Username) ? active.OtherUser.Id.ToString() : active.OtherUser.Username);
     // Zamonaviy SVG ikonlar (matn emoji o'rniga). Tick'lar IsRead bo'yicha rang oladi.
     const string singleTick = "<svg class=\"tick-svg\" viewBox=\"0 0 18 12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 7l3.4 3.4L13 2.4\"/></svg>";
     const string doubleTick = "<svg class=\"tick-svg dbl\" viewBox=\"0 0 22 12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M1 7l3.4 3.4L12 2.4\"/><path d=\"M8.5 9.6L16.5 2\"/></svg>";
@@ -112,19 +119,24 @@
                 <a href="/chat" class="btn btn-ghost btn-sm btn-icon" data-back aria-label="Orqaga">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 </a>
-                <span class="avatar-wrap">
-                    @if (!string.IsNullOrEmpty(active.OtherUser.AvatarUrl))
-                    {
+                @if (!string.IsNullOrEmpty(active.OtherUser.AvatarUrl))
+                {
+                    @* Avatar bosilsa — rasm to'liq ekranda (lightbox) ochiladi *@
+                    <button type="button" class="avatar-wrap avatar-zoom" data-avatar-full="@active.OtherUser.AvatarUrl" aria-label="Profil rasmini to'liq ko'rish">
                         <img class="avatar" src="@active.OtherUser.AvatarUrl" alt="@active.OtherUser.FullName" />
-                    }
-                    else
-                    {
+                        <span class="online-dot @(active.IsOnline ? "on" : "")" data-online-for="@active.OtherUser.Id"></span>
+                    </button>
+                }
+                else
+                {
+                    <span class="avatar-wrap">
                         <span class="avatar">@ViewHelpers.Initial(active.OtherUser.FullName)</span>
-                    }
-                    <span class="online-dot @(active.IsOnline ? "on" : "")" data-online-for="@active.OtherUser.Id"></span>
-                </span>
+                        <span class="online-dot @(active.IsOnline ? "on" : "")" data-online-for="@active.OtherUser.Id"></span>
+                    </span>
+                }
                 <div class="info">
-                    <span class="name">@active.OtherUser.FullName @Html.Raw(ViewHelpers.FounderBadge(active.OtherUser.Username))</span>
+                    @* Ism bosilsa — suhbatdoshning profil sahifasiga o'tadi *@
+                    <a class="name" href="@headerProfileUrl">@active.OtherUser.FullName @Html.Raw(ViewHelpers.FounderBadge(active.OtherUser.Username))</a>
                     <span class="presence @(active.IsOnline ? "online" : "")" id="headerPresence"
                           data-user="@active.OtherUser.Id"
                           data-last-seen="@(active.LastSeenAt?.ToString("o"))">
@@ -547,6 +559,41 @@
         document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
     }
 
+    // ── Header: suhbatdosh avatari bosilsa — rasm to'liq ekranda (lightbox) ──
+    const headerAvatar = document.querySelector(".chat-header .avatar-zoom");
+    if (headerAvatar) {
+        headerAvatar.addEventListener("click", () => {
+            let url = headerAvatar.dataset.avatarFull || "";
+            // Google avatari odatda kichik (=s96-c) keladi — kattaroq variantini so'raymiz.
+            if (/googleusercontent\.com/.test(url)) url = url.replace(/=s\d+(-c)?$/, "=s512-c");
+            if (url) openLightbox(url);
+        });
+    }
+
+    // ── Mobil klaviatura balandligi ──
+    // Android Chrome'da viewport meta (interactive-widget=resizes-content) layout'ni o'zi
+    // kichraytiradi. iOS Safari (va shu parametrni bilmaydigan brauzerlar) esa layout'ni
+    // O'ZGARTIRMAYDI — sahifa "panorama" bo'lib, header tepadan chiqib ketadi va input
+    // klaviatura ostida qoladi. Bu yerda visualViewport orqali chat balandligini o'zimiz
+    // klaviaturaga moslaymiz: header tepada qotadi, input klaviatura ustida turadi.
+    const chatRoot = document.querySelector(".chat.has-active");
+    const vv = window.visualViewport;
+    if (chatRoot && vv) {
+        const navbar = document.querySelector(".navbar");
+        function syncChatHeight() {
+            if (!window.matchMedia("(max-width: 768px)").matches) { chatRoot.style.height = ""; return; }
+            const kb = Math.max(0, window.innerHeight - vv.height);
+            if (kb > 80) { // klaviatura ochiq (resizes-content ishlagan brauzerda kb≈0 bo'ladi)
+                chatRoot.style.height = (vv.height - (navbar ? navbar.offsetHeight : 0)) + "px";
+                window.scrollTo(0, 0); // brauzer surib qo'ygan bo'lsa headerni joyiga qaytaramiz
+                scrollBottom();
+            } else {
+                chatRoot.style.height = "";
+            }
+        }
+        vv.addEventListener("resize", syncChatHeight);
+    }
+
     // ───────── Reaksiya tanlagich (Telegram uslubi) ─────────
     const reactionPicker = document.getElementById("reactionPicker");
     let reactionTargetId = null;
@@ -625,6 +672,9 @@
             lastTypingSent = now;
             chatConn.invoke("Typing", conversationId).catch(() => {});
         }
+
+        // Mobil: klaviatura ochilib layout kichrayganda oxirgi xabarlar ko'rinib tursin.
+        text.addEventListener("focus", () => setTimeout(scrollBottom, 250));
 
         text.addEventListener("input", () => {
             counter.textContent = text.value.length;
