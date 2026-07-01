@@ -94,6 +94,23 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
         _db.ChallengeWinnerLikes.RemoveRange(await _db.ChallengeWinnerLikes
             .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
 
+        // Challenge winner entries for this user (though UserId has Cascade, explicitly remove
+        // to avoid multi-path cascade issues and to clear GiftedByUserId references).
+        _db.ChallengeWinners.RemoveRange(await _db.ChallengeWinners
+            .Where(w => w.UserId == userId).ToListAsync(cancellationToken));
+
+        // Also nullify GiftedByUserId where this user gifted books to other winners.
+        var winnersGiftedByUser = await _db.ChallengeWinners
+            .Where(w => w.GiftedByUserId == userId).ToListAsync(cancellationToken);
+        foreach (var w in winnersGiftedByUser)
+        {
+            w.GiftedByUserId = null;
+            w.GiftedAt = null;
+            w.GiftBookTitle = null;
+            w.GiftBookAuthor = null;
+            w.GiftBookCoverUrl = null;
+        }
+
         _db.PushSubscriptions.RemoveRange(await _db.PushSubscriptions
             .Where(ps => ps.UserId == userId).ToListAsync(cancellationToken));
 

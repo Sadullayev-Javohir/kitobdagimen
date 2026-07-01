@@ -1,5 +1,6 @@
 using System.Text.Json;
 using KitobdaGimen.Application.Common.Exceptions;
+using Microsoft.EntityFrameworkCore;
 using ValidationException = KitobdaGimen.Application.Common.Exceptions.ValidationException;
 
 namespace KitobdaGimen.Web.Middleware;
@@ -41,6 +42,9 @@ public class ExceptionHandlingMiddleware
             NotFoundException nf => (StatusCodes.Status404NotFound, nf.Message, null),
             ForbiddenAccessException fa => (StatusCodes.Status403Forbidden, fa.Message, null),
             UnauthorizedAccessException ua => (StatusCodes.Status401Unauthorized, ua.Message, null),
+            DbUpdateException db => (StatusCodes.Status400BadRequest,
+                "Ma'lumotlar bazasida xatolik: " + ExtractDbErrorMessage(db),
+                (IDictionary<string, string[]>?)null),
             _ => (StatusCodes.Status500InternalServerError, "Serverda kutilmagan xatolik yuz berdi.",
                 (IDictionary<string, string[]>?)null)
         };
@@ -60,5 +64,26 @@ public class ExceptionHandlingMiddleware
 
         var payload = JsonSerializer.Serialize(new { message, errors }, JsonOptions);
         await context.Response.WriteAsync(payload);
+    }
+
+    private static string ExtractDbErrorMessage(DbUpdateException ex)
+    {
+        // Try to extract a user-friendly message from the inner exception.
+        var inner = ex.InnerException?.Message ?? ex.Message;
+        
+        if (inner.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase) ||
+            inner.Contains("FK_", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Bog'liq ma'lumotlar mavjud. Avval bog'langan yozuvlarni o'chiring.";
+        }
+        
+        if (inner.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
+            inner.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Bunday qiymat allaqachon mavjud.";
+        }
+
+        // Return a sanitized version (don't expose full SQL error to users).
+        return "Ma'lumotlarni saqlashda xatolik yuz berdi.";
     }
 }
