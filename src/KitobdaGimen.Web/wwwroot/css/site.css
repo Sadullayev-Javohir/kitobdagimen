@@ -2678,6 +2678,16 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 .status-detail { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 .status-error-text { color: #f44336; font-weight: 600; }
 
+/* Server monitoring — global risk banner + risk dots */
+.risk-banner { color: #fff; }
+.risk-banner .material-symbols-outlined { font-size: 22px; }
+.risk-banner.risk-ok { background: #4caf50; }
+.risk-banner.risk-warning { background: #ff9800; }
+.risk-banner.risk-critical { background: #f44336; }
+.status-dot { display: inline-block; }
+.status-dot.status-warn { background: #ff9800; }
+.status-dot.status-error { background: #f44336; }
+
 @media (max-width: 768px) {
     .status-grid { grid-template-columns: 1fr; }
 }

@@ -21,8 +21,9 @@ public class GetServerSnapshotQueryHandler : IRequestHandler<GetServerSnapshotQu
 
     public async Task<ServerSnapshot?> Handle(GetServerSnapshotQuery request, CancellationToken cancellationToken)
     {
-        // Server internals are SuperAdmin-only (more sensitive than the user list).
-        await AdminGuard.RequireAsync(_db, _currentUser, UserRole.SuperAdmin, cancellationToken);
+        // Server health is visible to Admin and SuperAdmin. The snapshot contains only aggregate
+        // numbers and component states — no secrets (connection strings, keys) or PII.
+        await AdminGuard.RequireAsync(_db, _currentUser, UserRole.Admin, cancellationToken);
         return _store.Latest;
     }
 }

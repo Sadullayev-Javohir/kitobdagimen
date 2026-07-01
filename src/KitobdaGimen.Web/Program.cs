@@ -66,6 +66,24 @@ builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 // Online presence (Redis, TTL heartbeat). Scoped because it persists LastSeenAt via the scoped DbContext.
 builder.Services.AddScoped<IPresenceService, RedisPresenceService>();
 
+// ── Server monitoring (admin dashboard) ─────────────────────────────────────────────
+// A single central collector gathers server health every few seconds into an in-memory
+// ring buffer; the admin panel reads the latest snapshot. All singletons so the counters
+// and CPU-delta state persist across requests. Can be disabled via Monitoring:Enabled=false.
+var monitoringEnabled = builder.Configuration.GetValue<bool?>("Monitoring:Enabled") ?? true;
+builder.Services.Configure<KitobdaGimen.Application.Features.Admin.Monitoring.MonitoringThresholds>(
+    builder.Configuration.GetSection("Monitoring:Thresholds"));
+builder.Services.AddSingleton<KitobdaGimen.Web.Monitoring.RealtimeConnectionCounter>();
+builder.Services.AddSingleton<KitobdaGimen.Web.Monitoring.HttpMetrics>();
+builder.Services.AddSingleton<KitobdaGimen.Web.Monitoring.SystemMetricsReader>();
+builder.Services.AddSingleton<IServerMetricsStore>(_ =>
+    new KitobdaGimen.Web.Monitoring.ServerMetricsStore(
+        builder.Configuration.GetValue<int?>("Monitoring:HistorySize") ?? 150));
+if (monitoringEnabled)
+{
+    builder.Services.AddHostedService<KitobdaGimen.Web.Monitoring.MetricsCollectorService>();
+}
+
 var app = builder.Build();
 
 // Apply pending migrations and seed canonical genres + sample books. Best-effort:
@@ -126,6 +144,11 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseRouting();
+
+// Server monitoring: measure every routed request (latency + status) for the admin dashboard.
+// After UseRouting (matched endpoint available for path normalization) and before the rate
+// limiter, so 429 rejections are also counted as they unwind back through this middleware.
+app.UseMiddleware<KitobdaGimen.Web.Middleware.RequestMetricsMiddleware>();
 
 app.UseRateLimiter();
 

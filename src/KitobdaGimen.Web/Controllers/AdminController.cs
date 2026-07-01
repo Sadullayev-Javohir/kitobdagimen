@@ -46,14 +46,14 @@ public class AdminController : AppController
             var users = await Mediator.Send(new GetAdminUsersQuery());
             var myRole = users.FirstOrDefault(u => u.Id == CurrentUserId)?.Role ?? UserRole.User;
             ViewData["MyRole"] = myRole;
-            
-            // SuperAdmin uchun server snapshot ham ko'rsatamiz
-            if (myRole == UserRole.SuperAdmin)
+
+            // Server holati — Admin va SuperAdmin ko'radi (agregat metrikalar, maxfiy ma'lumotsiz).
+            if (myRole >= UserRole.Admin)
             {
                 var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
                 ViewData["ServerSnapshot"] = snapshot;
             }
-            
+
             return View(users);
         }
         catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)

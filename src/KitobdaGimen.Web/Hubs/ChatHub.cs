@@ -19,12 +19,18 @@ public class ChatHub : Hub
     private readonly IPresenceService _presence;
     private readonly IChatNotifier _chatNotifier;
     private readonly IAppDbContext _db;
+    private readonly Monitoring.RealtimeConnectionCounter _connections;
 
-    public ChatHub(IPresenceService presence, IChatNotifier chatNotifier, IAppDbContext db)
+    public ChatHub(
+        IPresenceService presence,
+        IChatNotifier chatNotifier,
+        IAppDbContext db,
+        Monitoring.RealtimeConnectionCounter connections)
     {
         _presence = presence;
         _chatNotifier = chatNotifier;
         _db = db;
+        _connections = connections;
     }
 
     /// <summary>The SignalR group name that targets a single user across all their connections.</summary>
@@ -32,6 +38,7 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
+        _connections.Increment();
         if (TryGetUserId(out var userId))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
@@ -47,6 +54,7 @@ public class ChatHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        _connections.Decrement();
         if (TryGetUserId(out var userId))
         {
             var becameOffline = await _presence.SetOfflineAsync(userId);
