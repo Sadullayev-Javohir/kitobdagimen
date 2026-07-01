@@ -36,6 +36,14 @@ public class ChallengeController : AppController
     private const long MaxGiftCoverBytes = 5 * 1024 * 1024; // 5 MB
     private const int MaxCoverDimension = 1200;
 
+    // Faqat brauzer va ImageSharp ishonchli dekod qila oladigan formatlar. iPhone'ning
+    // HEIC/HEIF rasmlari va boshqa qo'llab-quvvatlanmaydigan formatlar (accept="image/*"
+    // ular ham tanlanishiga yo'l qo'yadi) bu yerda oldindan rad etiladi.
+    private static readonly HashSet<string> AllowedImageTypes = new()
+    {
+        "image/jpeg", "image/png", "image/webp", "image/gif"
+    };
+
     private readonly IAppDbContext _db;
 
     public ChallengeController(IAppDbContext db)
@@ -342,21 +350,45 @@ public class ChallengeController : AppController
             throw new InvalidOperationException("Rasm hajmi 5 MB dan oshmasligi kerak.");
         }
 
-        await using var input = file.OpenReadStream();
-        using var image = await Image.LoadAsync(input);
-
-        if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
+        // Content-type'ni oldindan tekshiramiz — HEIC/HEIF (iPhone), AVIF va boshqa
+        // qo'llab-quvvatlanmaydigan formatlar tushunarli xato bilan rad etiladi.
+        if (!AllowedImageTypes.Contains(file.ContentType))
         {
-            image.Mutate(x => x.Resize(new ResizeOptions
-            {
-                Mode = ResizeMode.Max,
-                Size = new Size(MaxCoverDimension, MaxCoverDimension)
-            }));
+            throw new InvalidOperationException(
+                "Rasm formati qo'llab-quvvatlanmaydi. Iltimos JPG, PNG, WEBP yoki GIF " +
+                "formatidagi rasm yuklang (iPhone HEIC rasmlarini avval JPG/PNG'ga o'giring).");
         }
 
-        var coversDir = KitobdaGimen.Web.UploadPaths.Dir("covers");
-        var fileName = $"{Guid.NewGuid():N}.webp";
-        await image.SaveAsWebpAsync(Path.Combine(coversDir, fileName), new WebpEncoder { Quality = 82 });
-        return $"/uploads/covers/{fileName}";
+        Image image;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            // Faylni rasm sifatida dekod qilamiz — content-type'ga ishonmasdan, haqiqiy
+            // rasm ekanini tasdiqlaymiz va WebP'ga qayta-kodlaymiz.
+            image = await Image.LoadAsync(input);
+        }
+        catch (UnknownImageFormatException)
+        {
+            throw new InvalidOperationException(
+                "Yuklangan fayl rasm formatida emas yoki buzilgan. Iltimos JPG, PNG, " +
+                "WEBP yoki GIF formatidagi to'g'ri rasm yuklang.");
+        }
+
+        using (image)
+        {
+            if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(MaxCoverDimension, MaxCoverDimension)
+                }));
+            }
+
+            var coversDir = KitobdaGimen.Web.UploadPaths.Dir("covers");
+            var fileName = $"{Guid.NewGuid():N}.webp";
+            await image.SaveAsWebpAsync(Path.Combine(coversDir, fileName), new WebpEncoder { Quality = 82 });
+            return $"/uploads/covers/{fileName}";
+        }
     }
 }
