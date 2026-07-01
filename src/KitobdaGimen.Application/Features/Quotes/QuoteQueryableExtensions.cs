@@ -37,7 +37,13 @@ internal static class QuoteQueryableExtensions
                 Source = q.Book.Source
             },
             SaveCount = q.SavedBy.Count,
-            IsSavedByCurrentUser = currentUserId != null && q.SavedBy.Any(s => s.UserId == currentUserId)
+            IsSavedByCurrentUser = currentUserId != null && q.SavedBy.Any(s => s.UserId == currentUserId),
+            LikeCount = q.Likes.Count,
+            CommentCount = q.Comments.Count,
+            IsLikedByCurrentUser = currentUserId != null && q.Likes.Any(l => l.UserId == currentUserId),
+            IsAuthor = currentUserId != null && q.UserId == currentUserId,
+            IsFollowingAuthor = currentUserId != null && q.User.Followers.Any(f => f.FollowerId == currentUserId),
+            AuthorHasStory = q.User.Stories.Any(s => s.ExpiresAt > DateTime.UtcNow)
         });
     }
 }

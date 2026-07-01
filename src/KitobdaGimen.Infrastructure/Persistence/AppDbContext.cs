@@ -29,6 +29,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<ReadingProgress> ReadingProgress => Set<ReadingProgress>();
     public DbSet<Quote> Quotes => Set<Quote>();
     public DbSet<SavedQuote> SavedQuotes => Set<SavedQuote>();
+    public DbSet<QuoteLike> QuoteLikes => Set<QuoteLike>();
+    public DbSet<QuoteComment> QuoteComments => Set<QuoteComment>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<Story> Stories => Set<Story>();

@@ -62,7 +62,7 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Quo
                 ActorName = dto.Author.FullName,
                 ActorAvatarUrl = dto.Author.AvatarUrl,
                 Message = $"{dto.Author.FullName} yangi iqtibos qo'shdi",
-                Url = "/quotes"
+                Url = $"/quotes/{dto.Id}"
             }, cancellationToken);
         }
 

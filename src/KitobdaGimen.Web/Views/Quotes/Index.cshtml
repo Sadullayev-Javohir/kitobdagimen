@@ -121,7 +121,7 @@
         var tab = path.Equals("/quotes/my", StringComparison.OrdinalIgnoreCase) ? "my"
             : path.Equals("/quotes/saved", StringComparison.OrdinalIgnoreCase) ? "saved" : "all";
         var bookId = Context.Request.Query["bookId"].ToString();
-        <div class="quote-grid" id="quoteGrid"
+        <div class="feed" id="quoteGrid"
              data-page="@Model.Page" data-total-pages="@Model.TotalPages"
              data-tab="@tab" data-search="@search" data-book-id="@bookId">
             <partial name="_QuoteCards" model="Model.Items" />
@@ -181,10 +181,10 @@
 
         // Matn, kitob/muallif manbasi va yozuvchi ismi bo'yicha
         cards.forEach((card) => {
-            card.querySelectorAll(".quote-text, .quote-source, .muted").forEach(highlightNode);
+            card.querySelectorAll(".quote-feed-text, .qfb-title, .qfb-author, .name").forEach(highlightNode);
         });
     }
-    highlightCards(Array.from(document.querySelectorAll(".quote-card")));
+    highlightCards(Array.from(document.querySelectorAll(".quote-feed-card")));
 
     // --- Cheksiz skroll: pastga tushganda keyingi iqtiboslarni yuklash ---
     const grid = document.getElementById("quoteGrid");

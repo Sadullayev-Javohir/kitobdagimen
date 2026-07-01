@@ -2608,10 +2608,13 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 /* ===== /feed — Iqtibos (quote) kartasi: kitob muqovasi + chiroyli iqtibos ===== */
 .badge-quote { background: rgba(232, 112, 58, .12); color: var(--accent-dark); gap: 3px; }
 .badge-quote .material-symbols-outlined { font-size: 15px; line-height: 1; }
+.badge-post { background: var(--primary-soft); color: var(--primary); gap: 3px; }
+.badge-post .material-symbols-outlined { font-size: 15px; line-height: 1; }
 
 .quote-feed-card .quote-feed-body {
     display: grid; grid-template-columns: 88px 1fr; gap: 16px;
     padding: 4px 20px 18px;
+    position: relative;
 }
 .quote-feed-cover {
     width: 88px; height: 124px; border-radius: 10px; overflow: hidden;

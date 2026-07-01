@@ -52,7 +52,7 @@
 
     // Like tugmalari (feed, profil, post detali) — delegatsiya
     document.addEventListener("click", async (e) => {
-        const btn = e.target.closest(".like-btn");
+        const btn = e.target.closest("[data-like]");
         if (!btn) return;
         e.preventDefault();
         const id = btn.getAttribute("data-like");
@@ -62,6 +62,25 @@
             btn.classList.toggle("liked", result.isLiked);
             const countEl = btn.querySelector(".like-count");
             if (countEl) countEl.textContent = result.likeCount;
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+
+    // Iqtibos like tugmalari (feed, /quotes, iqtibos detali) — delegatsiya.
+    // Bir iqtibosga tegishli barcha tugmalarni (masalan detal sahifasidagi hisoblagichlar) sinxronlash.
+    document.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-like-quote]");
+        if (!btn) return;
+        e.preventDefault();
+        const id = btn.getAttribute("data-like-quote");
+        try {
+            const result = await apiPost(`/quotes/${id}/like`);
+            if (!result) return;
+            document.querySelectorAll(`[data-like-quote="${id}"]`).forEach((b) => {
+                b.classList.toggle("liked", result.isLiked);
+                b.querySelectorAll(".like-count").forEach((el) => { el.textContent = result.likeCount; });
+            });
         } catch (err) {
             alert(err.message);
         }

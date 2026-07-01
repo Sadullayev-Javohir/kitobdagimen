@@ -1,0 +1,58 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model KitobdaGimen.Application.Features.Posts.Dtos.CommentDto
+@{
+    var isMine = CurrentUser.UserId is int uid && uid == Model.Author.Id;
+    var viewerIsQuoteOwner = ViewData["ViewerIsQuoteOwner"] is true;
+    var canDelete = isMine || viewerIsQuoteOwner;
+    var isReply = Model.ParentCommentId is not null;
+}
+
+<div class="comment @(Model.IsPostAuthor ? "comment-author" : "")" data-comment-id="@Model.Id">
+    <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
+        @if (!string.IsNullOrEmpty(Model.Author.AvatarUrl))
+        {
+            <img class="avatar sm" src="@Model.Author.AvatarUrl" alt="@Model.Author.FullName" referrerpolicy="no-referrer" />
+        }
+        else
+        {
+            <span class="avatar sm">@KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName)</span>
+        }
+    </a>
+    <div class="body">
+        <div class="bubble">
+            <div class="comment-meta">
+                <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">@Model.Author.FullName</a>
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(Model.Author.Username))
+                @if (Model.IsPostAuthor)
+                {
+                    <span class="badge badge-author">Muallif</span>
+                }
+                @if (canDelete)
+                {
+                    <button type="button" class="comment-delete" data-delete-quote-comment="@Model.Id" aria-label="O'chirish" title="O'chirish">
+                        <span class="material-symbols-outlined">delete</span>
+                    </button>
+                }
+            </div>
+            <div class="text">@Model.Text</div>
+        </div>
+        <div class="comment-footer">
+            @if (!isReply && CurrentUser.IsAuthenticated)
+            {
+                <button type="button" class="comment-reply-btn" data-reply="@Model.Id">Javob berish</button>
+            }
+            <span class="time">@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)</span>
+        </div>
+
+        @if (!isReply)
+        {
+            <div class="replies" data-replies-for="@Model.Id">
+                @foreach (var reply in Model.Replies)
+                {
+                    <partial name="_QuoteComment" model="reply" />
+                }
+            </div>
+        }
+    </div>
+</div>

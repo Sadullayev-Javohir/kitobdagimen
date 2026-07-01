@@ -23,6 +23,8 @@ public interface IAppDbContext
     DbSet<ReadingProgress> ReadingProgress { get; }
     DbSet<Quote> Quotes { get; }
     DbSet<SavedQuote> SavedQuotes { get; }
+    DbSet<QuoteLike> QuoteLikes { get; }
+    DbSet<QuoteComment> QuoteComments { get; }
     DbSet<Conversation> Conversations { get; }
     DbSet<Message> Messages { get; }
     DbSet<Story> Stories { get; }

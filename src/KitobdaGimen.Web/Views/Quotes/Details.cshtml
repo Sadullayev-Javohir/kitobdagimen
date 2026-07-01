@@ -1,0 +1,281 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@inject ICurrentUserService CurrentUser
+@model KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDetailDto
+@{
+    var q = Model.Quote;
+    ViewData["Title"] = $"{q.Author.FullName} iqtibosi — {q.Book.Title}";
+    var isAuth = CurrentUser.IsAuthenticated;
+    var meId = CurrentUser.UserId;
+    var quoteUrl = $"/quotes/{q.Id}";
+    var quoteShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{quoteUrl}";
+    var loginUrl = "/auth/google-login?returnUrl=" + Uri.EscapeDataString(quoteUrl);
+    // The quote owner may delete any comment on their quote.
+    ViewData["ViewerIsQuoteOwner"] = q.IsAuthor;
+    var avatarBody = !string.IsNullOrEmpty(q.Author.AvatarUrl)
+        ? Html.Raw($"<img class=\"avatar\" src=\"{q.Author.AvatarUrl}\" alt=\"{Html.Encode(q.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")
+        : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(q.Author.FullName))}</span>");
+}
+
+<div class="container page pd-page">
+    @if (isAuth)
+    {
+        <a class="btn btn-ghost btn-sm pd-back" href="/Feed">
+            <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+            Asosiyga
+        </a>
+    }
+
+    <div class="pd-grid">
+        <!-- Chap ustun: iqtibos -->
+        <article class="pd-article">
+            <div class="pd-author">
+                @if (q.AuthorHasStory)
+                {
+                    <span class="post-avatar-wrap has-story" data-open-story="@q.Author.Id" role="button" tabindex="0" title="Story">
+                        @avatarBody
+                    </span>
+                }
+                else
+                {
+                    <a href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(q.Author.Username, q.Author.Id)">
+                        @avatarBody
+                    </a>
+                }
+                <div class="meta">
+                    <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(q.Author.Username, q.Author.Id)">@Model.Quote.Author.FullName</a>
+                    <time class="time" datetime="@q.CreatedAt.ToString("o")">
+                        <span class="material-symbols-outlined">schedule</span>
+                        @KitobdaGimen.Web.ViewHelpers.RelativeTime(q.CreatedAt)
+                    </time>
+                </div>
+                <span class="badge badge-quote" style="margin-left:auto"><span class="material-symbols-outlined">format_quote</span>Iqtibos</span>
+            </div>
+
+            <div class="quote-feed-body" style="padding-left:0;padding-right:0">
+                <div class="quote-feed-cover">
+                    @if (!string.IsNullOrEmpty(q.Book.CoverUrl))
+                    {
+                        <img src="@q.Book.CoverUrl" alt="@q.Book.Title" referrerpolicy="no-referrer" />
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">menu_book</span>
+                    }
+                </div>
+                <div class="quote-feed-main">
+                    <span class="quote-feed-mark material-symbols-outlined" aria-hidden="true">format_quote</span>
+                    <blockquote class="quote-feed-text">@q.Text</blockquote>
+                    <div class="quote-feed-book">
+                        <span class="qfb-title">@q.Book.Title</span>
+                        <span class="qfb-author">@q.Book.Author</span>
+                        @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(q.Book.Source))
+                    </div>
+                </div>
+            </div>
+
+            <div class="pd-stats">
+                <span><span class="material-symbols-outlined">favorite</span> <span class="like-count">@q.LikeCount</span> yoqtirish</span>
+                <span><span class="material-symbols-outlined">chat_bubble</span> <span id="commentCount">@q.CommentCount</span> izoh</span>
+                <span><span class="material-symbols-outlined">bookmark</span> <span class="save-count">@q.SaveCount</span> saqlash</span>
+            </div>
+
+            <div class="pd-actions">
+                @if (isAuth)
+                {
+                    <button type="button" class="pd-action-btn like-btn @(q.IsLikedByCurrentUser ? "liked" : "")" data-like-quote="@q.Id">
+                        <span class="material-symbols-outlined">favorite</span>
+                        <span>Yoqdi (<span class="like-count">@q.LikeCount</span>)</span>
+                    </button>
+                    <button type="button" class="pd-action-btn @(q.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@q.Id">
+                        <span class="material-symbols-outlined">bookmark</span>
+                        <span>Saqlash (<span class="save-count">@q.SaveCount</span>)</span>
+                    </button>
+                }
+                <button type="button" class="pd-action-btn" data-share-url="@quoteShareUrl">
+                    <span class="material-symbols-outlined">share</span>
+                    <span>Ulashish</span>
+                </button>
+                @if (meId != null && q.Author.Id == meId)
+                {
+                    <form method="post" action="/quotes/@q.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="pd-action-btn">
+                            <span class="material-symbols-outlined">delete</span>
+                            <span>O'chirish</span>
+                        </button>
+                    </form>
+                }
+            </div>
+        </article>
+
+        <!-- O'ng ustun: izohlar -->
+        <aside class="pd-comments">
+            <div class="pd-comments-card">
+                <h3 class="pd-comments-title">
+                    <span class="material-symbols-outlined">forum</span>
+                    Izohlar
+                </h3>
+
+                <div class="pd-comment-list" id="commentList">
+                    @if (Model.Comments.Count == 0)
+                    {
+                        <p class="muted" id="noComments">Hozircha izohlar yo'q. Birinchi bo'ling!</p>
+                    }
+                    else
+                    {
+                        foreach (var comment in Model.Comments)
+                        {
+                            <partial name="_QuoteComment" model="comment" />
+                        }
+                    }
+                </div>
+
+                @if (isAuth)
+                {
+                    <form id="commentForm" class="pd-comment-form">
+                        @Html.AntiForgeryToken()
+                        <textarea class="input" id="commentText" rows="3" placeholder="O'z fikringizni qoldiring..." spellcheck="false" minlength="3" maxlength="500" required></textarea>
+                        <button type="submit" class="btn btn-accent btn-block">
+                            <span class="material-symbols-outlined" style="font-size:18px">send</span>
+                            Yuborish
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="pd-comment-form">
+                        <a class="btn btn-accent btn-block" href="@loginUrl">Izoh qoldirish uchun ro'yxatdan o'ting</a>
+                    </div>
+                }
+            </div>
+        </aside>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const quoteId = @q.Id;
+    const quoteAuthorId = @q.Author.Id;
+    const list = document.getElementById("commentList");
+    const commentCountEl = document.getElementById("commentCount");
+
+    function escapeHtml(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+    }
+
+    function bumpCommentCount(delta) {
+        if (!commentCountEl) return;
+        commentCountEl.textContent = String((parseInt(commentCountEl.textContent, 10) || 0) + delta);
+    }
+
+    function commentHtml(c, isReply) {
+        const initial = (c.author.fullName || "?").trim().charAt(0).toUpperCase();
+        const avatar = c.author.avatarUrl
+            ? `<img class="avatar sm" src="${escapeHtml(c.author.avatarUrl)}" alt="" referrerpolicy="no-referrer" />`
+            : `<span class="avatar sm">${initial}</span>`;
+        const isAuthor = c.author.id === quoteAuthorId;
+        const authorBadge = isAuthor ? `<span class="badge badge-author">Muallif</span>` : "";
+        const replyBtn = isReply ? "" : `<button type="button" class="comment-reply-btn" data-reply="${c.id}">Javob berish</button>`;
+        const repliesBox = isReply ? "" : `<div class="replies" data-replies-for="${c.id}"></div>`;
+        return `
+            <div class="comment ${isAuthor ? "comment-author" : ""}" data-comment-id="${c.id}">
+                <a href="/profile/${c.author.username || c.author.id}">${avatar}</a>
+                <div class="body">
+                    <div class="bubble">
+                        <div class="comment-meta">
+                            <a class="name" href="/profile/${c.author.username || c.author.id}">${escapeHtml(c.author.fullName)}</a>
+                            ${authorBadge}
+                            <button type="button" class="comment-delete" data-delete-quote-comment="${c.id}" aria-label="O'chirish" title="O'chirish">
+                                <span class="material-symbols-outlined">delete</span>
+                            </button>
+                        </div>
+                        <div class="text">${escapeHtml(c.text)}</div>
+                    </div>
+                    <div class="comment-footer">
+                        ${replyBtn}
+                        <span class="time">hozirgina</span>
+                    </div>
+                    ${repliesBox}
+                </div>
+            </div>`;
+    }
+
+    // Izohni o'chirish — faqat iqtibos izohlari uchun (global "data-delete-comment"dan alohida).
+    document.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-delete-quote-comment]");
+        if (!btn) return;
+        e.preventDefault();
+        if (!confirm("Izohni o'chirmoqchimisiz?")) return;
+        const id = btn.getAttribute("data-delete-quote-comment");
+        try {
+            await kitob.apiPost(`/quotes/comment/${id}/delete`);
+            const node = btn.closest(".comment");
+            if (node) node.remove();
+            bumpCommentCount(-1);
+        } catch (err) { alert(err.message); }
+    });
+
+    const form = document.getElementById("commentForm");
+    if (!form) return;
+    const input = document.getElementById("commentText");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (text.length < 3) { alert("Izoh kamida 3 belgidan iborat bo'lishi kerak."); return; }
+        if (text.length > 500) { alert("Izoh 500 belgidan oshmasligi kerak."); return; }
+        try {
+            const c = await kitob.apiPost(`/quotes/${quoteId}/comment`, { quoteId: quoteId, text: text });
+            if (!c) return;
+            const noComments = document.getElementById("noComments");
+            if (noComments) noComments.remove();
+            list.insertAdjacentHTML("beforeend", commentHtml(c, false));
+            bumpCommentCount(1);
+            input.value = "";
+        } catch (err) { alert(err.message); }
+    });
+
+    // "Javob berish" — izoh ostida kichik javob formasini ochadi/yopadi.
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-reply]");
+        if (!btn) return;
+        e.preventDefault();
+        const commentId = btn.getAttribute("data-reply");
+        const existing = document.querySelector(`.comment-reply-form[data-reply-form-for="${commentId}"]`);
+        if (existing) { existing.remove(); return; }
+
+        const footer = btn.closest(".comment-footer");
+        const replyForm = document.createElement("form");
+        replyForm.className = "comment-reply-form";
+        replyForm.setAttribute("data-reply-form-for", commentId);
+        replyForm.innerHTML = `
+            <textarea class="input" rows="2" placeholder="Javobingizni yozing..." spellcheck="false" minlength="3" maxlength="500" required></textarea>
+            <button type="submit" class="btn btn-accent btn-sm">Yuborish</button>`;
+        footer.insertAdjacentElement("afterend", replyForm);
+        replyForm.querySelector("textarea").focus();
+    });
+
+    document.addEventListener("submit", async (e) => {
+        const replyForm = e.target.closest(".comment-reply-form");
+        if (!replyForm) return;
+        e.preventDefault();
+        const commentId = replyForm.getAttribute("data-reply-form-for");
+        const textarea = replyForm.querySelector("textarea");
+        const text = textarea.value.trim();
+        if (text.length < 3) { alert("Izoh kamida 3 belgidan iborat bo'lishi kerak."); return; }
+        if (text.length > 500) { alert("Izoh 500 belgidan oshmasligi kerak."); return; }
+        try {
+            const c = await kitob.apiPost(`/quotes/${quoteId}/comment`, { quoteId: quoteId, text: text, parentCommentId: parseInt(commentId, 10) });
+            if (!c) return;
+            const repliesBox = document.querySelector(`[data-replies-for="${commentId}"]`);
+            if (repliesBox) repliesBox.insertAdjacentHTML("beforeend", commentHtml(c, true));
+            bumpCommentCount(1);
+            replyForm.remove();
+        } catch (err) { alert(err.message); }
+    });
+})();
+</script>
+}

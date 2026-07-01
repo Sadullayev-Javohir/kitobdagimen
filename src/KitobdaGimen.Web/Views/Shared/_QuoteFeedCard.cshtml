@@ -3,6 +3,8 @@
 @model QuoteDto
 @{
     var meId = CurrentUser.UserId;
+    var quoteUrl = $"/quotes/{Model.Id}";
+    var quoteShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{quoteUrl}";
     var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
         ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")
         : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(Model.Author.FullName))}</span>");
@@ -10,9 +12,18 @@
 
 <article class="card post-card quote-feed-card" data-quote-id="@Model.Id">
     <header class="post-head">
-        <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
-            @avatarBody
-        </a>
+        @if (Model.AuthorHasStory)
+        {
+            <span class="post-avatar-wrap has-story" data-open-story="@Model.Author.Id" role="button" tabindex="0" title="Story">
+                @avatarBody
+            </span>
+        }
+        else
+        {
+            <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">
+                @avatarBody
+            </a>
+        }
         <div class="meta">
             <div class="name-row">
                 <a class="name" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">@Model.Author.FullName</a>
@@ -24,6 +35,7 @@
     </header>
 
     <div class="quote-feed-body">
+        <a class="post-body-link" href="@quoteUrl" aria-label="Iqtibosni ochish"></a>
         <div class="quote-feed-cover">
             @if (!string.IsNullOrEmpty(Model.Book.CoverUrl))
             {
@@ -46,32 +58,38 @@
     </div>
 
     <footer class="post-actions">
+        <button class="action-btn like-btn @(Model.IsLikedByCurrentUser ? "liked" : "")" data-like-quote="@Model.Id" aria-label="Yoqtirish">
+            <span class="material-symbols-outlined">favorite</span>
+            <span class="like-count">@Model.LikeCount</span>
+        </button>
+        <a class="action-btn" href="@quoteUrl" aria-label="Izohlar">
+            <span class="material-symbols-outlined">chat_bubble</span>
+            <span>@Model.CommentCount</span>
+        </a>
         <button class="action-btn @(Model.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@Model.Id" aria-label="Saqlash" title="Saqlash">
             <span class="material-symbols-outlined">bookmark</span>
             <span class="save-count">@Model.SaveCount</span>
         </button>
-        <a class="action-btn" href="/quotes" aria-label="Barcha iqtiboslar" title="Iqtiboslar">
-            <span class="material-symbols-outlined">format_quote</span>
-        </a>
-        @if (meId != null && Model.Author.Id == meId)
-        {
-            <span class="post-actions-end">
+        <span class="post-actions-end">
+            <button type="button" class="action-btn" data-share-url="@quoteShareUrl" aria-label="Ulashish" title="Ulashish">
+                <span class="material-symbols-outlined">share</span>
+            </button>
+            @if (meId != null && Model.Author.Id == meId)
+            {
                 <form method="post" action="/quotes/@Model.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="action-btn danger" aria-label="O'chirish" title="O'chirish">
                         <span class="material-symbols-outlined">delete</span>
                     </button>
                 </form>
-            </span>
-        }
-        else if (ViewData["IsAdmin"] as bool? ?? false)
-        {
-            <span class="post-actions-end">
+            }
+            else if (ViewData["IsAdmin"] as bool? ?? false)
+            {
                 <button type="button" class="action-btn danger" data-admin-delete-quote="@Model.Id"
                         title="Admin: iqtibosni o'chirish" aria-label="Admin: o'chirish">
                     <span class="material-symbols-outlined">delete</span>
                 </button>
-            </span>
-        }
+            }
+        </span>
     </footer>
 </article>
