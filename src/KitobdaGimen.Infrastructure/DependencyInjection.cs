@@ -38,51 +38,66 @@ public static class DependencyInjection
         // User-Agent kerak, aks holda asaxiy bo'sh UA so'rovlarni rad etishi mumkin.
         //
         // asaxiy.uz Cloudflare ortida turadi va xorijiy data-markaz IP'larini (mas.
-        // Hetzner Helsinki) 403 bilan bloklaydi. Shu sabab serverdan to'g'ridan-to'g'ri
-        // so'rov ishlamaydi. Ikki muqobil bepul yechim bor (ikkalasi ham ixtiyoriy):
+        // Hetzner Helsinki) 403 bilan bloklaydi. Shuning uchun bitta yo'lga tayanmaymiz —
+        // AsaxiyBookService bir nechta transportni AVTOMATIK navbat bilan sinaydi va oxirgi
+        // ishlaganini eslab qoladi (sticky). Transportlar (ustunlik tartibida):
         //
-        //   1) "Asaxiy:WorkerUrl" (env: Asaxiy__WorkerUrl) — bepul Cloudflare Worker
-        //      reverse-proxy. asaxiy O'ZI Cloudflare ortida, shuning uchun Worker'dan
-        //      chiqqan so'rov Cloudflare tarmog'idan ketadi (Hetzner ASN emas) va blokka
-        //      tushmaydi. Worker HAR DOIM yoniq — uy kompyuteriga bog'liq emas. Tavsiya
-        //      etiladigan yo'l. (Skript: deploy/asaxiy-proxy-worker.js)
-        //      Ixtiyoriy "Asaxiy:WorkerSecret" (env: Asaxiy__WorkerSecret) bilan himoyalanadi.
+        //   1) Worker — "Asaxiy:WorkerUrl" (env: Asaxiy__WorkerUrl) bepul Cloudflare Worker
+        //      reverse-proxy. Worker'dan chiqqan so'rov Cloudflare tarmog'idan ketadi va
+        //      blokka tushmaydi. Ixtiyoriy "Asaxiy:WorkerSecret" bilan himoyalanadi.
+        //   2) Proxy — "Asaxiy:ProxyUrl" (env: Asaxiy__ProxyUrl) O'zbekiston IP'sidagi
+        //      SOCKS/HTTP proksi (uy SSH tunnel).
+        //   3) Direct — to'g'ridan-to'g'ri (lokal ish yoki bloklanmagan server uchun).
+        //   4) Jina — r.jina.ai o'qigich: Cloudflare bloki OSTIDA ham ishlaydigan, sozlamasiz,
+        //      bepul zaxira yo'l. Hech qanday sozlama bo'lmasa ham qidiruv shu orqali ishlaydi.
         //
-        //   2) "Asaxiy:ProxyUrl" (env: Asaxiy__ProxyUrl) — O'zbekiston IP'sidagi SOCKS/HTTP
-        //      proksi (uy SSH tunnel). Faqat uy kompyuteri yoniq bo'lganda ishlaydi.
-        //
-        // WorkerUrl berilsa, u ustun (proksi e'tiborsiz). Hech biri bo'lmasa —
-        // to'g'ridan-to'g'ri (lokal ish uchun).
-        var asaxiyWorkerUrl = configuration["Asaxiy:WorkerUrl"];
-        var asaxiyWorkerSecret = configuration["Asaxiy:WorkerSecret"];
-        var asaxiyProxyUrl = configuration["Asaxiy:ProxyUrl"];
-        var useWorker = !string.IsNullOrWhiteSpace(asaxiyWorkerUrl);
+        // Bu yondashuv "umrbod ishlash"ni ta'minlaydi: birorta transport o'chsa, keyingisiga
+        // avtomatik o'tadi; "Kitoblarni yangilash" tugmasi holatni tiklab, boshidan sinaydi.
+        services.AddSingleton<AsaxiyTransportState>();
+        services.AddSingleton(new AsaxiyOptions
+        {
+            WorkerUrl = configuration["Asaxiy:WorkerUrl"],
+            WorkerSecret = configuration["Asaxiy:WorkerSecret"],
+            ProxyUrl = configuration["Asaxiy:ProxyUrl"]
+        });
 
-        var asaxiyHttp = services.AddHttpClient<IAsaxiyBookService, AsaxiyBookService>(client =>
+        void ConfigureBrowserClient(System.Net.Http.HttpClient client)
         {
             client.Timeout = TimeSpan.FromSeconds(15);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                 "(KHTML, like Gecko) Chrome/124.0 Safari/537.36");
             client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("uz,en;q=0.8");
-        })
-        .ConfigurePrimaryHttpMessageHandler(() =>
-        {
-            var handler = new HttpClientHandler { AllowAutoRedirect = true };
-            // SOCKS proksi faqat Worker ishlatilmaganda qo'llanadi.
-            if (!useWorker && !string.IsNullOrWhiteSpace(asaxiyProxyUrl))
-            {
-                handler.Proxy = new System.Net.WebProxy(asaxiyProxyUrl);
-                handler.UseProxy = true;
-            }
-            return handler;
-        });
-
-        if (useWorker)
-        {
-            asaxiyHttp.AddHttpMessageHandler(() =>
-                new AsaxiyWorkerProxyHandler(asaxiyWorkerUrl!, asaxiyWorkerSecret));
         }
+
+        // 1) Direct + Worker + public transportlar shu klientdan foydalanadi (proksisiz).
+        services.AddHttpClient(AsaxiyClients.Direct, ConfigureBrowserClient)
+            .ConfigurePrimaryHttpMessageHandler(() =>
+                new System.Net.Http.HttpClientHandler { AllowAutoRedirect = true });
+
+        // 2) SOCKS/HTTP proksi klienti (faqat Asaxiy:ProxyUrl berilganda).
+        var asaxiyProxyUrl = configuration["Asaxiy:ProxyUrl"];
+        services.AddHttpClient(AsaxiyClients.Proxy, ConfigureBrowserClient)
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                var handler = new System.Net.Http.HttpClientHandler { AllowAutoRedirect = true };
+                if (!string.IsNullOrWhiteSpace(asaxiyProxyUrl))
+                {
+                    handler.Proxy = new System.Net.WebProxy(asaxiyProxyUrl);
+                    handler.UseProxy = true;
+                }
+                return handler;
+            });
+
+        // 3) Jina Reader klienti — sekinroq bo'lgani uchun uzunroq timeout.
+        services.AddHttpClient(AsaxiyClients.Jina, client =>
+        {
+            ConfigureBrowserClient(client);
+            client.Timeout = TimeSpan.FromSeconds(40);
+        }).ConfigurePrimaryHttpMessageHandler(() =>
+            new System.Net.Http.HttpClientHandler { AllowAutoRedirect = true });
+
+        services.AddScoped<IAsaxiyBookService, AsaxiyBookService>();
 
         services.AddIdentityServices(configuration);
         services.AddCaching(configuration);

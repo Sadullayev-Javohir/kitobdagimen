@@ -49,6 +49,25 @@ public class BooksController : AppController
     }
 
     /// <summary>
+    /// "Kitoblarni yangilash" — asaxiy qidiruvini qayta ishga tushiradi: transport tanlash
+    /// holatini tiklaydi va jonli sinov qidiruvi bajarib, ishlayotgan yo'lni topadi. Qidiruv
+    /// o'chib qolgan bo'lsa, shu tugma orqali qayta tiklanadi.
+    /// </summary>
+    [HttpPost("asaxiy-refresh")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AsaxiyRefresh()
+    {
+        var result = await _asaxiy.RefreshAsync();
+        return Json(new
+        {
+            ok = result.Healthy,
+            transport = result.Transport,
+            count = result.Count,
+            message = result.Message
+        });
+    }
+
+    /// <summary>
     /// Searches the asaxiy.uz book catalogue (live). Returns lightweight results the
     /// picker shows below local matches; the actual book is created only on import.
     /// </summary>

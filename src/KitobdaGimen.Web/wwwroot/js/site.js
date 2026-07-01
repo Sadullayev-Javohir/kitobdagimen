@@ -757,6 +757,40 @@ async function renderAsaxiyBooks(query, suggestions, pickBook) {
     suggestions.hidden = false;
 }
 
+// "Kitoblarni yangilash" tugmasi — asaxiy qidiruvini qayta ishga tushiradi.
+// Tugma [data-asaxiy-refresh="<qidiruv input selektori>"] atributiga ega. Bosilganda
+// /books/asaxiy-refresh ga so'rov yuboriladi (transportlarni qaytadan sinaydi), keyin
+// input bo'sh bo'lmasa qidiruv qayta ishga tushiriladi.
+document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-asaxiy-refresh]");
+    if (!btn) return;
+    e.preventDefault();
+    if (btn.dataset.busy) return;
+    btn.dataset.busy = "1";
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = "Tekshirilmoqda…";
+    try {
+        const r = await apiPost("/books/asaxiy-refresh");
+        if (r && r.ok) {
+            showToast(r.message || "Kitob qidiruvi ishlayapti ✓");
+            const sel = btn.getAttribute("data-asaxiy-refresh");
+            const input = sel ? document.querySelector(sel) : null;
+            if (input && input.value.trim().length >= 2) {
+                input.dispatchEvent(new Event("input"));
+            }
+        } else {
+            showToast((r && r.message) || "Kitob qidiruvini tiklab bo'lmadi. Yana urinib ko'ring.");
+        }
+    } catch (err) {
+        showToast(err.message || "Xatolik yuz berdi.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+        delete btn.dataset.busy;
+    }
+});
+
 window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks };
 
 initNotifications();
