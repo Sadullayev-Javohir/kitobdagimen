@@ -5,6 +5,7 @@ using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteQuote;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteUser;
 using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
+using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
 using KitobdaGimen.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,11 +29,13 @@ public class AdminController : AppController
 
     private readonly IAppDbContext _db;
     private readonly IAsaxiyBookService _asaxiy;
+    private readonly ICacheService _cache;
 
-    public AdminController(IAppDbContext db, IAsaxiyBookService asaxiy)
+    public AdminController(IAppDbContext db, IAsaxiyBookService asaxiy, ICacheService cache)
     {
         _db = db;
         _asaxiy = asaxiy;
+        _cache = cache;
     }
     /// <summary>User list with exact registration and last-seen timestamps.</summary>
     [HttpGet("")]
@@ -43,6 +46,14 @@ public class AdminController : AppController
             var users = await Mediator.Send(new GetAdminUsersQuery());
             var myRole = users.FirstOrDefault(u => u.Id == CurrentUserId)?.Role ?? UserRole.User;
             ViewData["MyRole"] = myRole;
+            
+            // SuperAdmin uchun server snapshot ham ko'rsatamiz
+            if (myRole == UserRole.SuperAdmin)
+            {
+                var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
+                ViewData["ServerSnapshot"] = snapshot;
+            }
+            
             return View(users);
         }
         catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
@@ -82,6 +93,44 @@ public class AdminController : AppController
     {
         await Mediator.Send(new AdminDeleteQuoteCommand(id));
         return Ok();
+    }
+
+    /// <summary>
+    /// API endpoint — server holatini olish (SuperAdmin uchun).
+    /// </summary>
+    [HttpGet("api/status")]
+    public async Task<IActionResult> GetSystemStatus()
+    {
+        var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
+        if (snapshot == null)
+        {
+            return Json(new { error = "Server holati hali to'planmagan" });
+        }
+        return Json(snapshot);
+    }
+
+    /// <summary>
+    /// SuperAdmin: Redis keshlarini tozalash.
+    /// </summary>
+    [HttpPost("clear-cache")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearCache()
+    {
+        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
+        if (role != UserRole.SuperAdmin)
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            await _cache.FlushAsync();
+            return Json(new { success = true, message = "Barcha keshlar tozalandi" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Xato: {ex.Message}" });
+        }
     }
 
     /// <summary>

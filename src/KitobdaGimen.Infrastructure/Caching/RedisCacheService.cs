@@ -60,4 +60,25 @@ public class RedisCacheService : ICacheService
             _logger.LogWarning(ex, "Redis o'chirishda xatolik (key: {Key})", key);
         }
     }
+
+    public async Task FlushAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var endpoints = _redis.GetEndPoints();
+            foreach (var endpoint in endpoints)
+            {
+                var server = _redis.GetServer(endpoint);
+                if (!server.IsReplica)
+                {
+                    await server.FlushDatabaseAsync();
+                    _logger.LogInformation("Redis keshlari tozalandi (endpoint: {Endpoint})", endpoint);
+                }
+            }
+        }
+        catch (RedisException ex)
+        {
+            _logger.LogWarning(ex, "Redis tozalashda xatolik");
+        }
+    }
 }

@@ -1,4 +1,5 @@
 @using KitobdaGimen.Application.Features.Admin.Dtos
+@using KitobdaGimen.Application.Features.Admin.Monitoring
 @using KitobdaGimen.Domain.Enums
 @model IReadOnlyList<AdminUserDto>
 @{
@@ -6,6 +7,7 @@
     ViewData["Robots"] = "noindex, nofollow";
     var myRole = (UserRole)(ViewData["MyRole"] ?? UserRole.User);
     var isSuper = myRole == UserRole.SuperAdmin;
+    var serverSnapshot = ViewData["ServerSnapshot"] as ServerSnapshot;
 
     string RoleLabel(UserRole r) => r switch
     {
@@ -27,18 +29,161 @@
         <p class="muted">Jami @Model.Count foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
     </div>
 
+    @if (isSuper && serverSnapshot != null)
+    {
+        <div class="card admin-server-status" style="margin-bottom:18px; padding:20px">
+            <h2 style="margin:0 0 16px 0; font-size:18px; display:flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:22px">monitoring</span>
+                Server holati
+            </h2>
+            <div class="status-grid">
+                <!-- Database -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Database.Up ? "status-ok" : "status-error")">
+                        <span class="material-symbols-outlined">storage</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Ma'lumotlar bazasi</div>
+                        <div class="status-value">@(serverSnapshot.Database.Up ? "Faol" : "Ulanmagan")</div>
+                        @if (serverSnapshot.Database.Up)
+                        {
+                            <div class="status-detail">Ping: @serverSnapshot.Database.PingMs.ToString("0.0") ms</div>
+                            <div class="status-detail">Ulanishlar: @serverSnapshot.Database.ActiveConnections</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Redis -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Redis.Up ? "status-ok" : serverSnapshot.Redis.Configured ? "status-error" : "status-warn")">
+                        <span class="material-symbols-outlined">memory</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Redis (kesh)</div>
+                        <div class="status-value">
+                            @if (!serverSnapshot.Redis.Configured)
+                            {
+                                <span>Sozlanmagan</span>
+                            }
+                            else if (serverSnapshot.Redis.Up)
+                            {
+                                <span>Faol</span>
+                            }
+                            else
+                            {
+                                <span>Ulanmagan</span>
+                            }
+                        </div>
+                        @if (serverSnapshot.Redis.Up)
+                        {
+                            <div class="status-detail">Ping: @serverSnapshot.Redis.PingMs.ToString("0.0") ms</div>
+                            <div class="status-detail">Xotira: @serverSnapshot.Redis.UsedMemory</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- CPU & RAM -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.System.CpuPercent < 80 ? "status-ok" : "status-warn")">
+                        <span class="material-symbols-outlined">speed</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">CPU va xotira</div>
+                        <div class="status-value">CPU: @serverSnapshot.System.CpuPercent.ToString("0.0")%</div>
+                        <div class="status-detail">RAM: @serverSnapshot.System.WorkingSetMb MB</div>
+                        <div class="status-detail">Managed: @serverSnapshot.System.ManagedHeapMb MB</div>
+                    </div>
+                </div>
+
+                <!-- Realtime -->
+                <div class="status-card">
+                    <div class="status-icon status-ok">
+                        <span class="material-symbols-outlined">hub</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Real-time (SignalR)</div>
+                        <div class="status-value">@serverSnapshot.Realtime.OnlineUsers ta onlayn</div>
+                        <div class="status-detail">Ulanishlar: @serverSnapshot.Realtime.ActiveConnections</div>
+                    </div>
+                </div>
+
+                <!-- Hangfire -->
+                @if (serverSnapshot.Hangfire.Available)
+                {
+                    <div class="status-card">
+                        <div class="status-icon @(serverSnapshot.Hangfire.Failed > 0 ? "status-warn" : "status-ok")">
+                            <span class="material-symbols-outlined">schedule</span>
+                        </div>
+                        <div class="status-info">
+                            <div class="status-label">Hangfire (fon vazifalari)</div>
+                            <div class="status-value">@serverSnapshot.Hangfire.Enqueued navbatda</div>
+                            <div class="status-detail">Muvaffaqiyatli: @serverSnapshot.Hangfire.Succeeded</div>
+                            @if (serverSnapshot.Hangfire.Failed > 0)
+                            {
+                                <div class="status-detail status-error-text">Xato: @serverSnapshot.Hangfire.Failed</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Disk -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Disk.FreePercent > 20 ? "status-ok" : "status-warn")">
+                        <span class="material-symbols-outlined">hard_drive</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Disk</div>
+                        <div class="status-value">Bo'sh: @serverSnapshot.Disk.FreePercent.ToString("0.0")%</div>
+                        <div class="status-detail">Yuklangan fayllar: @serverSnapshot.Disk.UploadsSizeMb MB</div>
+                        <div class="status-detail">Bo'sh joy: @serverSnapshot.Disk.DriveFreeMb MB</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color); font-size:13px; color:var(--text-muted)">
+                <strong>Tizim:</strong> @serverSnapshot.System.OsDescription |
+                <strong>Uptime:</strong> @serverSnapshot.System.Uptime |
+                <strong>.NET:</strong> @serverSnapshot.System.DotNetVersion |
+                <strong>Oxirgi yangilanish:</strong> @serverSnapshot.Timestamp.ToString("HH:mm:ss")
+            </div>
+        </div>
+    }
+
     @if (isSuper)
     {
-        <div class="card" style="margin-bottom:18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap">
-            <div style="flex:1; min-width:220px">
-                <strong>Kitob muqovalarini asaxiy.uz dan tiklash</strong>
-                <div class="muted" style="font-size:13px">Yo'qolgan (eski) muqovalar asaxiy.uz dan qayta yuklab olinadi. Tugagunicha bosilaveradi.</div>
+        <div class="card" style="margin-bottom:18px; padding:18px">
+            <h2 style="margin:0 0 16px 0; font-size:18px; display:flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:22px">settings</span>
+                Tizim sozlamalari
+            </h2>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px">
+                <!-- Keshni tozalash -->
+                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                    <div style="flex:1; min-width:0">
+                        <strong style="display:block; margin-bottom:4px">Redis keshlarini tozalash</strong>
+                        <div class="muted" style="font-size:13px">Barcha keshlangan ma'lumotlar (feed, profillar, kitoblar) tozalanadi.</div>
+                    </div>
+                    <button type="button" id="clearCacheBtn" class="btn btn-danger btn-sm" style="flex-shrink:0">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">delete_sweep</span>
+                        Tozalash
+                    </button>
+                </div>
+
+                <!-- Muqovalarni tiklash -->
+                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                    <div style="flex:1; min-width:0">
+                        <strong style="display:block; margin-bottom:4px">Kitob muqovalarini tiklash</strong>
+                        <div class="muted" style="font-size:13px">Yo'qolgan muqovalar asaxiy.uz dan qayta yuklanadi.</div>
+                    </div>
+                    <button type="button" id="refreshCoversBtn" class="btn btn-primary btn-sm" style="flex-shrink:0">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
+                        Tiklash
+                    </button>
+                </div>
             </div>
-            <button type="button" id="refreshCoversBtn" class="btn btn-primary">
-                <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
-                Muqovalarni tiklash
-            </button>
-            <span id="refreshCoversStatus" class="muted" style="font-size:13px"></span>
+
+            <div id="settingsStatus" class="muted" style="font-size:13px; margin-top:12px; min-height:20px"></div>
         </div>
     }
 
@@ -128,29 +273,57 @@
 @section Scripts {
 <script>
 (function () {
-    var btn = document.getElementById("refreshCoversBtn");
-    if (!btn) return;
-    var status = document.getElementById("refreshCoversStatus");
     function token() { var el = document.querySelector('input[name="__RequestVerificationToken"]'); return el ? el.value : ''; }
-    btn.addEventListener("click", async function () {
-        btn.disabled = true;
-        status.textContent = "Tiklanmoqda... (biroz vaqt oladi)";
-        try {
-            var r = await fetch("/admin/refresh-covers", {
-                method: "POST",
-                headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
-            });
-            if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
-            var d = await r.json();
-            status.textContent = "Tiklandi: " + d.fixedCount + " ta. Qolgan (yana bosing): " + d.remaining +
-                ". Jami asaxiy kitoblar: " + d.totalAsaxiy + ".";
-            if (d.fixedCount > 0) setTimeout(function () { location.reload(); }, 1500);
-        } catch (e) {
-            status.textContent = "Xato: " + e.message;
-        } finally {
-            btn.disabled = false;
-        }
-    });
+    var status = document.getElementById("settingsStatus");
+    
+    // Keshni tozalash
+    var clearCacheBtn = document.getElementById("clearCacheBtn");
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener("click", async function () {
+            if (!confirm("Barcha keshlarni tozalashni tasdiqlaysizmi? Bu sahifalar sekinroq yuklanishiga olib kelishi mumkin.")) {
+                return;
+            }
+            clearCacheBtn.disabled = true;
+            status.textContent = "Tozalanmoqda...";
+            try {
+                var r = await fetch("/admin/clear-cache", {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
+                var d = await r.json();
+                status.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
+            } catch (e) {
+                status.textContent = "✗ Xato: " + e.message;
+            } finally {
+                clearCacheBtn.disabled = false;
+            }
+        });
+    }
+
+    // Muqovalarni tiklash
+    var refreshCoversBtn = document.getElementById("refreshCoversBtn");
+    if (refreshCoversBtn) {
+        refreshCoversBtn.addEventListener("click", async function () {
+            refreshCoversBtn.disabled = true;
+            status.textContent = "Tiklanmoqda... (biroz vaqt oladi)";
+            try {
+                var r = await fetch("/admin/refresh-covers", {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
+                var d = await r.json();
+                status.textContent = "✓ Tiklandi: " + d.fixedCount + " ta. Qolgan: " + d.remaining +
+                    ". Jami asaxiy kitoblar: " + d.totalAsaxiy + ".";
+                if (d.fixedCount > 0) setTimeout(function () { location.reload(); }, 1500);
+            } catch (e) {
+                status.textContent = "✗ Xato: " + e.message;
+            } finally {
+                refreshCoversBtn.disabled = false;
+            }
+        });
+    }
 })();
 </script>
 }

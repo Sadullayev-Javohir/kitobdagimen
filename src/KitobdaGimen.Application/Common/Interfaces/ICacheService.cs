@@ -8,4 +8,7 @@ public interface ICacheService
     Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken cancellationToken = default);
 
     Task RemoveAsync(string key, CancellationToken cancellationToken = default);
+    
+    /// <summary>Barcha keshni tozalash (admin uchun).</summary>
+    Task FlushAsync(CancellationToken cancellationToken = default);
 }

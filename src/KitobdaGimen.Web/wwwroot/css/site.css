@@ -2664,6 +2664,25 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 .admin-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .admin-note { margin-top: 14px; font-size: 13px; }
 
+/* Admin server status */
+.admin-server-status { background: var(--surface); border: 1px solid var(--border); }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.status-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
+.status-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.status-icon.status-ok { background: rgba(76, 175, 80, 0.12); color: #4caf50; }
+.status-icon.status-warn { background: rgba(255, 152, 0, 0.12); color: #ff9800; }
+.status-icon.status-error { background: rgba(244, 67, 54, 0.12); color: #f44336; }
+.status-info { flex: 1; min-width: 0; }
+.status-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); margin-bottom: 4px; }
+.status-value { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.status-detail { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.status-error-text { color: #f44336; font-weight: 600; }
+
+@media (max-width: 768px) {
+    .status-grid { grid-template-columns: 1fr; }
+}
+
+
 
 /* ===== Feed composer — yopiq tugma + modal oyna ===== */
 .composer-trigger {
