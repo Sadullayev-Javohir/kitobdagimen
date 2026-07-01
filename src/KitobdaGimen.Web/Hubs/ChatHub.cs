@@ -75,6 +75,27 @@ public class ChatHub : Hub
         }
     }
 
+    /// <summary>
+    /// Broadcasts a "typing" signal to the other participant of a conversation. Best-effort:
+    /// the client debounces and re-sends; the recipient auto-clears the indicator after a timeout.
+    /// </summary>
+    public async Task Typing(int conversationId)
+    {
+        if (!TryGetUserId(out var userId)) return;
+
+        var conversation = await _db.Conversations
+            .FirstOrDefaultAsync(c => c.Id == conversationId);
+        if (conversation is null) return;
+
+        if (conversation.User1Id != userId && conversation.User2Id != userId) return;
+
+        var otherUserId = conversation.User1Id == userId ? conversation.User2Id : conversation.User1Id;
+
+        await Clients
+            .Group(UserGroup(otherUserId))
+            .SendAsync("UserTyping", new { conversationId, userId });
+    }
+
     private async Task BroadcastPresenceAsync(int userId, bool isOnline, DateTime? lastSeenAt)
     {
         var partnerIds = await _db.Connections

@@ -9,6 +9,11 @@
     const string bookIcon = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 19.5A2.5 2.5 0 0 1 6.5 17H20\"/><path d=\"M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z\"/></svg>";
     const string pencilIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z\"/></svg>";
     const string trashIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/></svg>";
+    // Modern (SVG) reaksiya (kulgichli) ikoni — xabar ustidagi "reaksiya qo'shish" tugmasi.
+    const string reactIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8.5 14.5a4.5 4.5 0 0 0 7 0\"/><line x1=\"9\" y1=\"9.5\" x2=\"9\" y2=\"9.5\"/><line x1=\"15\" y1=\"9.5\" x2=\"15\" y2=\"9.5\"/></svg>";
+    var stickers = KitobdaGimen.Web.ChatStickers.All;
+    // Backend'dagi ruxsat etilgan reaksiyalar bilan bir xil (ToggleReactionCommandHandler).
+    var reactionEmojis = new[] { "❤️", "👍", "👎", "😂", "😮", "😢", "🔥", "🎉", "📚", "🙏" };
 }
 
 <div class="chat @(Model.ActiveConversationId != null ? "has-active" : "")">
@@ -66,6 +71,16 @@
     </aside>
 
     <section class="chat-main">
+        <div class="chat-books-bg" aria-hidden="true">
+            <span class="fb fb1">@Html.Raw(bookIcon)</span>
+            <span class="fb fb2">@Html.Raw(stickers["open"])</span>
+            <span class="fb fb3">@Html.Raw(stickers["bookmark"])</span>
+            <span class="fb fb4">@Html.Raw(bookIcon)</span>
+            <span class="fb fb5">@Html.Raw(stickers["quill"])</span>
+            <span class="fb fb6">@Html.Raw(stickers["open"])</span>
+            <span class="fb fb7">@Html.Raw(stickers["glasses"])</span>
+            <span class="fb fb8">@Html.Raw(bookIcon)</span>
+        </div>
         @if (active == null)
         {
             <div class="chat-empty">Suhbatni tanlang yoki yangi kitobxonni qidirib taklif qiling.</div>
@@ -94,6 +109,9 @@
                           data-last-seen="@(active.LastSeenAt?.ToString("o"))">
                         @ViewHelpers.Presence(active.IsOnline, active.LastSeenAt)
                     </span>
+                    <span class="typing-indicator" id="typingIndicator" hidden>
+                        yozayapti<span class="typing-dots"><i></i><i></i><i></i></span>
+                    </span>
                 </div>
             </div>
             <div class="messages" id="messages" data-other-user="@active.OtherUser.Id">
@@ -101,8 +119,17 @@
                 {
                     foreach (var m in Model.Messages.Items)
                     {
-                        <div class="msg @(m.IsMine ? "out" : "in")" data-msg-id="@m.Id">
+                        var isSticker = !string.IsNullOrEmpty(m.StickerKey) && stickers.ContainsKey(m.StickerKey!);
+                        <div class="msg @(m.IsMine ? "out" : "in") @(isSticker ? "is-sticker" : "") @(!string.IsNullOrEmpty(m.ImageUrl) ? "has-image" : "")" data-msg-id="@m.Id">
                             <div class="msg-content">
+                                @if (isSticker)
+                                {
+                                    <span class="msg-sticker">@Html.Raw(stickers[m.StickerKey!])</span>
+                                }
+                                @if (!string.IsNullOrEmpty(m.ImageUrl))
+                                {
+                                    <img class="msg-image" src="@m.ImageUrl" data-full="@m.ImageUrl" alt="rasm" loading="lazy" />
+                                }
                                 @if (!string.IsNullOrEmpty(m.Text))
                                 {
                                     <span class="msg-text">@m.Text</span>
@@ -129,16 +156,26 @@
                                     }
                                 </span>
                             </div>
-                            @if (m.IsMine)
+                            @if (m.Reactions.Count > 0)
                             {
-                                <div class="msg-actions">
-                                    @if (!string.IsNullOrEmpty(m.Text))
+                                <div class="msg-reactions">
+                                    @foreach (var r in m.Reactions)
                                     {
-                                        <button type="button" class="msg-act" data-edit-msg aria-label="Tahrirlash">@Html.Raw(pencilIcon)</button>
+                                        <button type="button" class="reaction-chip @(r.Mine ? "mine" : "")" data-reaction="@r.Emoji">@r.Emoji<span class="rc-count">@r.Count</span></button>
                                     }
-                                    <button type="button" class="msg-act" data-del-msg aria-label="O'chirish">@Html.Raw(trashIcon)</button>
                                 </div>
                             }
+                            <div class="msg-actions">
+                                <button type="button" class="msg-act" data-react-open aria-label="Reaksiya">@Html.Raw(reactIcon)</button>
+                                @if (m.IsMine && !string.IsNullOrEmpty(m.Text))
+                                {
+                                    <button type="button" class="msg-act" data-edit-msg aria-label="Tahrirlash">@Html.Raw(pencilIcon)</button>
+                                }
+                                @if (m.IsMine)
+                                {
+                                    <button type="button" class="msg-act" data-del-msg aria-label="O'chirish">@Html.Raw(trashIcon)</button>
+                                }
+                            </div>
                         </div>
                     }
                 }
@@ -147,15 +184,45 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="conversationId" value="@active.Id" />
                 <div class="row">
-                    <input class="input" id="msgText" placeholder="Xabar yozing..." autocomplete="off" maxlength="5000" required />
+                    <button type="button" class="chat-tool-btn" id="stickerBtn" aria-label="Stikerlar" title="Stikerlar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M20 12a8 8 0 0 1-8 8"/><path d="M20 12h-4a4 4 0 0 0-4 4v4"/></svg>
+                    </button>
+                    <button type="button" class="chat-tool-btn" id="imageBtn" aria-label="Rasm yuborish" title="Rasm yuborish">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </button>
+                    <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+                    <input class="input" id="msgText" placeholder="Xabar yozing..." autocomplete="off" maxlength="5000" />
                     <button type="submit" class="btn btn-primary btn-icon" aria-label="Yuborish">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                     </button>
                 </div>
                 <div class="char-count"><span id="charCount">0</span>/5000</div>
+
+                <div class="sticker-panel" id="stickerPanel" hidden>
+                    @foreach (var s in stickers)
+                    {
+                        <button type="button" class="sticker-item" data-sticker="@s.Key" aria-label="@s.Key">@Html.Raw(s.Value)</button>
+                    }
+                </div>
             </form>
         }
     </section>
+</div>
+
+<!-- Reaksiya tanlagich (bitta umumiy element, kerakli xabar yoniga joylashtiriladi) -->
+<div class="reaction-picker" id="reactionPicker" hidden>
+    @foreach (var e in reactionEmojis)
+    {
+        <button type="button" class="rp-emoji" data-emoji="@e">@e</button>
+    }
+</div>
+
+<!-- Rasmni to'liq o'lchamda ko'rish (lightbox) -->
+<div class="chat-lightbox" id="chatLightbox" hidden>
+    <button type="button" class="chat-lightbox-close" id="chatLightboxClose" aria-label="Yopish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+    </button>
+    <img id="chatLightboxImg" src="" alt="Rasm" />
 </div>
 
 @section Scripts {
@@ -171,8 +238,12 @@
         double: '<svg class="tick-svg dbl" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7l3.4 3.4L12 2.4"/><path d="M8.5 9.6L16.5 2"/></svg>',
         book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
         pencil: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
-        trash: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+        trash: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+        react: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" y1="9.5" x2="9" y2="9.5"/><line x1="15" y1="9.5" x2="15" y2="9.5"/></svg>'
     };
+
+    // Stiker SVG'lari (server bilan bir xil manba — ChatStickers.cs).
+    const STICKERS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stickers));
 
     // ───────── O'zbekiston vaqti (UTC+5, DSTsiz) — qurilma timezone'idan MUSTAQIL ─────────
     // Server barcha vaqtlarni hardcoded +5 bilan renderlaydi (ViewHelpers.LastSeen). Mijoz ham
@@ -252,7 +323,7 @@
         const item = block.querySelector(`.conv-item[href$="conversationId=${m.conversationId}"]`);
         if (!item) return; // ro'yxatda yo'q (mas. butunlay yangi suhbat) — refresh ko'rsatadi
         const last = item.querySelector(".last");
-        if (last) last.textContent = m.text ? m.text : "📖 Post ulashildi";
+        if (last) last.textContent = m.text ? m.text : (m.imageUrl ? "Rasm" : (m.stickerKey ? "Stiker" : "Post ulashildi"));
         if (incrementUnread) {
             let badge = item.querySelector(".unread-badge");
             if (!badge) {
@@ -276,9 +347,28 @@
 
     function scrollBottom() { if (list) list.scrollTop = list.scrollHeight; }
 
-    // Bitta xabarning ichki HTML'i (kontent + meta + o'z xabari uchun edit/delete tugmalari).
+    // Xabar sinf(class)lari — stiker/rasm holatiga qarab bubble ko'rinishini o'zgartiradi.
+    function msgClass(m) {
+        let c = `msg ${m.isMine ? "out" : "in"}`;
+        if (m.stickerKey && STICKERS[m.stickerKey]) c += " is-sticker";
+        if (m.imageUrl) c += " has-image";
+        return c;
+    }
+
+    // Reaksiya chiplari (emoji + son). "mine" — joriy foydalanuvchi qo'ygan.
+    function reactionsHtml(m) {
+        if (!m.reactions || m.reactions.length === 0) return "";
+        const chips = m.reactions.map(r =>
+            `<button type="button" class="reaction-chip ${r.mine ? "mine" : ""}" data-reaction="${esc(r.emoji)}">${esc(r.emoji)}<span class="rc-count">${r.count}</span></button>`
+        ).join("");
+        return `<div class="msg-reactions">${chips}</div>`;
+    }
+
+    // Bitta xabarning ichki HTML'i (kontent + meta + reaksiyalar + amal tugmalari).
     function msgInner(m) {
         let content = "";
+        if (m.stickerKey && STICKERS[m.stickerKey]) content += `<span class="msg-sticker">${STICKERS[m.stickerKey]}</span>`;
+        if (m.imageUrl) content += `<img class="msg-image" src="${esc(m.imageUrl)}" data-full="${esc(m.imageUrl)}" alt="rasm" loading="lazy" />`;
         if (m.text) content += `<span class="msg-text">${esc(m.text)}</span>`;
         if (m.sharedPost) {
             content += `<a class="shared-card" href="/posts/${m.sharedPost.postId}">` +
@@ -290,20 +380,22 @@
         if (m.editedAt) meta += `<span class="msg-edited">tahrirlangan</span>`;
         meta += `<span class="msg-time" data-ts="${esc(m.sentAt || "")}">${fmtTime(m.sentAt)}</span>`;
         if (m.isMine) meta += `<span class="ticks ${m.isRead ? "read" : ""}">${m.isRead ? ICON.double : ICON.single}</span>`;
-        let actions = "";
-        if (m.isMine) {
-            actions = `<div class="msg-actions">` +
-                (m.text ? `<button type="button" class="msg-act" data-edit-msg aria-label="Tahrirlash">${ICON.pencil}</button>` : "") +
-                `<button type="button" class="msg-act" data-del-msg aria-label="O'chirish">${ICON.trash}</button></div>`;
-        }
+
+        let actions = `<div class="msg-actions">` +
+            `<button type="button" class="msg-act" data-react-open aria-label="Reaksiya">${ICON.react}</button>` +
+            (m.isMine && m.text ? `<button type="button" class="msg-act" data-edit-msg aria-label="Tahrirlash">${ICON.pencil}</button>` : "") +
+            (m.isMine ? `<button type="button" class="msg-act" data-del-msg aria-label="O'chirish">${ICON.trash}</button>` : "") +
+            `</div>`;
+
         return `<div class="msg-content">${content}` +
-            (meta ? `<span class="meta-row">${meta}</span>` : "") + `</div>` + actions;
+            (meta ? `<span class="meta-row">${meta}</span>` : "") + `</div>` +
+            reactionsHtml(m) + actions;
     }
 
     function renderMessage(m) {
         if (!list) return;
         const div = document.createElement("div");
-        div.className = `msg ${m.isMine ? "out" : "in"}`;
+        div.className = msgClass(m);
         div.dataset.msgId = m.id;
         div.innerHTML = msgInner(m);
         list.appendChild(div);
@@ -311,7 +403,7 @@
     }
 
     function findMsgEl(id) { return list ? list.querySelector(`.msg[data-msg-id="${id}"]`) : null; }
-    function updateMessageEl(m) { const el = findMsgEl(m.id); if (el) { el.classList.remove("editing"); el.innerHTML = msgInner(m); } }
+    function updateMessageEl(m) { const el = findMsgEl(m.id); if (el) { el.className = msgClass(m); el.innerHTML = msgInner(m); } }
     function removeMessageEl(id) { const el = findMsgEl(id); if (el) el.remove(); }
 
     // ── O'z xabarini tahrirlash (inline) ──
@@ -358,17 +450,104 @@
 
     if (list) {
         list.addEventListener("click", async (e) => {
+            // Rasmni to'liq o'lchamda ochish (lightbox).
+            const img = e.target.closest(".msg-image");
+            if (img) { openLightbox(img.dataset.full || img.src); return; }
+
             const msgEl = e.target.closest(".msg");
             if (!msgEl) return;
             if (e.target.closest("[data-edit-save]")) { await saveEdit(msgEl); return; }
             if (e.target.closest("[data-edit-cancel]")) { exitEdit(msgEl); return; }
             if (e.target.closest("[data-edit-msg]")) { enterEdit(msgEl); return; }
             if (e.target.closest("[data-del-msg]")) { await deleteMsg(msgEl); return; }
-            // Sensorli qurilmalar uchun: o'z xabariga teginish tugmalarni ko'rsatadi.
-            if (msgEl.classList.contains("out") && !e.target.closest("a, button")) {
+            if (e.target.closest("[data-react-open]")) { openReactionPicker(msgEl, e.target.closest("[data-react-open]")); return; }
+            const chip = e.target.closest(".reaction-chip");
+            if (chip) { await toggleReaction(parseInt(msgEl.dataset.msgId, 10), chip.dataset.reaction); return; }
+            // Sensorli qurilmalar uchun: xabarga teginish amal tugmalarini ko'rsatadi.
+            if (!e.target.closest("a, button")) {
                 msgEl.classList.toggle("show-actions");
             }
         });
+    }
+
+    // ───────── Rasm lightbox (to'liq o'lcham) ─────────
+    const lightbox = document.getElementById("chatLightbox");
+    const lightboxImg = document.getElementById("chatLightboxImg");
+    function openLightbox(url) {
+        if (!lightbox || !lightboxImg || !url) return;
+        lightboxImg.src = url;
+        lightbox.hidden = false;
+        document.body.classList.add("chat-lightbox-open");
+    }
+    function closeLightbox() {
+        if (!lightbox) return;
+        lightbox.hidden = true;
+        lightboxImg.src = "";
+        document.body.classList.remove("chat-lightbox-open");
+    }
+    if (lightbox) {
+        lightbox.addEventListener("click", (e) => {
+            if (e.target === lightbox || e.target.closest("#chatLightboxClose")) closeLightbox();
+        });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+    }
+
+    // ───────── Reaksiya tanlagich (Telegram uslubi) ─────────
+    const reactionPicker = document.getElementById("reactionPicker");
+    let reactionTargetId = null;
+    function openReactionPicker(msgEl, btn) {
+        if (!reactionPicker || !msgEl) return;
+        reactionTargetId = parseInt(msgEl.dataset.msgId, 10);
+        reactionPicker.hidden = false;
+        // Tugma yoki xabar yoniga joylashtiramiz (ekrandan chiqib ketmasin).
+        const anchor = (btn || msgEl).getBoundingClientRect();
+        const pw = reactionPicker.offsetWidth || 260;
+        const ph = reactionPicker.offsetHeight || 48;
+        let left = Math.min(Math.max(8, anchor.left), window.innerWidth - pw - 8);
+        let top = anchor.top - ph - 8;
+        if (top < 8) top = anchor.bottom + 8;
+        reactionPicker.style.left = left + "px";
+        reactionPicker.style.top = top + "px";
+    }
+    function closeReactionPicker() {
+        if (reactionPicker) reactionPicker.hidden = true;
+        reactionTargetId = null;
+    }
+    if (reactionPicker) {
+        reactionPicker.addEventListener("click", async (e) => {
+            const b = e.target.closest("[data-emoji]");
+            if (!b || reactionTargetId == null) return;
+            const id = reactionTargetId;
+            closeReactionPicker();
+            await toggleReaction(id, b.dataset.emoji);
+        });
+        // Tashqariga bosilganda yopish.
+        document.addEventListener("click", (e) => {
+            if (reactionPicker.hidden) return;
+            if (e.target.closest("#reactionPicker") || e.target.closest("[data-react-open]")) return;
+            closeReactionPicker();
+        });
+        window.addEventListener("scroll", closeReactionPicker, true);
+    }
+
+    async function toggleReaction(messageId, emoji) {
+        if (!messageId || !emoji) return;
+        try {
+            const m = await api.apiPost(`/chat/message/${messageId}/react`, { emoji });
+            if (m) updateMessageEl(m);
+        } catch (err) { alert(err.message); }
+    }
+
+    // SignalR ulanishi (typing signalini yuborish uchun) — pastda tayinlanadi.
+    let chatConn = null;
+
+    // Umumiy yuborish yordamchisi (matn / stiker / rasm).
+    async function sendPayload(payload) {
+        try {
+            const m = await api.apiPost("/chat/send", Object.assign({ conversationId }, payload));
+            if (m) renderMessage(m);
+            return m;
+        } catch (err) { alert(err.message); return null; }
     }
 
     if (form) {
@@ -382,22 +561,78 @@
             if (t) el.textContent = t;
         });
 
+        // Typing signalini debounce bilan yuboramiz (har bosishda emas, ~2s oralatib).
+        let lastTypingSent = 0;
+        function signalTyping() {
+            if (!chatConn || chatConn.state !== signalR.HubConnectionState.Connected) return;
+            const now = Date.now();
+            if (now - lastTypingSent < 2000) return;
+            lastTypingSent = now;
+            chatConn.invoke("Typing", conversationId).catch(() => {});
+        }
+
         text.addEventListener("input", () => {
             counter.textContent = text.value.length;
             counter.parentElement.classList.toggle("over", text.value.length > 5000);
+            if (text.value.trim()) signalTyping();
         });
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
             const value = text.value.trim();
             if (!value) return;
-            try {
-                const m = await api.apiPost("/chat/send", { conversationId, text: value });
-                if (!m) return;
-                renderMessage(m);
-                text.value = ""; counter.textContent = "0";
-            } catch (err) { alert(err.message); }
+            const m = await sendPayload({ text: value });
+            if (m) { text.value = ""; counter.textContent = "0"; }
         });
+
+        // ── Stiker paneli ──
+        const stickerBtn = document.getElementById("stickerBtn");
+        const stickerPanel = document.getElementById("stickerPanel");
+        if (stickerBtn && stickerPanel) {
+            stickerBtn.addEventListener("click", () => { stickerPanel.hidden = !stickerPanel.hidden; });
+            stickerPanel.addEventListener("click", async (e) => {
+                const b = e.target.closest("[data-sticker]");
+                if (!b) return;
+                stickerPanel.hidden = true;
+                await sendPayload({ stickerKey: b.dataset.sticker });
+            });
+            document.addEventListener("click", (e) => {
+                if (stickerPanel.hidden) return;
+                if (e.target.closest("#stickerPanel") || e.target.closest("#stickerBtn")) return;
+                stickerPanel.hidden = true;
+            });
+        }
+
+        // ── Rasm yuborish ──
+        const imageBtn = document.getElementById("imageBtn");
+        const imageInput = document.getElementById("imageInput");
+        if (imageBtn && imageInput) {
+            imageBtn.addEventListener("click", () => imageInput.click());
+            imageInput.addEventListener("change", async () => {
+                const file = imageInput.files && imageInput.files[0];
+                imageInput.value = ""; // keyingi tanlov uchun tozalaymiz
+                if (!file) return;
+                imageBtn.classList.add("uploading");
+                try {
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    const res = await fetch("/chat/upload-image", {
+                        method: "POST",
+                        headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": api.antiforgeryToken() },
+                        credentials: "include",
+                        body: fd
+                    });
+                    if (!res.ok) {
+                        let msg = "Rasm yuklanmadi.";
+                        try { const d = await res.json(); msg = d.message || msg; } catch { /* ignore */ }
+                        throw new Error(msg);
+                    }
+                    const data = await res.json();
+                    if (data && data.url) await sendPayload({ imageUrl: data.url });
+                } catch (err) { alert(err.message); }
+                finally { imageBtn.classList.remove("uploading"); }
+            });
+        }
     }
 
     // ───────── People search ─────────
@@ -595,6 +830,7 @@
             .withUrl("/hubs/chat")
             .withAutomaticReconnect(foreverRetry)
             .build();
+        chatConn = chat;
 
         chat.on("ReceiveMessage", (m) => {
             if (!m) return;
@@ -624,6 +860,29 @@
         });
 
         chat.on("PresenceChanged", (p) => { if (p) applyPresence(p.userId, p.isOnline, p.lastSeenAt); });
+
+        // Reaksiya o'zgarishi — tegishli xabarni jonli yangilaymiz.
+        chat.on("MessageReaction", (m) => {
+            if (!m || !conversationId || m.conversationId !== conversationId) return;
+            updateMessageEl(m);
+        });
+
+        // "yozayapti..." indikatori — 4 soniyada avtomatik o'chadi.
+        let typingTimer = null;
+        const typingEl = document.getElementById("typingIndicator");
+        const presenceEl = document.getElementById("headerPresence");
+        function showTyping(userId) {
+            if (!typingEl || !list) return;
+            if (String(userId) !== String(list.dataset.otherUser)) return;
+            typingEl.hidden = false;
+            if (presenceEl) presenceEl.style.display = "none";
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                typingEl.hidden = true;
+                if (presenceEl) presenceEl.style.display = "";
+            }, 4000);
+        }
+        chat.on("UserTyping", (p) => { if (p && conversationId && p.conversationId === conversationId) showTyping(p.userId); });
 
         let heartbeat = null;
         function beat() { chat.invoke("Heartbeat").catch(() => {}); }

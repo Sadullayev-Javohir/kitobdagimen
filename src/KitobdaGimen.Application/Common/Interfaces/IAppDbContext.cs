@@ -27,6 +27,7 @@ public interface IAppDbContext
     DbSet<QuoteComment> QuoteComments { get; }
     DbSet<Conversation> Conversations { get; }
     DbSet<Message> Messages { get; }
+    DbSet<MessageReaction> MessageReactions { get; }
     DbSet<Story> Stories { get; }
     DbSet<StoryView> StoryViews { get; }
     DbSet<StoryLike> StoryLikes { get; }

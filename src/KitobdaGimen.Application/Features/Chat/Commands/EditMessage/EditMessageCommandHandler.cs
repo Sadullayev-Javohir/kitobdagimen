@@ -54,6 +54,8 @@ public class EditMessageCommandHandler : IRequestHandler<EditMessageCommand, Mes
             .ToMessageDto(userId)
             .FirstAsync(cancellationToken);
 
+        await _db.AttachReactionsAsync(new[] { dto }, userId, cancellationToken);
+
         var otherUserId = message.Conversation.User1Id == userId
             ? message.Conversation.User2Id
             : message.Conversation.User1Id;

@@ -11,6 +11,8 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.HasKey(m => m.Id);
 
         builder.Property(m => m.Text).HasMaxLength(4000);
+        builder.Property(m => m.ImageUrl).HasMaxLength(512);
+        builder.Property(m => m.StickerKey).HasMaxLength(64);
 
         builder.HasOne(m => m.Conversation)
             .WithMany(c => c.Messages)

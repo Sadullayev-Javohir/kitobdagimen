@@ -50,6 +50,8 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, PagedRe
 
         items.Reverse();
 
+        await _db.AttachReactionsAsync(items, userId, cancellationToken);
+
         return PagedResult<MessageDto>.Create(items, page, pageSize, totalCount);
     }
 }

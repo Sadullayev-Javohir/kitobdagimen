@@ -9,6 +9,8 @@ public record MessageDto
     public int ConversationId { get; init; }
     public UserSummaryDto Sender { get; init; } = null!;
     public string? Text { get; init; }
+    public string? ImageUrl { get; init; }
+    public string? StickerKey { get; init; }
     public SharedPostPreviewDto? SharedPost { get; init; }
     public DateTime SentAt { get; init; }
     public bool IsRead { get; init; }
@@ -18,4 +20,8 @@ public record MessageDto
 
     /// <summary>True when the current user is the sender.</summary>
     public bool IsMine { get; init; }
+
+    /// <summary>Emoji reactions on this message, grouped by emoji (Telegram-style).
+    /// Populated after the base projection via <c>AttachReactionsAsync</c>.</summary>
+    public List<MessageReactionGroupDto> Reactions { get; set; } = new();
 }

@@ -35,6 +35,7 @@ public class TestDbContext : DbContext, IAppDbContext
     public DbSet<QuoteComment> QuoteComments => Set<QuoteComment>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
+    public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();
     public DbSet<Story> Stories => Set<Story>();
     public DbSet<StoryView> StoryViews => Set<StoryView>();
     public DbSet<StoryLike> StoryLikes => Set<StoryLike>();

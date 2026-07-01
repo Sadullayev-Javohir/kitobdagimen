@@ -24,6 +24,9 @@ public interface IChatNotifier
     /// <summary>Tells the recipient that a message was deleted (so they can remove it live).</summary>
     Task MessageDeletedAsync(int recipientUserId, int conversationId, int messageId, CancellationToken cancellationToken = default);
 
+    /// <summary>Tells the recipient that a message's emoji reactions changed (so they update live).</summary>
+    Task MessageReactionChangedAsync(int recipientUserId, MessageDto message, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Tells the original sender that their messages in a conversation were read, so their
     /// outgoing messages can switch to the blue double-tick in real time.

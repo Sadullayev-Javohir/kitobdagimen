@@ -81,6 +81,8 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
             ConversationId = conversation.Id,
             SenderId = userId,
             Text = string.IsNullOrWhiteSpace(request.Text) ? null : request.Text,
+            ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl,
+            StickerKey = string.IsNullOrWhiteSpace(request.StickerKey) ? null : request.StickerKey.Trim(),
             SharedPostId = request.SharedPostId,
             SentAt = DateTime.UtcNow,
             IsRead = false

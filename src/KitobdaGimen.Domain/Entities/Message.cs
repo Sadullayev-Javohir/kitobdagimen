@@ -15,6 +15,12 @@ public class Message : BaseEntity
 
     public string? Text { get; set; }
 
+    /// <summary>Public URL of an attached image (uploaded to <c>/uploads/chat</c>); null if none.</summary>
+    public string? ImageUrl { get; set; }
+
+    /// <summary>Key of a built-in app sticker (e.g. "book", "quill"); null if not a sticker message.</summary>
+    public string? StickerKey { get; set; }
+
     public int? SharedPostId { get; set; }
     public Post? SharedPost { get; set; }
 
@@ -23,4 +29,7 @@ public class Message : BaseEntity
 
     /// <summary>When the sender last edited the text; null if never edited.</summary>
     public DateTime? EditedAt { get; set; }
+
+    /// <summary>Emoji reactions left on this message (Telegram-style).</summary>
+    public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
 }

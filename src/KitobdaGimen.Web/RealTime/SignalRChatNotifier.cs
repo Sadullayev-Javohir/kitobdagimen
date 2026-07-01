@@ -94,6 +94,20 @@ public class SignalRChatNotifier : IChatNotifier
         }
     }
 
+    public async Task MessageReactionChangedAsync(int recipientUserId, MessageDto message, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _hub.Clients
+                .Group(ChatHub.UserGroup(recipientUserId))
+                .SendAsync("MessageReaction", message, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Reaksiya o'zgarishini yuborib bo'lmadi (recipient {RecipientId}).", recipientUserId);
+        }
+    }
+
     public async Task MessagesReadAsync(int senderUserId, int conversationId, CancellationToken cancellationToken = default)
     {
         try

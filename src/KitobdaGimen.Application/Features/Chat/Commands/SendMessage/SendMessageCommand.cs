@@ -14,4 +14,10 @@ public record SendMessageCommand : IRequest<MessageDto>
     public int? RecipientId { get; init; }
     public string? Text { get; init; }
     public int? SharedPostId { get; init; }
+
+    /// <summary>Public URL of an uploaded image attachment (from <c>/chat/upload-image</c>).</summary>
+    public string? ImageUrl { get; init; }
+
+    /// <summary>Key of a built-in app sticker (e.g. "book", "quill").</summary>
+    public string? StickerKey { get; init; }
 }

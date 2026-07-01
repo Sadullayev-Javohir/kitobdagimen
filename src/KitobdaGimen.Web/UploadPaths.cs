@@ -36,7 +36,7 @@ public static class UploadPaths
         }
 
         // Ensure the sub-folders exist so the first upload never fails.
-        foreach (var sub in new[] { "covers", "avatars", "posts", "stories" })
+        foreach (var sub in new[] { "covers", "avatars", "posts", "stories", "chat" })
         {
             Directory.CreateDirectory(Path.Combine(Root, sub));
         }

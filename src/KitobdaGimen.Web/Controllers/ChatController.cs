@@ -4,6 +4,7 @@ using KitobdaGimen.Application.Features.Chat.Commands.EditMessage;
 using KitobdaGimen.Application.Features.Chat.Commands.GetOrCreateConversation;
 using KitobdaGimen.Application.Features.Chat.Commands.MarkMessagesRead;
 using KitobdaGimen.Application.Features.Chat.Commands.SendMessage;
+using KitobdaGimen.Application.Features.Chat.Commands.ToggleReaction;
 using KitobdaGimen.Application.Features.Chat.Queries.GetConversations;
 using KitobdaGimen.Application.Features.Chat.Queries.GetMessages;
 using KitobdaGimen.Application.Features.Chat.Queries.GetUnreadMessageCount;
@@ -16,6 +17,9 @@ using KitobdaGimen.Application.Features.Users.Queries.SearchUsers;
 using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using SixLabors.ImageSharp.Processing;
 
 namespace KitobdaGimen.Web.Controllers;
 
@@ -23,6 +27,15 @@ namespace KitobdaGimen.Web.Controllers;
 [Route("chat")]
 public class ChatController : AppController
 {
+    // Allowed chat image types — re-encoded to WebP regardless of the original format.
+    private static readonly HashSet<string> AllowedImageTypes = new()
+    {
+        "image/jpeg", "image/png", "image/webp", "image/gif"
+    };
+
+    private const long MaxImageBytes = 8 * 1024 * 1024; // 8 MB
+    private const int MaxImageDimension = 1600;
+
     /// <summary>Redis presence service, resolved per request (same pattern as the base mediator).</summary>
     private IPresenceService Presence =>
         HttpContext.RequestServices.GetRequiredService<IPresenceService>();
@@ -74,6 +87,78 @@ public class ChatController : AppController
     public async Task<IActionResult> Send([FromBody] SendMessageCommand command)
     {
         var message = await Mediator.Send(command);
+        return Json(message);
+    }
+
+    /// <summary>Uploads a chat image, re-encodes it as WebP and returns its public URL (JSON).</summary>
+    [HttpPost("upload-image")]
+    public async Task<IActionResult> UploadImage(IFormFile? file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Rasm tanlanmadi." });
+        }
+
+        if (file.Length > MaxImageBytes)
+        {
+            return BadRequest(new { message = "Rasm hajmi 8 MB dan oshmasligi kerak." });
+        }
+
+        var contentType = file.ContentType?.ToLowerInvariant() ?? "";
+        var isAllowedType = AllowedImageTypes.Contains(contentType);
+        var hasImageExtension = file.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (!isAllowedType && !hasImageExtension)
+        {
+            return BadRequest(new { message = $"Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin. ({contentType})" });
+        }
+
+        Image image;
+        try
+        {
+            await using var input = file.OpenReadStream();
+            image = await Image.LoadAsync(input);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return BadRequest(new { message = "Fayl rasm formatida emas." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Rasmni o'qib bo'lmadi: {ex.Message}" });
+        }
+
+        using (image)
+        {
+            if (image.Width > MaxImageDimension || image.Height > MaxImageDimension)
+            {
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(MaxImageDimension, MaxImageDimension)
+                }));
+            }
+
+            var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("chat");
+            var fileName = $"{Guid.NewGuid():N}.webp";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 80 });
+
+            var url = $"/uploads/chat/{fileName}";
+            return Json(new { url });
+        }
+    }
+
+    /// <summary>Toggles the current user's emoji reaction on a message (Telegram-style).</summary>
+    [HttpPost("message/{id:int}/react")]
+    public async Task<IActionResult> React(int id, [FromBody] ReactRequest body)
+    {
+        var message = await Mediator.Send(new ToggleReactionCommand(id, body.Emoji ?? ""));
         return Json(message);
     }
 
@@ -184,4 +269,7 @@ public class ChatController : AppController
 
     /// <summary>JSON body for <see cref="EditMessage"/>.</summary>
     public record EditMessageRequest(string? Text);
+
+    /// <summary>JSON body for <see cref="React"/> (toggle an emoji reaction on a message).</summary>
+    public record ReactRequest(string? Emoji);
 }

@@ -81,8 +81,10 @@ public class QuotesController : AppController
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>Quote detail page with its comment thread, by internal id.</summary>
+    /// <summary>Quote detail page with its comment thread, by internal id. Viewable without
+    /// logging in so shared quotes (e.g. sent to someone in chat) open for anonymous visitors too.</summary>
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     public async Task<IActionResult> Details(int id)
     {
         var detail = await Mediator.Send(new GetQuoteByIdQuery(id));
