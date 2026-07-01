@@ -18,13 +18,14 @@
     // (chat sahifasida ham — input pastki nav ustida turadi, balandlik shунга moslashtirilgan).
     var showBottomNav = isAuth && !hideChrome;
     var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
-    // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Iqtiboslar va post detali sahifalarida ko'rsatilmaydi.
+    // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Iqtiboslar, Challenge va post detali sahifalarida ko'rsatilmaydi.
     // (/feed va /quotes da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
     var hideSearch = isChatPage
         || string.Equals(currentController, "Feed", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Profile", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "ReadingGoals", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Quotes", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentController, "Challenge", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase);
 
     // --- SEO (Google'da yuqori chiqish uchun) ---

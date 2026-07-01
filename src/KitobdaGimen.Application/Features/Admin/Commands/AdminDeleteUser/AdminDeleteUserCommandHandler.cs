@@ -29,6 +29,11 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.TargetUserId, cancellationToken)
             ?? throw new NotFoundException("Foydalanuvchi", request.TargetUserId);
 
+        if (user.Role == UserRole.SuperAdmin)
+        {
+            throw new ForbiddenAccessException("Super adminni o'chirib bo'lmaydi.");
+        }
+
         var userId = user.Id;
 
         // Dependent rows with Restrict FKs are removed explicitly before the user; rows that cascade

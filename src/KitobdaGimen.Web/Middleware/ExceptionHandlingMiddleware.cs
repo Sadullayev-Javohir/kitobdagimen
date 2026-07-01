@@ -53,6 +53,14 @@ public class ExceptionHandlingMiddleware
         {
             _logger.LogError(exception, "Ishlov berilmagan xatolik");
         }
+        else if (exception is DbUpdateException)
+        {
+            // DB write failures are logged at Error with the full inner detail so the exact
+            // failing constraint/table is always visible in the server logs (past user-delete
+            // FK bugs were hard to diagnose because the sanitized client message hid the cause).
+            _logger.LogError(exception, "Ma'lumotlar bazasi yozuv xatosi: {Detail}",
+                exception.InnerException?.Message ?? exception.Message);
+        }
         else
         {
             _logger.LogWarning(exception, "So'rov xatosi: {Message}", exception.Message);
@@ -70,13 +78,18 @@ public class ExceptionHandlingMiddleware
     {
         // Try to extract a user-friendly message from the inner exception.
         var inner = ex.InnerException?.Message ?? ex.Message;
-        
+
         if (inner.Contains("foreign key constraint", StringComparison.OrdinalIgnoreCase) ||
             inner.Contains("FK_", StringComparison.OrdinalIgnoreCase))
         {
-            return "Bog'liq ma'lumotlar mavjud. Avval bog'langan yozuvlarni o'chiring.";
+            // Name the offending table so a missed dependency is immediately actionable
+            // instead of hiding behind a generic message (e.g. "... jadval: Comments").
+            var table = ExtractReferencedTable(inner);
+            return table is null
+                ? "Bog'liq ma'lumotlar mavjud. Avval bog'langan yozuvlarni o'chiring."
+                : $"Bog'liq ma'lumotlar mavjud (jadval: {table}). Avval bog'langan yozuvlarni o'chiring.";
         }
-        
+
         if (inner.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
             inner.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
         {
@@ -85,5 +98,23 @@ public class ExceptionHandlingMiddleware
 
         // Return a sanitized version (don't expose full SQL error to users).
         return "Ma'lumotlarni saqlashda xatolik yuz berdi.";
+    }
+
+    /// <summary>
+    /// Pulls the child table name out of a PostgreSQL FK-violation message such as
+    /// <c>... violates foreign key constraint "FK_Comments_Users_UserId" on table "Comments"</c>.
+    /// Returns <c>null</c> if no table name can be found.
+    /// </summary>
+    private static string? ExtractReferencedTable(string message)
+    {
+        const string marker = "on table \"";
+        var start = message.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (start < 0)
+        {
+            return null;
+        }
+        start += marker.Length;
+        var end = message.IndexOf('"', start);
+        return end > start ? message[start..end] : null;
     }
 }
