@@ -29,11 +29,6 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == request.TargetUserId, cancellationToken)
             ?? throw new NotFoundException("Foydalanuvchi", request.TargetUserId);
 
-        if (user.Role == UserRole.SuperAdmin)
-        {
-            throw new ForbiddenAccessException("Super adminni o'chirib bo'lmaydi.");
-        }
-
         var userId = user.Id;
 
         // Dependent rows with Restrict FKs are removed explicitly before the user; rows that cascade
@@ -61,6 +56,11 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
         // be removed explicitly or the User delete is blocked.
         _db.MessageReactions.RemoveRange(await _db.MessageReactions
             .Where(r => r.UserId == userId).ToListAsync(cancellationToken));
+
+        // Messages sent by this user (SenderId has Restrict FK). Must be removed explicitly
+        // before deleting conversations, or the User delete is blocked.
+        _db.Messages.RemoveRange(await _db.Messages
+            .Where(m => m.SenderId == userId).ToListAsync(cancellationToken));
 
         _db.Conversations.RemoveRange(await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId).ToListAsync(cancellationToken));
