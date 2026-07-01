@@ -1,0 +1,148 @@
+@using KitobdaGimen.Application.Features.YearReview.Dtos
+@model YearReviewDto
+@{
+    var shareUrl = ViewData["ShareUrl"] as string ?? "";
+    var initial = string.IsNullOrWhiteSpace(Model.FullName) ? "?" : Model.FullName.Trim()[..1].ToUpper();
+    var extraEmoji = Model.Emojis.Count > 1 ? Model.Emojis[1] : "✨";
+    var thirdEmoji = Model.Emojis.Count > 2 ? Model.Emojis[2] : "🌟";
+}
+<div class="yr-card yr-theme-@Model.ThemeVariant"
+     data-yr-year="@Model.Year"
+     data-yr-share-url="@shareUrl"
+     data-yr-name="@Model.FullName">
+
+    @* Bayram effektlari (qor/uchqun) — JS to'ldiradi, yuklab olishga kirmaydi *@
+    <div class="yr-fx" data-yr-fx aria-hidden="true"></div>
+
+    @* html2canvas uchun tortib olinadigan hudud (tugmalarsiz) *@
+    <div class="yr-capture" data-yr-capture>
+        <div class="yr-corner yr-corner-tl" aria-hidden="true">@Model.PrimaryEmoji</div>
+        <div class="yr-corner yr-corner-tr" aria-hidden="true">@extraEmoji</div>
+        <div class="yr-corner yr-corner-bl" aria-hidden="true">@thirdEmoji</div>
+        <div class="yr-corner yr-corner-br" aria-hidden="true">@Model.PrimaryEmoji</div>
+
+        <header class="yr-head">
+            <span class="yr-logo" aria-hidden="true">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="40" height="40">
+                    <g transform="translate(8,4)">
+                        <ellipse cx="42" cy="58" rx="33" ry="41" fill="#E8703A" />
+                        <path d="M 9 39 Q 2 16 22 19 Q 14 31 16 45 Z" fill="#E8703A" />
+                        <path d="M 75 39 Q 82 16 62 19 Q 70 31 68 45 Z" fill="#E8703A" />
+                        <circle cx="28" cy="46" r="12" fill="#FAF6EE" />
+                        <circle cx="56" cy="46" r="12" fill="#FAF6EE" />
+                        <circle cx="28" cy="46" r="6.4" fill="#1B4D3E" />
+                        <circle cx="56" cy="46" r="6.4" fill="#1B4D3E" />
+                        <path d="M 42 52.5 L 37 62.5 L 47 62.5 Z" fill="#d2602d" />
+                        <path d="M 6 76 Q 1 85 8 91 Q 12 84 12.5 76 Z" fill="#d2602d" />
+                        <path d="M 78 76 Q 83 85 76 91 Q 72 84 71.5 76 Z" fill="#d2602d" />
+                        <g transform="translate(15.5,74)">
+                            <path d="M 0 4.8 Q 0 0 4.8 0 L 22.5 0 Q 25.5 0 25.5 3.2 L 25.5 30.5 Q 25.5 33.7 22.5 33.7 L 4.8 33.7 Q 0 33.7 0 28.9 Z" fill="#1B4D3E" />
+                            <path d="M 51 4.8 Q 51 0 46.2 0 L 28.5 0 Q 25.5 0 25.5 3.2 L 25.5 30.5 Q 25.5 33.7 28.5 33.7 L 46.2 33.7 Q 51 33.7 51 28.9 Z" fill="#1B4D3E" />
+                            <line x1="25.5" y1="3.2" x2="25.5" y2="32" stroke="#FAF6EE" stroke-width="1.2" />
+                        </g>
+                        <ellipse cx="29.5" cy="100" rx="5.2" ry="2.6" fill="#d2602d" />
+                        <ellipse cx="54.5" cy="100" rx="5.2" ry="2.6" fill="#d2602d" />
+                    </g>
+                </svg>
+            </span>
+            <span class="yr-brand">kitobdagimen<span class="yr-brand-accent">.uz</span></span>
+        </header>
+
+        <div class="yr-title">
+            <span class="yr-year">@Model.Year</span>
+            <span class="yr-title-sub">yillik kitob yakuni</span>
+        </div>
+
+        <div class="yr-user">
+            <span class="yr-avatar" aria-hidden="true">@initial</span>
+            <span class="yr-username">@Model.FullName</span>
+        </div>
+
+        @if (Model.HasActivity)
+        {
+            <div class="yr-stats">
+                <div class="yr-stat">
+                    <span class="yr-stat-num">@Model.BooksRead</span>
+                    <span class="yr-stat-label">kitob</span>
+                </div>
+                <div class="yr-stat">
+                    <span class="yr-stat-num">@Model.TotalPages</span>
+                    <span class="yr-stat-label">bet</span>
+                </div>
+                <div class="yr-stat">
+                    <span class="yr-stat-num">@Model.ActiveDays</span>
+                    <span class="yr-stat-label">faol kun</span>
+                </div>
+            </div>
+
+            @if (Model.Books.Count > 0)
+            {
+                <div class="yr-section">
+                    <div class="yr-section-head">📖 O'qigan kitoblaring</div>
+                    <div class="yr-books">
+                        @foreach (var b in Model.Books)
+                        {
+                            <span class="yr-book-chip" title="@b.Author">@b.Title</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (Model.TopPost is not null || Model.TopQuote is not null)
+            {
+                <div class="yr-highlights">
+                    @if (Model.TopPost is not null)
+                    {
+                        <div class="yr-highlight">
+                            <div class="yr-highlight-head">
+                                <span>🏆 Eng mashhur posting</span>
+                                <span class="yr-likes">❤ @Model.TopPost.LikeCount</span>
+                            </div>
+                            <div class="yr-highlight-body">“@Model.TopPost.Snippet”</div>
+                            <div class="yr-highlight-meta">@Model.TopPost.BookTitle</div>
+                        </div>
+                    }
+                    @if (Model.TopQuote is not null)
+                    {
+                        <div class="yr-highlight">
+                            <div class="yr-highlight-head">
+                                <span>💬 Eng mashhur iqtibosing</span>
+                                <span class="yr-likes">❤ @Model.TopQuote.LikeCount</span>
+                            </div>
+                            <div class="yr-highlight-body">“@Model.TopQuote.Snippet”</div>
+                            <div class="yr-highlight-meta">@Model.TopQuote.BookTitle</div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="yr-empty">
+                <div class="yr-empty-emoji">@Model.PrimaryEmoji</div>
+                <p>Bu yil o'qish sari ilk qadamlaringni qo'yding. Kelasi yil yakuning
+                    kitoblar bilan to'lib-toshsin!</p>
+            </div>
+        }
+
+        <div class="yr-motivation">@Model.Motivation</div>
+
+        <footer class="yr-foot">
+            <span>kitobdagimen.uz</span>
+            <span class="yr-foot-dot">•</span>
+            <span>@Model.Year</span>
+        </footer>
+    </div>
+
+    @* Amallar — tortib olinadigan hududdan tashqarida (rasmga tushmaydi) *@
+    <div class="yr-actions" data-yr-actions>
+        <button type="button" class="yr-btn yr-btn-primary" data-yr-download="png">
+            <span class="material-symbols-outlined">download</span> Rasm (PNG)
+        </button>
+        <button type="button" class="yr-btn" data-yr-download="jpg">JPG</button>
+        <button type="button" class="yr-btn" data-yr-download="pdf">PDF</button>
+        <button type="button" class="yr-btn" data-yr-share>
+            <span class="material-symbols-outlined">share</span> Ulashish
+        </button>
+    </div>
+</div>

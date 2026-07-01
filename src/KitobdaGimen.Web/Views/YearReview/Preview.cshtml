@@ -1,0 +1,23 @@
+@using KitobdaGimen.Application.Features.YearReview.Dtos
+@model KitobdaGimen.Web.Models.YearReviewPageViewModel
+@{
+    ViewData["ShareUrl"] = Model.ShareUrl;
+}
+
+<link rel="stylesheet" href="/css/year-review.css" asp-append-version="true" />
+
+<div class="yr-page">
+    <div class="yr-page-inner">
+        <div class="yr-preview-banner">
+            <span class="material-symbols-outlined">science</span>
+            <div>
+                <strong>Sinov rejimi (oldindan ko'rish)</strong>
+                <p>Bu kartochka foydalanuvchilarga 20-dekabrdan 1-yanvargacha har kirishda avtomatik
+                    ko'rsatiladi. Bu yerda uni sanaga qaramay sinab ko'rishingiz mumkin —
+                    quyida yuklab olish va ulashishni ham tekshiring.</p>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("_YearReviewCard", Model.Review)
+    </div>
+</div>

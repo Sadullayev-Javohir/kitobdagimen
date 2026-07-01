@@ -15,7 +15,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="33f6d112-5c1c-41fd-b366-0b0c85fa4ece" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/KitobdaGimen.Application/Features/Admin/Commands/AdminDeleteUser/AdminDeleteUserCommandHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/KitobdaGimen.Application/Features/Admin/Commands/AdminDeleteUser/AdminDeleteUserCommandHandler.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.KitobdaGimen/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.KitobdaGimen/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -105,7 +105,7 @@
       <workItem from="1782784268341" duration="17107000" />
       <workItem from="1782833418433" duration="4149000" />
       <workItem from="1782893225474" duration="26543000" />
-      <workItem from="1782925126186" duration="1494000" />
+      <workItem from="1782925126186" duration="2748000" />
     </task>
     <servers />
   </component>

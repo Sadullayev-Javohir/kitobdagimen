@@ -1,0 +1,23 @@
+@using KitobdaGimen.Application.Features.YearReview.Dtos
+@model KitobdaGimen.Web.Models.YearReviewPageViewModel
+@{
+    ViewData["ShareUrl"] = Model.ShareUrl;
+    var name = string.IsNullOrWhiteSpace(Model.Review.FullName) ? "Kitobxon" : Model.Review.FullName;
+}
+
+<link rel="stylesheet" href="/css/year-review.css" asp-append-version="true" />
+
+<div class="yr-page">
+    <div class="yr-page-inner">
+        @await Html.PartialAsync("_YearReviewCard", Model.Review)
+
+        <div class="yr-page-cta">
+            <p>@name ning @Model.Review.Year-yilgi kitob yakuni. Sen ham o'zingnikini yarat!</p>
+            <a class="yr-btn yr-btn-primary" href="/">kitobdagimen.uz ga kirish</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/year-review.js" asp-append-version="true"></script>
+}

@@ -27,6 +27,10 @@ builder.Services.AddControllersWithViews()
     });
 builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
 
+// Data Protection — "Yillik yakun" ulashish tokenlarini (foydalanuvchi id + yil)
+// himoyalash uchun. Standart holatda kalitlar avtomatik boshqariladi.
+builder.Services.AddDataProtection();
+
 // Reverse-proxy (nginx/Hetzner) ortida to'g'ri ishlash: HTTPS sxemasi va haqiqiy
 // mijoz IP'si X-Forwarded-* sarlavhalaridan olinadi. Busiz: cookie Secure flagi
 // qo'yilmaydi (Request.IsHttps=false) va rate-limit barcha foydalanuvchini bitta

@@ -147,6 +147,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="kitobdagimen" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isAuth)
+    {
+        <link rel="stylesheet" href="~/css/year-review.css" asp-append-version="true" />
+    }
 </head>
 <body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
@@ -398,6 +402,7 @@
     @if (isAuth)
     {
         <script src="~/js/push.js" asp-append-version="true"></script>
+        <script src="~/js/year-review.js" asp-append-version="true"></script>
     }
 </body>
 </html>
