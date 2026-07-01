@@ -57,6 +57,7 @@ public class ChallengeController : AppController
 
         var announced = await Mediator.Send(new GetAnnouncedWinnersQuery());
         var covers = await Mediator.Send(new GetRandomBookCoversQuery { Count = DecorationCoverCount });
+        covers = FilterExistingCovers(covers);
 
         var stats = CurrentUserId is int uid
             ? await Mediator.Send(new GetUserChallengeStatsQuery(uid))
@@ -89,7 +90,7 @@ public class ChallengeController : AppController
     public async Task<IActionResult> Covers()
     {
         var covers = await Mediator.Send(new GetRandomBookCoversQuery { Count = DecorationCoverCount });
-        return Json(covers);
+        return Json(FilterExistingCovers(covers));
     }
 
     /// <summary>Berilgan yil uchun o'qish kalendari (GitHub uslubidagi heatmap) — JSON.
@@ -145,6 +146,7 @@ public class ChallengeController : AppController
         var standings = await Mediator.Send(new GetChallengeStandingsQuery { Year = y, Month = m, Limit = 3 });
         var announced = await Mediator.Send(new GetAnnouncedWinnersQuery { Year = y, Month = m });
         var covers = await Mediator.Send(new GetRandomBookCoversQuery { Count = DecorationCoverCount });
+        covers = FilterExistingCovers(covers);
 
         ViewData["Title"] = "Challenge — admin oldindan ko'rish";
 
@@ -181,15 +183,75 @@ public class ChallengeController : AppController
         return RedirectToAction("Admin", new { year, month });
     }
 
+    /// <summary>Berilgan oyni e'lon qiladi (g'oliblarni saqlaydi) va shu bilan birga har bir
+    /// g'olibga sovg'a kitob (nom, muallif, yuklangan muqova rasmi) biriktiradi. Super admin.</summary>
+    [HttpPost("admin/announce")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(30 * 1024 * 1024)]
+    public async Task<IActionResult> Announce(int year, int month)
+    {
+        try
+        {
+            var count = await Mediator.Send(new FinalizeChallengeMonthCommand(year, month));
+
+            // 1-, 2-, 3-o'rin g'oliblariga sovg'a kitoblarni saqlaymiz (kiritilgan bo'lsa).
+            for (var rank = 1; rank <= 3; rank++)
+            {
+                var title = Request.Form[$"title_{rank}"].ToString();
+                var author = Request.Form[$"author_{rank}"].ToString();
+                var file = Request.Form.Files.GetFile($"cover_{rank}");
+                var hasFile = file is not null && file.Length > 0;
+
+                if (string.IsNullOrWhiteSpace(title) && !hasFile)
+                {
+                    continue;
+                }
+
+                var savedCoverUrl = hasFile ? await SaveGiftCoverAsync(file!) : null;
+
+                try
+                {
+                    await Mediator.Send(new SetWinnerGiftBookCommand
+                    {
+                        Year = year,
+                        Month = month,
+                        Rank = rank,
+                        GiftBookTitle = title,
+                        GiftBookAuthor = author,
+                        GiftBookCoverUrl = savedCoverUrl
+                    });
+                }
+                catch (NotFoundException)
+                {
+                    // Bu o'rin uchun g'olib yo'q (masalan reytingda 2 kishi) — o'tkazamiz.
+                }
+            }
+
+            TempData["ChallengeMsg"] = count > 0
+                ? $"{ChallengeCalendar.PeriodLabel(year, month)} uchun {count} ta g'olib e'lon qilindi va sovg'alar saqlandi."
+                : $"{ChallengeCalendar.PeriodLabel(year, month)} allaqachon e'lon qilingan yoki g'olib topilmadi.";
+        }
+        catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
+        {
+            return RedirectToAction("Index");
+        }
+        catch (Exception ex)
+        {
+            TempData["ChallengeMsg"] = $"Xato: {ex.Message}";
+        }
+
+        return RedirectToAction("Admin", new { year, month });
+    }
+
     /// <summary>1-o'rin g'olibiga kitob sovg'a qiladi (super admin). Muqovani fayl sifatida yuklash mumkin.</summary>
     [HttpPost("admin/gift")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Gift(
-        int year, int month, int rank, string? title, string? author, IFormFile? cover, string? coverUrl)
+        int year, int month, int rank, string? title, string? author, IFormFile? cover)
     {
         try
         {
-            var savedCoverUrl = coverUrl;
+            string? savedCoverUrl = null;
             if (cover is not null && cover.Length > 0)
             {
                 savedCoverUrl = await SaveGiftCoverAsync(cover);
@@ -229,6 +291,47 @@ public class ChallengeController : AppController
         }
 
         return await _db.Users.Where(u => u.Id == uid).Select(u => u.Role).FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Dekoratsiya muqovalaridan fayli mavjud bo'lmaganlarini (o'chirilgan/ko'chirilmagan
+    /// yuklamalar) chiqarib tashlaydi — shunda sahifada 404 so'rovlari bo'lmaydi. Tashqi
+    /// (http/https) manzillar tegilmasdan o'tkaziladi.
+    /// </summary>
+    private static IReadOnlyList<string> FilterExistingCovers(IReadOnlyList<string> covers)
+    {
+        var result = new List<string>(covers.Count);
+        foreach (var url in covers)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                continue;
+            }
+
+            if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                result.Add(url);
+                continue;
+            }
+
+            // Lokal yuklama (/uploads/...) — faqat fayli diskda mavjud bo'lsa qoldiramiz.
+            if (url.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            {
+                var rel = url["/uploads/".Length..].Replace('/', Path.DirectorySeparatorChar);
+                var full = Path.Combine(KitobdaGimen.Web.UploadPaths.Root, rel);
+                if (System.IO.File.Exists(full))
+                {
+                    result.Add(url);
+                }
+                continue;
+            }
+
+            // Boshqa lokal manzillar (mas. /images/...) — o'zgarishsiz qoldiramiz.
+            result.Add(url);
+        }
+
+        return result;
     }
 
     /// <summary>Sovg'a kitob muqovasini rasm sifatida dekod qilib, WebP qilib saqlaydi.</summary>

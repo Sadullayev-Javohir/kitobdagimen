@@ -35,11 +35,17 @@ public class SetWinnerGiftBookCommandHandler : IRequestHandler<SetWinnerGiftBook
         var author = request.GiftBookAuthor?.Trim();
         var cover = request.GiftBookCoverUrl?.Trim();
 
-        var hasGift = !string.IsNullOrEmpty(title) || !string.IsNullOrEmpty(cover);
-
         winner.GiftBookTitle = string.IsNullOrEmpty(title) ? null : title;
         winner.GiftBookAuthor = string.IsNullOrEmpty(author) ? null : author;
-        winner.GiftBookCoverUrl = string.IsNullOrEmpty(cover) ? null : cover;
+
+        // Yangi muqova yuklangan bo'lsagina almashtiramiz — aks holda mavjud muqova saqlanadi
+        // (faqat nom/muallifni tahrirlaganda rasm o'chib ketmasin).
+        if (!string.IsNullOrEmpty(cover))
+        {
+            winner.GiftBookCoverUrl = cover;
+        }
+
+        var hasGift = !string.IsNullOrEmpty(title) || !string.IsNullOrEmpty(winner.GiftBookCoverUrl);
         winner.GiftedByUserId = hasGift ? callerId : null;
         winner.GiftedAt = hasGift ? DateTime.UtcNow : null;
 

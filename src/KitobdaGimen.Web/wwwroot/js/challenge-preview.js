@@ -76,6 +76,12 @@
         winnersHost.innerHTML = html;
     }
 
+    function refreshGift(rank) {
+        var giftCell = overlay.querySelector('[data-sa-winner-gift="' + rank + '"]');
+        if (giftCell) { giftCell.innerHTML = giftPreviewHtml(rank); }
+        renderSummary();
+    }
+
     function renderGiftForms() {
         if (!formsHost) { return; }
         var html = "";
@@ -89,7 +95,7 @@
                         '<label>Muallif<input type="text" data-sa-input="author" data-sa-rank="' + w.rank + '" value="' + esc(g.author || "") + '" placeholder="Masalan: Jeyms Klir" /></label>' +
                     "</div>" +
                     '<div class="ch-form-row">' +
-                        '<label>Muqova URL (ixtiyoriy)<input type="text" data-sa-input="coverUrl" data-sa-rank="' + w.rank + '" value="' + esc(g.coverUrl || "") + '" placeholder="https://..." /></label>' +
+                        '<label>Muqova rasmi (yuklash)<input type="file" accept="image/*" data-sa-file data-sa-rank="' + w.rank + '" /></label>' +
                     "</div>" +
                 "</div>";
         });
@@ -101,9 +107,24 @@
                 var field = inp.getAttribute("data-sa-input");
                 gifts[rank] = gifts[rank] || {};
                 gifts[rank][field] = inp.value.trim();
-                var giftCell = overlay.querySelector('[data-sa-winner-gift="' + rank + '"]');
-                if (giftCell) { giftCell.innerHTML = giftPreviewHtml(rank); }
-                renderSummary();
+                refreshGift(rank);
+            });
+        });
+
+        // Muqova — haqiqiy rasm yuklash. Sinov rejimi bo'lgani uchun rasmni brauzerda
+        // data URL sifatida o'qib, faqat oldindan ko'rsatamiz (hech narsa saqlanmaydi).
+        formsHost.querySelectorAll("[data-sa-file]").forEach(function (inp) {
+            inp.addEventListener("change", function () {
+                var rank = parseInt(inp.getAttribute("data-sa-rank"), 10);
+                gifts[rank] = gifts[rank] || {};
+                var file = inp.files && inp.files[0];
+                if (!file) { gifts[rank].coverUrl = ""; refreshGift(rank); return; }
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    gifts[rank].coverUrl = e.target.result;
+                    refreshGift(rank);
+                };
+                reader.readAsDataURL(file);
             });
         });
     }
@@ -135,6 +156,8 @@
             host = document.createElement("div");
             host.className = "ch-festive";
             host.setAttribute("data-ch-festive", "");
+            // Preview overlay z-index:2000 — uchqunlar undan ustida ko'rinishi uchun.
+            host.style.zIndex = "2400";
             document.body.appendChild(host);
             var icons = ["celebration", "auto_awesome", "star", "emoji_events", "workspace_premium", "menu_book", "redeem"];
             for (var i = 0; i < 28; i++) {
@@ -192,6 +215,8 @@
         if (!modal) {
             modal = document.createElement("div");
             modal.className = "ch-modal";
+            // Preview overlay z-index:2000 dan yuqori — modal uning ustida ko'rinsin.
+            modal.style.zIndex = "3000";
             document.body.appendChild(modal);
         }
         modal.innerHTML =

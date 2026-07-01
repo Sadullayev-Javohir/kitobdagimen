@@ -63,6 +63,24 @@
         if (e.key === "Escape") { closeModal(); }
     });
 
+    // E'lon qilish oynasi (g'oliblarga sovg'a biriktirish + e'lon)
+    const announceModal = document.querySelector("[data-announce-modal]");
+    function openAnnounce() {
+        if (announceModal) { announceModal.hidden = false; document.body.style.overflow = "hidden"; }
+    }
+    function closeAnnounce() {
+        if (announceModal) { announceModal.hidden = true; document.body.style.overflow = ""; }
+    }
+    document.querySelectorAll("[data-announce-open]").forEach(function (b) {
+        b.addEventListener("click", openAnnounce);
+    });
+    document.querySelectorAll("[data-announce-close]").forEach(function (b) {
+        b.addEventListener("click", closeAnnounce);
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { closeAnnounce(); }
+    });
+
     // Bayram ko'rinishini sinash
     let festiveOn = false;
     document.querySelectorAll("[data-festive-toggle]").forEach(function (btn) {

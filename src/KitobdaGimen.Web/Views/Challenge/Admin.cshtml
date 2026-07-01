@@ -92,15 +92,10 @@
         </button>
         @if (Model.Announced is null && Model.IsSuperAdmin)
         {
-            <form method="post" action="/challenge/admin/finalize" style="display:inline">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="year" value="@Model.Year" />
-                <input type="hidden" name="month" value="@Model.Month" />
-                <button type="submit" class="btn btn-primary" onclick="return confirm('@Model.PeriodLabel uchun g\'oliblarni e\'lon qilishni tasdiqlaysizmi? Bu amalni orqaga qaytarib bo\'lmaydi.');">
-                    <span class="material-symbols-outlined" style="vertical-align:-4px">campaign</span>
-                    G'oliblarni e'lon qilish
-                </button>
-            </form>
+            <button type="button" class="btn btn-primary" data-announce-open @(Model.Standings.Count == 0 ? "disabled" : "")>
+                <span class="material-symbols-outlined" style="vertical-align:-4px">campaign</span>
+                G'oliblarni e'lon qilish
+            </button>
         }
     </div>
 
@@ -187,9 +182,6 @@
                             <label>Muqova rasmi (yuklash)
                                 <input type="file" name="cover" accept="image/*" />
                             </label>
-                            <label>yoki muqova URL manzili
-                                <input type="text" name="coverUrl" value="@win.GiftBookCoverUrl" placeholder="https://..." />
-                            </label>
                         </div>
                         <button type="submit" class="btn btn-accent">
                             <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
@@ -234,6 +226,58 @@
         <button type="button" class="btn btn-accent" data-preview-close>Yopish</button>
     </div>
 </div>
+
+@* E'lon qilish oynasi — g'oliblarga sovg'a kitob biriktirib, birga e'lon qilish *@
+@if (Model.Announced is null && Model.IsSuperAdmin && Model.Standings.Count > 0)
+{
+    <div class="ch-modal" data-announce-modal hidden>
+        <div class="ch-modal-backdrop" data-announce-close></div>
+        <div class="ch-modal-box" role="dialog" aria-modal="true">
+            <div class="ch-modal-header">
+                <button type="button" class="ch-modal-x" data-announce-close aria-label="Yopish">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <span class="material-symbols-outlined ch-modal-crown">campaign</span>
+                <h2 class="ch-modal-title">@Model.PeriodLabel g'oliblarini e'lon qilish</h2>
+                <p class="ch-modal-sub">Har bir g'olibga sovg'a kitob biriktiring (ixtiyoriy), so'ng e'lon qiling.</p>
+            </div>
+            <form method="post" action="/challenge/admin/announce" enctype="multipart/form-data" class="ch-announce-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="year" value="@Model.Year" />
+                <input type="hidden" name="month" value="@Model.Month" />
+                @foreach (var u in Model.Standings.OrderBy(x => x.Rank))
+                {
+                    <div class="card ch-gift-form" style="margin:0 16px 12px;text-align:left">
+                        <p class="muted">
+                            @Html.Raw(MedalIcon(u.Rank)) <strong>@u.Rank-o'rin — @u.FullName</strong>
+                            <span class="muted">· @u.PagesRead bet · @u.BooksRead kitob</span>
+                        </p>
+                        <div class="ch-form-row">
+                            <label>Kitob nomi
+                                <input type="text" name="title_@u.Rank" placeholder="Masalan: Atom odatlari" />
+                            </label>
+                            <label>Muallif
+                                <input type="text" name="author_@u.Rank" placeholder="Masalan: Jeyms Klir" />
+                            </label>
+                        </div>
+                        <div class="ch-form-row">
+                            <label>Muqova rasmi (yuklash)
+                                <input type="file" name="cover_@u.Rank" accept="image/*" />
+                            </label>
+                        </div>
+                    </div>
+                }
+                <div style="text-align:center;padding:6px 16px 0">
+                    <button type="submit" class="btn btn-primary"
+                            onclick="return confirm('@Model.PeriodLabel uchun g\'oliblarni e\'lon qilishni tasdiqlaysizmi? Bu amalni orqaga qaytarib bo\'lmaydi.');">
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">campaign</span>
+                        E'lon qilish va sovg'alarni saqlash
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
 
 <link rel="stylesheet" href="/css/challenge.css" asp-append-version="true" />
 

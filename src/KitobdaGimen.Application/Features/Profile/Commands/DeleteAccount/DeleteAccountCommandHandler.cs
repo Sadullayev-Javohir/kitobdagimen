@@ -62,7 +62,14 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
 
-        // Conversations the user takes part in (messages cascade from the conversation at the DB).
+        // Message reactions left by this user (Restrict FK). Reactions on this user's messages
+        // cascade from the conversation delete below, but reactions the user placed elsewhere must
+        // be removed explicitly or the User delete is blocked.
+        _db.MessageReactions.RemoveRange(await _db.MessageReactions
+            .Where(r => r.UserId == userId).ToListAsync(cancellationToken));
+
+        // Conversations the user takes part in (messages + their reactions cascade from the
+        // conversation at the DB).
         _db.Conversations.RemoveRange(await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId).ToListAsync(cancellationToken));
 
@@ -81,6 +88,23 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
         // Quotes saved by this user (saves on the user's own quotes cascade from the quote).
         _db.SavedQuotes.RemoveRange(await _db.SavedQuotes
             .Where(sq => sq.UserId == userId).ToListAsync(cancellationToken));
+
+        // Quote likes placed by this user (Restrict FK). Likes on the user's own quotes cascade
+        // when the quotes are removed; likes on other users' quotes must be removed explicitly.
+        _db.QuoteLikes.RemoveRange(await _db.QuoteLikes
+            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
+
+        // Quote comments authored by the user, on the user's quotes, or replying to the user's
+        // comments (Restrict FKs — mirror the post-comment cleanup above).
+        _db.QuoteComments.RemoveRange(await _db.QuoteComments
+            .Where(c => c.UserId == userId || c.Quote.UserId == userId ||
+                        (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
+            .ToListAsync(cancellationToken));
+
+        // Challenge winner likes placed by this user (Restrict FK). Likes on the user's own
+        // winner rows cascade from the winner; likes elsewhere must be removed explicitly.
+        _db.ChallengeWinnerLikes.RemoveRange(await _db.ChallengeWinnerLikes
+            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
 
         // Owned content that cascades its own dependents.
         _db.Posts.RemoveRange(await _db.Posts.Where(p => p.UserId == userId).ToListAsync(cancellationToken));

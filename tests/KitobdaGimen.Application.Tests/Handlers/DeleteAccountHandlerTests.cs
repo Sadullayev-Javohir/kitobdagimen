@@ -49,4 +49,41 @@ public class DeleteAccountHandlerTests : TestBase
 
         Assert.NotNull(await db.Users.FirstOrDefaultAsync(u => u.Id == 1));
     }
+
+    [Fact]
+    public async Task Removes_quote_challenge_and_message_engagement_by_the_user()
+    {
+        using var db = CreateContext();
+        await SeedUsersAsync(db, 1, 2, 3);
+
+        db.Books.Add(new Book { Id = 1, Title = "B", Author = "A", TotalPages = 100, GenreId = 1 });
+        // Quote owned by user 2; user 1 likes and comments on it.
+        db.Quotes.Add(new Quote { Id = 1, UserId = 2, BookId = 1, Text = "q", CreatedAt = DateTime.UtcNow });
+        db.QuoteLikes.Add(new QuoteLike { Id = 1, QuoteId = 1, UserId = 1, CreatedAt = DateTime.UtcNow });
+        db.QuoteComments.Add(new QuoteComment { Id = 1, QuoteId = 1, UserId = 1, Text = "c", CreatedAt = DateTime.UtcNow });
+
+        // Challenge winner is user 2; user 1 likes the winner row.
+        db.ChallengeWinners.Add(new ChallengeWinner
+        {
+            Id = 1, Year = 2026, Month = 7, UserId = 2, Rank = 1,
+            PagesRead = 100, BooksRead = 2, AnnouncedAt = DateTime.UtcNow
+        });
+        db.ChallengeWinnerLikes.Add(new ChallengeWinnerLike { Id = 1, ChallengeWinnerId = 1, UserId = 1, CreatedAt = DateTime.UtcNow });
+
+        // Message in a conversation between users 2 and 3; user 1 reacted to it.
+        db.Conversations.Add(new Conversation { Id = 1, User1Id = 2, User2Id = 3, CreatedAt = DateTime.UtcNow });
+        db.Messages.Add(new Message { Id = 1, ConversationId = 1, SenderId = 2, Text = "hi", SentAt = DateTime.UtcNow });
+        db.MessageReactions.Add(new MessageReaction { Id = 1, MessageId = 1, UserId = 1, Emoji = "❤️", CreatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var handler = new DeleteAccountCommandHandler(db, new FakeCurrentUserService(userId: 1, email: "u1@e.com"));
+
+        await handler.Handle(new DeleteAccountCommand("u1@e.com"), CancellationToken.None);
+
+        Assert.Null(await db.Users.FirstOrDefaultAsync(u => u.Id == 1));
+        Assert.Empty(await db.QuoteLikes.Where(x => x.UserId == 1).ToListAsync());
+        Assert.Empty(await db.QuoteComments.Where(x => x.UserId == 1).ToListAsync());
+        Assert.Empty(await db.ChallengeWinnerLikes.Where(x => x.UserId == 1).ToListAsync());
+        Assert.Empty(await db.MessageReactions.Where(x => x.UserId == 1).ToListAsync());
+    }
 }
