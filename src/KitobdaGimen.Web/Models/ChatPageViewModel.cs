@@ -10,4 +10,7 @@ public class ChatPageViewModel
     public int? ActiveConversationId { get; init; }
     public ConversationDto? ActiveConversation { get; init; }
     public PagedResult<MessageDto>? Messages { get; init; }
+
+    /// <summary>Real asaxiy.uz book-cover URLs shown as a floating background behind the chat.</summary>
+    public IReadOnlyList<string> FloatingBookCovers { get; init; } = Array.Empty<string>();
 }

@@ -27,6 +27,13 @@
     <div class="admin-head">
         <h1>Admin panel</h1>
         <p class="muted">Jami @Model.Count foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
+        @if (isSuper)
+        {
+            <a href="/admin/analytics" class="btn btn-primary" style="margin-top:10px; display:inline-flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:20px">insights</span>
+                Founder analitika (DAU / retention / konversiya)
+            </a>
+        }
     </div>
 
     @if (serverSnapshot == null)

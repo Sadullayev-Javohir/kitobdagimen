@@ -1,0 +1,180 @@
+@using KitobdaGimen.Application.Features.Admin.Analytics
+@model FounderAnalyticsDto
+@{
+    ViewData["Title"] = "Founder analitika";
+    ViewData["Robots"] = "noindex, nofollow";
+
+    string Pct(double v) => v.ToString("0.#") + "%";
+    string Signed(double v) => (v >= 0 ? "+" : "") + v.ToString("0.#") + "%";
+
+    // Heatmap cell colour for a retention percentage (green scale).
+    string CellStyle(double? v)
+    {
+        if (v is null) return "background:transparent; color:var(--text-secondary)";
+        var t = Math.Clamp(v.Value / 100.0, 0, 1);
+        // Alpha ramps with retention; text flips to white on darker cells.
+        var alpha = (0.12 + 0.78 * t).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var color = t > 0.5 ? "#fff" : "var(--text)";
+        return $"background:rgba(27,77,62,{alpha}); color:{color}";
+    }
+
+    // ---- Activity chart geometry (server-rendered SVG) ----
+    var pts = Model.DailyActivity;
+    var chartW = 720.0; var chartH = 220.0;
+    var padL = 34.0; var padR = 12.0; var padT = 14.0; var padB = 26.0;
+    var innerW = chartW - padL - padR;
+    var innerH = chartH - padT - padB;
+    var n = Math.Max(pts.Count, 1);
+    var maxActive = Math.Max(1, pts.Count > 0 ? pts.Max(p => p.ActiveUsers) : 1);
+    var maxNew = Math.Max(1, pts.Count > 0 ? pts.Max(p => p.NewUsers) : 1);
+    var barW = innerW / n * 0.62;
+    double XForBar(int i) => padL + innerW * (i + 0.5) / n;
+    double YNew(int v) => padT + innerH * (1 - (double)v / maxNew);
+    var newLine = string.Join(" ", pts.Select((p, i) =>
+        XForBar(i).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "," +
+        YNew(p.NewUsers).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
+}
+
+<div class="container page">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px">
+        <div>
+            <h1 style="margin:0; display:flex; align-items:center; gap:10px">
+                <span class="material-symbols-outlined" style="font-size:28px; color:var(--accent)">insights</span>
+                Founder analitika
+            </h1>
+            <p class="muted" style="margin:6px 0 0">Foydalanuvchi o'sishi, faollik, konversiya va retention. Oxirgi yangilanish: @Model.GeneratedAtUtc.AddHours(5).ToString("dd.MM.yyyy HH:mm") (UZB)</p>
+        </div>
+        <a href="/admin" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:6px">
+            <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+            Admin panel
+        </a>
+    </div>
+
+    @* ---------------- KPI cards ---------------- *@
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:14px; margin:18px 0">
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">Jami foydalanuvchi</div>
+            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.TotalUsers</div>
+            <div class="muted" style="font-size:12px">Bugun +@Model.NewUsersToday · 7 kun +@Model.NewUsers7d · 30 kun +@Model.NewUsers30d</div>
+        </div>
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">DAU (bugun faol)</div>
+            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.Dau</div>
+            <div class="muted" style="font-size:12px">Kunlik faol foydalanuvchilar</div>
+        </div>
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">WAU / MAU</div>
+            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.Wau <span style="font-size:16px; color:var(--text-secondary)">/ @Model.Mau</span></div>
+            <div class="muted" style="font-size:12px">Haftalik / oylik faol</div>
+        </div>
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">Stickiness (DAU/MAU)</div>
+            <div style="font-size:30px; font-weight:700; color:var(--accent)">@Pct(Model.StickinessPercent)</div>
+            <div class="muted" style="font-size:12px">Qaytib kelish darajasi</div>
+        </div>
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">Signup o'sishi (WoW)</div>
+            <div style="font-size:30px; font-weight:700; color:@(Model.SignupGrowthPercent >= 0 ? "var(--primary)" : "var(--danger)")">@Signed(Model.SignupGrowthPercent)</div>
+            <div class="muted" style="font-size:12px">Bu hafta vs o'tgan hafta</div>
+        </div>
+        <div class="card" style="padding:16px">
+            <div class="muted" style="font-size:13px">Kontent hajmi</div>
+            <div style="font-size:22px; font-weight:700; color:var(--primary)">@Model.TotalPosts <span style="font-size:13px; color:var(--text-secondary)">post</span></div>
+            <div class="muted" style="font-size:12px">@Model.TotalQuotes iqtibos · @Model.TotalMessages xabar</div>
+        </div>
+    </div>
+
+    @* ---------------- Activity chart ---------------- *@
+    <div class="card" style="padding:20px; margin-bottom:18px">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px">
+            <h2 style="margin:0; font-size:18px">So'nggi 30 kun faollik</h2>
+            <div class="muted" style="font-size:13px; display:flex; gap:16px">
+                <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:12px; border-radius:3px; background:var(--primary); display:inline-block"></span>Faol (DAU)</span>
+                <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:3px; border-radius:2px; background:var(--accent); display:inline-block"></span>Yangi ro'yxat</span>
+            </div>
+        </div>
+        <svg viewBox="0 0 @chartW.ToString("0", System.Globalization.CultureInfo.InvariantCulture) @chartH.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" width="100%" style="max-width:100%; height:auto" role="img" aria-label="Kunlik faollik grafigi">
+            @* baseline *@
+            <line x1="@padL" y1="@(padT + innerH)" x2="@(chartW - padR)" y2="@(padT + innerH)" stroke="var(--border)" stroke-width="1" />
+            @* y-axis max label *@
+            <text x="4" y="@(padT + 8)" font-size="11" fill="var(--text-secondary)">@maxActive</text>
+            <text x="4" y="@(padT + innerH)" font-size="11" fill="var(--text-secondary)">0</text>
+            @for (var i = 0; i < pts.Count; i++)
+            {
+                var p = pts[i];
+                var bh = innerH * (double)p.ActiveUsers / maxActive;
+                var x = XForBar(i) - barW / 2;
+                var y = padT + innerH - bh;
+                <rect x="@x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" y="@y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" width="@barW.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" height="@bh.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" rx="2" fill="var(--primary)" opacity="0.85">
+                    <title>@p.Date.ToString("dd.MM"): @p.ActiveUsers faol, @p.NewUsers yangi</title>
+                </rect>
+            }
+            @if (pts.Count > 1)
+            {
+                <polyline points="@newLine" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+            }
+            @* x labels: first and last *@
+            @if (pts.Count > 0)
+            {
+                <g>
+                    <text x="@padL" y="@(chartH - 6)" font-size="10" fill="var(--text-secondary)">@pts[0].Date.ToString("dd.MM")</text>
+                    <text x="@(chartW - padR)" y="@(chartH - 6)" font-size="10" fill="var(--text-secondary)" text-anchor="end">@pts[pts.Count - 1].Date.ToString("dd.MM")</text>
+                </g>
+            }
+        </svg>
+    </div>
+
+    @* ---------------- Conversion funnel ---------------- *@
+    <div class="card" style="padding:20px; margin-bottom:18px">
+        <h2 style="margin:0 0 14px; font-size:18px">Konversiya (funnel)</h2>
+        <div style="display:flex; flex-direction:column; gap:10px">
+            @foreach (var step in Model.Funnel)
+            {
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px">
+                        <span>@step.Label</span>
+                        <span class="muted"><strong style="color:var(--text)">@step.Count</strong> · @Pct(step.PercentOfTop) jamidan · @Pct(step.PercentOfPrevious) oldingidan</span>
+                    </div>
+                    <div style="height:22px; background:var(--bg); border-radius:8px; overflow:hidden; border:1px solid var(--border)">
+                        <div style="height:100%; width:@step.PercentOfTop.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%; background:linear-gradient(90deg, var(--primary), var(--accent)); border-radius:8px"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ---------------- Retention cohorts ---------------- *@
+    <div class="card" style="padding:20px; margin-bottom:18px">
+        <h2 style="margin:0 0 4px; font-size:18px">Retention (haftalik kogortalar)</h2>
+        <p class="muted" style="margin:0 0 14px; font-size:13px">Har qatordagi foydalanuvchilar ro'yxatdan o'tgandan keyingi haftalarda qancha % qaytib kelgani. W0 — ro'yxatdan o'tgan hafta.</p>
+        <div style="overflow-x:auto">
+            <table style="border-collapse:separate; border-spacing:4px; font-size:13px; min-width:520px">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:6px 10px; color:var(--text-secondary); font-weight:600">Kogorta</th>
+                        <th style="text-align:right; padding:6px 8px; color:var(--text-secondary); font-weight:600">Hajm</th>
+                        @for (var w = 0; w < Model.RetentionWeekCount; w++)
+                        {
+                            <th style="text-align:center; padding:6px 8px; color:var(--text-secondary); font-weight:600; min-width:44px">W@(w)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cohort in Model.Retention)
+                    {
+                        <tr>
+                            <td style="padding:6px 10px; white-space:nowrap"><strong>@cohort.Label</strong></td>
+                            <td style="padding:6px 8px; text-align:right">@cohort.CohortSize</td>
+                            @foreach (var cell in cohort.WeeklyRetention)
+                            {
+                                <td style="text-align:center; padding:8px 6px; border-radius:6px; @CellStyle(cell)">
+                                    @(cell is null ? "" : cell.Value.ToString("0") + "%")
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

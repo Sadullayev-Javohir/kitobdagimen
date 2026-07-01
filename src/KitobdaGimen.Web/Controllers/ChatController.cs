@@ -17,6 +17,7 @@ using KitobdaGimen.Application.Features.Users.Queries.SearchUsers;
 using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
@@ -40,6 +41,10 @@ public class ChatController : AppController
     private IPresenceService Presence =>
         HttpContext.RequestServices.GetRequiredService<IPresenceService>();
 
+    /// <summary>DB context, resolved per request (used only for the decorative floating covers).</summary>
+    private IAppDbContext Db =>
+        HttpContext.RequestServices.GetRequiredService<IAppDbContext>();
+
     /// <summary>Conversation list (and optionally an open conversation).</summary>
     [HttpGet("")]
     public async Task<IActionResult> Index(int? conversationId)
@@ -60,6 +65,18 @@ public class ChatController : AppController
         var conversations = await Mediator.Send(new GetConversationsQuery());
         await EnrichOnlineAsync(conversations);
 
+        // Decorative background: real book covers (asaxiy.uz first) that "fly" behind the chat.
+        var covers = (await Db.Books
+                .Where(b => b.CoverUrl != null && b.CoverUrl != "")
+                .OrderByDescending(b => b.Source == "asaxiy.uz")
+                .ThenByDescending(b => b.Id)
+                .Select(b => b.CoverUrl!)
+                .Take(80)
+                .ToListAsync())
+            .Distinct()
+            .Take(40)
+            .ToList();
+
         var model = new ChatPageViewModel
         {
             Conversations = conversations,
@@ -69,7 +86,8 @@ public class ChatController : AppController
                 : conversations.FirstOrDefault(c => c.Id == conversationId),
             Messages = conversationId is null
                 ? null
-                : await Mediator.Send(new GetMessagesQuery { ConversationId = conversationId.Value })
+                : await Mediator.Send(new GetMessagesQuery { ConversationId = conversationId.Value }),
+            FloatingBookCovers = covers
         };
 
         return View(model);

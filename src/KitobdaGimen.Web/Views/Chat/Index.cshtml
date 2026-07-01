@@ -71,16 +71,37 @@
     </aside>
 
     <section class="chat-main">
-        <div class="chat-books-bg" aria-hidden="true">
-            <span class="fb fb1">@Html.Raw(bookIcon)</span>
-            <span class="fb fb2">@Html.Raw(stickers["open"])</span>
-            <span class="fb fb3">@Html.Raw(stickers["bookmark"])</span>
-            <span class="fb fb4">@Html.Raw(bookIcon)</span>
-            <span class="fb fb5">@Html.Raw(stickers["quill"])</span>
-            <span class="fb fb6">@Html.Raw(stickers["open"])</span>
-            <span class="fb fb7">@Html.Raw(stickers["glasses"])</span>
-            <span class="fb fb8">@Html.Raw(bookIcon)</span>
-        </div>
+        @if (Model.FloatingBookCovers.Count > 0)
+        {
+            var rnd = new Random(20260701);
+            <div class="chat-books-bg chat-books-real" aria-hidden="true">
+                @for (var i = 0; i < Model.FloatingBookCovers.Count; i++)
+                {
+                    var url = Model.FloatingBookCovers[i];
+                    var left = rnd.Next(-2, 95);
+                    var top = rnd.Next(-2, 94);
+                    var w = rnd.Next(48, 96);
+                    var dur = rnd.Next(13, 26);
+                    var delay = Math.Round(rnd.NextDouble() * 6, 1);
+                    var rot = rnd.Next(-14, 14);
+                    var style = $"left:{left}%;top:{top}%;width:{w}px;animation-duration:{dur}s;animation-delay:{delay}s;--rot:{rot}deg";
+                    <span class="fb cover" style="@style"><img src="@url" alt="" loading="lazy" referrerpolicy="no-referrer" /></span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="chat-books-bg" aria-hidden="true">
+                <span class="fb fb1">@Html.Raw(bookIcon)</span>
+                <span class="fb fb2">@Html.Raw(stickers["open"])</span>
+                <span class="fb fb3">@Html.Raw(stickers["bookmark"])</span>
+                <span class="fb fb4">@Html.Raw(bookIcon)</span>
+                <span class="fb fb5">@Html.Raw(stickers["quill"])</span>
+                <span class="fb fb6">@Html.Raw(stickers["open"])</span>
+                <span class="fb fb7">@Html.Raw(stickers["glasses"])</span>
+                <span class="fb fb8">@Html.Raw(bookIcon)</span>
+            </div>
+        }
         @if (active == null)
         {
             <div class="chat-empty">Suhbatni tanlang yoki yangi kitobxonni qidirib taklif qiling.</div>
@@ -449,10 +470,25 @@
     }
 
     if (list) {
+        // Rasm yuklanmasa (404/tarmoq) — brauzerning katta "singan rasm" ikonini butun katakni
+        // qoplashiga yo'l qo'ymay, uni ixcham placeholder ikonga almashtiramiz. `error` bubble
+        // qilmaydi, shuning uchun capture bosqichida ushlaymiz. `data-failed` — cheksiz siklni oldini oladi.
+        const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#1B4D3E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>");
+        list.addEventListener("error", (e) => {
+            const t = e.target;
+            if (t && t.classList && t.classList.contains("msg-image") && !t.dataset.failed) {
+                t.dataset.failed = "1";
+                t.classList.add("img-failed");
+                t.removeAttribute("data-full");
+                t.src = IMG_PLACEHOLDER;
+            }
+        }, true);
+
         list.addEventListener("click", async (e) => {
-            // Rasmni to'liq o'lchamda ochish (lightbox).
+            // Rasmni to'liq o'lchamda ochish (lightbox). Yuklanmagan rasm uchun ochmaymiz.
             const img = e.target.closest(".msg-image");
-            if (img) { openLightbox(img.dataset.full || img.src); return; }
+            if (img) { if (!img.classList.contains("img-failed")) openLightbox(img.dataset.full || img.src); return; }
 
             const msgEl = e.target.closest(".msg");
             if (!msgEl) return;
@@ -475,6 +511,12 @@
     const lightboxImg = document.getElementById("chatLightboxImg");
     function openLightbox(url) {
         if (!lightbox || !lightboxImg || !url) return;
+        // Rasm tayyor bo'lguncha "Yuklanmoqda…", xato bo'lsa xabar ko'rsatamiz — hech qachon
+        // faqat qora oyna qolmaydi.
+        lightbox.classList.remove("is-error");
+        lightbox.classList.add("is-loading");
+        lightboxImg.onload = () => lightbox.classList.remove("is-loading", "is-error");
+        lightboxImg.onerror = () => { lightbox.classList.remove("is-loading"); lightbox.classList.add("is-error"); };
         lightboxImg.src = url;
         lightbox.hidden = false;
         document.body.classList.add("chat-lightbox-open");
@@ -483,6 +525,7 @@
         if (!lightbox) return;
         lightbox.hidden = true;
         lightboxImg.src = "";
+        lightbox.classList.remove("is-loading", "is-error");
         document.body.classList.remove("chat-lightbox-open");
     }
     if (lightbox) {

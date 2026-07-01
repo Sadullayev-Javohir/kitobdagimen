@@ -4,6 +4,7 @@ using KitobdaGimen.Application.Features.Admin.Commands.AdminDeletePost;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteQuote;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteUser;
 using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
+using KitobdaGimen.Application.Features.Admin.Analytics;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
 using KitobdaGimen.Domain.Enums;
@@ -59,6 +60,22 @@ public class AdminController : AppController
         catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
         {
             // Hide the panel from non-admins.
+            return RedirectToAction("Index", "Feed");
+        }
+    }
+
+    /// <summary>Founder analytics dashboard — DAU/WAU/MAU, growth, funnel, retention (SuperAdmin).</summary>
+    [HttpGet("analytics")]
+    public async Task<IActionResult> Analytics()
+    {
+        try
+        {
+            var data = await Mediator.Send(new GetFounderAnalyticsQuery());
+            return View(data);
+        }
+        catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
+        {
+            // Hide the page from non-SuperAdmins.
             return RedirectToAction("Index", "Feed");
         }
     }
