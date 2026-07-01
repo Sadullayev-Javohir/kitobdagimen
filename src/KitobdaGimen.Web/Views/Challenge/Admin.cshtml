@@ -22,7 +22,6 @@
     var standingsJson = Html.Raw(JsonSerializer.Serialize(Model.Standings, jsonOpts));
 
     var msg = TempData["ChallengeMsg"] as string;
-    var rank1 = Model.Announced?.Winners.FirstOrDefault(w => w.Rank == 1);
 }
 
 @Html.AntiForgeryToken()
@@ -155,57 +154,61 @@
         }
     </section>
 
-    @* Super admin: sovg'a kitob (faqat e'lon qilingandan keyin, 1-o'rin uchun) *@
-    @if (Model.IsSuperAdmin && Model.Announced is not null && rank1 is not null)
+    @* Super admin: sovg'a kitob (faqat e'lon qilingandan keyin — 1-, 2-, 3-o'rin uchun) *@
+    @if (Model.IsSuperAdmin && Model.Announced is not null && Model.Announced.Winners.Count > 0)
     {
         <section class="ch-section">
-            <h2 class="ch-h2"><span class="material-symbols-outlined">redeem</span> 1-o'rin g'olibiga kitob sovg'a qilish</h2>
-            <div class="card ch-gift-form">
-                <p class="muted">
-                    G'olib: <strong>@rank1.FullName</strong>.
-                    @if (!string.IsNullOrEmpty(rank1.GiftBookTitle))
-                    {
-                        <text> Joriy sovg'a: <strong>@rank1.GiftBookTitle</strong>.</text>
-                    }
-                </p>
-                <form method="post" action="/challenge/admin/gift" enctype="multipart/form-data">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="year" value="@Model.Year" />
-                    <input type="hidden" name="month" value="@Model.Month" />
-                    <input type="hidden" name="rank" value="1" />
-                    <div class="ch-form-row">
-                        <label>Kitob nomi
-                            <input type="text" name="title" value="@rank1.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
-                        </label>
-                        <label>Muallif
-                            <input type="text" name="author" value="@rank1.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
-                        </label>
-                    </div>
-                    <div class="ch-form-row">
-                        <label>Muqova rasmi (yuklash)
-                            <input type="file" name="cover" accept="image/*" />
-                        </label>
-                        <label>yoki muqova URL manzili
-                            <input type="text" name="coverUrl" value="@rank1.GiftBookCoverUrl" placeholder="https://..." />
-                        </label>
-                    </div>
-                    <button type="submit" class="btn btn-accent">
-                        <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
-                        Sovg'ani saqlash
-                    </button>
-                </form>
-                @if (!string.IsNullOrEmpty(rank1.GiftBookCoverUrl))
-                {
-                    <div class="ch-gift" style="margin-top:14px;max-width:320px">
-                        <img src="@rank1.GiftBookCoverUrl" alt="@rank1.GiftBookTitle" referrerpolicy="no-referrer" />
-                        <div>
-                            <span class="ch-gift-label"><span class="material-symbols-outlined">redeem</span> Joriy sovg'a</span>
-                            <strong>@rank1.GiftBookTitle</strong>
-                            <span class="muted">@rank1.GiftBookAuthor</span>
+            <h2 class="ch-h2"><span class="material-symbols-outlined">redeem</span> G'oliblarga kitob sovg'a qilish</h2>
+            <p class="muted ch-note">Har bir g'olibga (1-, 2-, 3-o'rin) bittadan kitob sovg'a qilishingiz mumkin.</p>
+            @foreach (var win in Model.Announced.Winners.OrderBy(w => w.Rank))
+            {
+                <div class="card ch-gift-form" style="margin-bottom:14px">
+                    <p class="muted">
+                        @Html.Raw(MedalIcon(win.Rank)) <strong>@win.Rank-o'rin — @win.FullName</strong>.
+                        @if (!string.IsNullOrEmpty(win.GiftBookTitle))
+                        {
+                            <text> Joriy sovg'a: <strong>@win.GiftBookTitle</strong>.</text>
+                        }
+                    </p>
+                    <form method="post" action="/challenge/admin/gift" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="year" value="@Model.Year" />
+                        <input type="hidden" name="month" value="@Model.Month" />
+                        <input type="hidden" name="rank" value="@win.Rank" />
+                        <div class="ch-form-row">
+                            <label>Kitob nomi
+                                <input type="text" name="title" value="@win.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
+                            </label>
+                            <label>Muallif
+                                <input type="text" name="author" value="@win.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
+                            </label>
                         </div>
-                    </div>
-                }
-            </div>
+                        <div class="ch-form-row">
+                            <label>Muqova rasmi (yuklash)
+                                <input type="file" name="cover" accept="image/*" />
+                            </label>
+                            <label>yoki muqova URL manzili
+                                <input type="text" name="coverUrl" value="@win.GiftBookCoverUrl" placeholder="https://..." />
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-accent">
+                            <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
+                            @win.Rank-o'rin sovg'asini saqlash
+                        </button>
+                    </form>
+                    @if (!string.IsNullOrEmpty(win.GiftBookCoverUrl))
+                    {
+                        <div class="ch-gift" style="margin-top:14px;max-width:320px">
+                            <img src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
+                            <div>
+                                <span class="ch-gift-label"><span class="material-symbols-outlined">redeem</span> Joriy sovg'a</span>
+                                <strong>@win.GiftBookTitle</strong>
+                                <span class="muted">@win.GiftBookAuthor</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         </section>
     }
     else if (Model.IsSuperAdmin && Model.Announced is null)

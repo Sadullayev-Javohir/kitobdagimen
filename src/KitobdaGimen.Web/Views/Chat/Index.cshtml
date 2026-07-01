@@ -511,6 +511,12 @@
     const lightboxImg = document.getElementById("chatLightboxImg");
     function openLightbox(url) {
         if (!lightbox || !lightboxImg || !url) return;
+        // Avvalgi yopish/xato natijasida qolgan inline visibility:hidden va "failed" belgilarini
+        // tozalaymiz — aks holda yaroqli rasm ham ko'rinmay qoladi.
+        lightboxImg.style.visibility = "";
+        delete lightboxImg.dataset.imgRetry;
+        delete lightboxImg.dataset.imgFailed;
+        delete lightboxImg.dataset.failed;
         // Rasm tayyor bo'lguncha "Yuklanmoqda…", xato bo'lsa xabar ko'rsatamiz — hech qachon
         // faqat qora oyna qolmaydi.
         lightbox.classList.remove("is-error");

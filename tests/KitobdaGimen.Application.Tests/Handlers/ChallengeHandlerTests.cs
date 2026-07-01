@@ -1,6 +1,7 @@
 using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Features.Challenge.Commands.FinalizeChallengeMonth;
 using KitobdaGimen.Application.Features.Challenge.Commands.ToggleChallengeWinnerLike;
+using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeBoard;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeStandings;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins;
 using KitobdaGimen.Application.Tests.Support;
@@ -168,6 +169,66 @@ public class ChallengeHandlerTests : TestBase
         Assert.Equal(3, wins[0].Month);            // eng yangi birinchi
         Assert.Equal(1, wins[0].Rank);
         Assert.Equal("Atom odatlari", wins[0].GiftBookTitle);
+    }
+
+    [Fact]
+    public async Task Board_returns_podium_next_twenty_and_viewer_own_rank_when_beyond_list()
+    {
+        using var db = CreateContext();
+        var (y, m) = CurrentPeriod();
+        var date = InPeriodDate();
+        // 25 foydalanuvchi: user i -> i*10 bet (user 25 eng ko'p = 1-o'rin, user 1 = 25-o'rin).
+        for (var i = 1; i <= 25; i++)
+        {
+            SeedUser(db, i);
+            SeedReading(db, i, i, i, date, i * 10);
+        }
+        await db.SaveChangesAsync();
+
+        // Ko'ruvchi = user 1 (25-o'rin, ro'yxatdan tashqarida).
+        var mediator = new StandingsOnlySender(db);
+        var handler = new GetChallengeBoardQueryHandler(db, new FakeCurrentUserService(1), mediator);
+
+        var board = await handler.Handle(
+            new GetChallengeBoardQuery { Year = y, Month = m, PodiumCount = 3, ListCount = 20 },
+            CancellationToken.None);
+
+        Assert.Equal(3, board.Podium.Count);
+        Assert.Equal(25, board.Podium[0].UserId); // 250 bet -> 1-o'rin
+        Assert.Equal(1, board.Podium[0].Rank);
+
+        Assert.Equal(20, board.Others.Count);      // 4–23-o'rinlar
+        Assert.Equal(4, board.Others[0].Rank);
+        Assert.Equal(23, board.Others[^1].Rank);
+
+        Assert.NotNull(board.MyStanding);
+        Assert.Equal(1, board.MyStanding!.UserId);
+        Assert.Equal(25, board.MyStanding.Rank);    // eng oxirgi o'rin
+        Assert.Equal(10, board.MyStanding.PagesRead);
+    }
+
+    [Fact]
+    public async Task Board_does_not_repeat_viewer_when_already_in_list()
+    {
+        using var db = CreateContext();
+        var (y, m) = CurrentPeriod();
+        var date = InPeriodDate();
+        for (var i = 1; i <= 25; i++)
+        {
+            SeedUser(db, i);
+            SeedReading(db, i, i, i, date, i * 10);
+        }
+        await db.SaveChangesAsync();
+
+        // Ko'ruvchi = user 25 (1-o'rin, podiumda) -> alohida "Siz" qatori bo'lmasligi kerak.
+        var mediator = new StandingsOnlySender(db);
+        var handler = new GetChallengeBoardQueryHandler(db, new FakeCurrentUserService(25), mediator);
+
+        var board = await handler.Handle(
+            new GetChallengeBoardQuery { Year = y, Month = m, PodiumCount = 3, ListCount = 20 },
+            CancellationToken.None);
+
+        Assert.Null(board.MyStanding);
     }
 
     /// <summary>

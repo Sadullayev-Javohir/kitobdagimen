@@ -72,6 +72,10 @@
             function onImgError(e) {
                 var img = e.target;
                 if (!img || img.tagName !== 'IMG') return;
+                // Chat lightbox rasmi o'zining yuklash/xato holatini boshqaradi — global
+                // "visibility:hidden" fallback unga tegmasligi kerak (aks holda keyingi ochishda
+                // rasm inline visibility:hidden bilan ko'rinmay qoladi).
+                if (img.id === 'chatLightboxImg' || (img.closest && img.closest('.chat-lightbox'))) return;
                 if (!img.dataset.imgRetry) {
                     img.dataset.imgRetry = '1';
                     try { img.referrerPolicy = 'no-referrer'; } catch (_) { }

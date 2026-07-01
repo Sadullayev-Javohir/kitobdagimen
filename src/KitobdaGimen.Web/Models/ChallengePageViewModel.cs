@@ -22,6 +22,12 @@ public class ChallengePageViewModel
     /// <summary>Joriy oy jonli reytingi (top 3).</summary>
     public IReadOnlyList<ChallengeStandingDto> LiveStandings { get; init; } = Array.Empty<ChallengeStandingDto>();
 
+    /// <summary>Podiumdan keyingi kitobxonlar (4–23-o'rin — 20 ta).</summary>
+    public IReadOnlyList<ChallengeStandingDto> OtherStandings { get; init; } = Array.Empty<ChallengeStandingDto>();
+
+    /// <summary>Joriy foydalanuvchining shaxsiy o'rni — faqat u ko'rsatilgan ro'yxatdan tashqarida bo'lsa.</summary>
+    public ChallengeStandingDto? MyStanding { get; init; }
+
     /// <summary>Oxirgi e'lon qilingan g'oliblar (bo'lmasa null).</summary>
     public AnnouncedChallengeDto? Announced { get; init; }
 

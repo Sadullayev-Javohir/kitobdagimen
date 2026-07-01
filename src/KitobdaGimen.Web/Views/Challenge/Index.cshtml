@@ -70,10 +70,19 @@
         </div>
         @if (Model.MyRole >= UserRole.Admin)
         {
-            <a class="btn btn-outline ch-admin-link" href="/challenge/admin">
-                <span class="material-symbols-outlined" style="vertical-align:-4px">visibility</span>
-                Admin ko'rinishi
-            </a>
+            <div class="ch-head-actions">
+                <a class="btn btn-outline ch-admin-link" href="/challenge/admin">
+                    <span class="material-symbols-outlined" style="vertical-align:-4px">visibility</span>
+                    Admin ko'rinishi
+                </a>
+                @if (Model.MyRole == UserRole.SuperAdmin)
+                {
+                    <button type="button" class="btn btn-primary ch-preview-btn" data-sa-preview>
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">science</span>
+                        Oldindan sinab ko'rish
+                    </button>
+                }
+            </div>
         }
     </header>
 
@@ -134,6 +143,45 @@
                     </a>
                 }
             </div>
+
+            @if (Model.OtherStandings.Count > 0)
+            {
+                <h3 class="ch-h3">
+                    <span class="material-symbols-outlined">format_list_numbered</span>
+                    Reyting davomi
+                </h3>
+                <ol class="ch-rank-list">
+                    @foreach (var u in Model.OtherStandings)
+                    {
+                        var isMe = Model.CurrentUserId == u.UserId;
+                        <li class="ch-rank-row @(isMe ? "is-me" : "")">
+                            <span class="ch-rank-num">@u.Rank</span>
+                            <a class="ch-rank-user" href="@ProfileUrl(u.UserId, u.Username)">
+                                @if (!string.IsNullOrEmpty(u.AvatarUrl))
+                                {
+                                    <img class="avatar ch-rank-avatar" src="@u.AvatarUrl" alt="@u.FullName" referrerpolicy="no-referrer" />
+                                }
+                                else
+                                {
+                                    <span class="avatar ch-rank-avatar">@Initial(u.FullName)</span>
+                                }
+                                <span class="ch-rank-name" title="@u.FullName">@u.FullName@(isMe ? " (siz)" : "")</span>
+                            </a>
+                            <span class="ch-rank-score"><strong>@u.PagesRead</strong> bet · @u.BooksRead kitob</span>
+                        </li>
+                    }
+                </ol>
+            }
+
+            @if (Model.MyStanding is not null)
+            {
+                <div class="ch-my-rank" title="Sizning o'rningiz">
+                    <span class="material-symbols-outlined ch-my-rank-ic">person_pin_circle</span>
+                    <span class="ch-rank-num ch-my-rank-num">@Model.MyStanding.Rank</span>
+                    <span class="ch-my-rank-label">Siz — <strong>@Model.MyStanding.Rank-o'rin</strong></span>
+                    <span class="ch-rank-score"><strong>@Model.MyStanding.PagesRead</strong> bet · @Model.MyStanding.BooksRead kitob</span>
+                </div>
+            }
         }
     </section>
 
@@ -173,7 +221,7 @@
                             <div><strong>@w.AvgPagesPerDay</strong><span class="muted">bet/kun</span></div>
                         </div>
 
-                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookTitle))
+                        @if (!string.IsNullOrEmpty(w.GiftBookTitle))
                         {
                             <div class="ch-gift">
                                 @if (!string.IsNullOrEmpty(w.GiftBookCoverUrl))
@@ -285,7 +333,7 @@
                         <div class="ch-modal-stats muted">
                             @w.PagesRead bet · @w.BooksRead kitob · kuniga @w.AvgPagesPerDay bet
                         </div>
-                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookTitle))
+                        @if (!string.IsNullOrEmpty(w.GiftBookTitle))
                         {
                             <div class="ch-modal-gift">
                                 @if (!string.IsNullOrEmpty(w.GiftBookCoverUrl))
@@ -315,6 +363,64 @@
 }
 
 <link rel="stylesheet" href="/css/challenge.css" asp-append-version="true" />
+
+@* ================= SUPER ADMIN: OLDINDAN SINAB KO'RISH (ephemeral) ================= *@
+@if (Model.MyRole == UserRole.SuperAdmin)
+{
+    var liveJson = Html.Raw(JsonSerializer.Serialize(Model.LiveStandings, jsonOpts));
+    <div class="ch-sa-preview" data-sa-preview-overlay hidden>
+        <div class="ch-sa-preview-inner">
+            <header class="ch-sa-preview-head">
+                <div>
+                    <h2 class="ch-sa-preview-title">
+                        <span class="material-symbols-outlined">science</span>
+                        Sinov rejimi — g'oliblarni oldindan ko'rish
+                    </h2>
+                    <p class="muted">
+                        Joriy davr (<strong>@Model.CurrentPeriodLabel</strong>) yetakchilari g'olib
+                        sifatida ko'rsatilmoqda. Bu yerda sovg'a kitob berish va bayram ko'rinishini
+                        sinab ko'rasiz. <strong>Hech narsa saqlanmaydi</strong> — «Orqaga qaytish»
+                        tugmasi hammasini avvalgi holatga qaytaradi.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-primary ch-sa-back" data-sa-preview-back>
+                    <span class="material-symbols-outlined" style="vertical-align:-4px">arrow_back</span>
+                    Orqaga qaytish
+                </button>
+            </header>
+
+            <div class="ch-sa-empty" data-sa-empty hidden>
+                <span class="material-symbols-outlined">auto_stories</span>
+                <p class="muted">Joriy davrda hali reyting bo'sh — sinash uchun g'olib yo'q.</p>
+            </div>
+
+            <section class="ch-sa-section" data-sa-body>
+                <h3 class="ch-h3"><span class="material-symbols-outlined">emoji_events</span> G'oliblar (joriy yetakchilar)</h3>
+                <div class="ch-sa-winners" data-sa-winners></div>
+
+                <h3 class="ch-h3"><span class="material-symbols-outlined">redeem</span> Sovg'a kitoblarni tayinlash</h3>
+                <p class="muted">Har bir g'olibga bittadan kitob tayinlang — quyida «kimga qaysi kitob beriladi» ko'rinadi.</p>
+                <div class="ch-sa-gift-forms" data-sa-gift-forms></div>
+
+                <div class="ch-sa-summary" data-sa-summary></div>
+
+                <div class="ch-sa-controls">
+                    <button type="button" class="btn btn-accent" data-sa-festive>
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">celebration</span>
+                        Bayram ko'rinishini yoqish / o'chirish
+                    </button>
+                    <button type="button" class="btn btn-outline" data-sa-open-modal>
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">slideshow</span>
+                        G'olib modalini ko'rish
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="application/json" data-sa-live>@liveJson</script>
+    <script src="~/js/challenge-preview.js" asp-append-version="true"></script>
+}
 
 @section Scripts {
     <script type="application/json" data-ch-data>

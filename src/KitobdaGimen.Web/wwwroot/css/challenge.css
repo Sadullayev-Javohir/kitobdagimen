@@ -232,3 +232,81 @@
     .ch-avatar { width: 54px; height: 54px; font-size: 22px; }
     .ch-place-1 .ch-avatar { width: 70px; height: 70px; font-size: 28px; }
 }
+
+/* ── Header amallar (admin + preview tugmalari) ── */
+.ch-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ch-preview-btn { white-space: nowrap; }
+
+/* ── Kichik sarlavha ── */
+.ch-h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 22px 0 10px; }
+.ch-h3 .material-symbols-outlined { color: var(--accent, #e8703a); font-size: 20px; }
+
+/* ── "Reyting davomi" ro'yxati (4–23-o'rin) ── */
+.ch-rank-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ch-rank-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 12px;
+    background: var(--surface, #fffdf8); border: 1px solid rgba(0,0,0,.06);
+}
+.ch-rank-row.is-me { border-color: var(--accent, #e8703a); background: rgba(232,112,58,.08); }
+.ch-rank-num { min-width: 30px; text-align: center; font-weight: 700; font-size: 15px; color: var(--primary, #1b4d3e); }
+.ch-rank-user { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex: 1 1 auto; min-width: 0; }
+.ch-rank-avatar { width: 34px; height: 34px; font-size: 14px; flex: 0 0 auto; }
+.ch-rank-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-rank-score { font-size: 13px; color: var(--muted, #6b675f); white-space: nowrap; }
+.ch-rank-score strong { color: var(--primary, #1b4d3e); }
+
+/* ── "Siz — N-o'rin" qatori (ro'yxatdan tashqarida bo'lsa) ── */
+.ch-my-rank {
+    display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 14px; border-radius: 14px;
+    border: 1px dashed var(--accent, #e8703a); background: rgba(232,112,58,.08);
+}
+.ch-my-rank-ic { color: var(--accent, #e8703a); }
+.ch-my-rank-num { background: var(--accent, #e8703a); color: #fff; border-radius: 8px; padding: 2px 8px; }
+.ch-my-rank-label { flex: 1 1 auto; }
+
+@media (max-width: 560px) {
+    .ch-rank-score { font-size: 11px; }
+}
+
+/* ════════════ SUPER ADMIN: OLDINDAN SINAB KO'RISH (overlay) ════════════ */
+.ch-sa-preview {
+    position: fixed; inset: 0; z-index: 2000; overflow-y: auto;
+    background: var(--bg, #faf6ee);
+}
+.ch-sa-preview-inner { max-width: 900px; margin: 0 auto; padding: 24px 18px 60px; }
+.ch-sa-preview-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    padding-bottom: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.ch-sa-preview-title { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 0 0 4px; }
+.ch-sa-preview-title .material-symbols-outlined { color: var(--accent, #e8703a); }
+.ch-sa-back { white-space: nowrap; }
+.ch-sa-empty { text-align: center; padding: 40px 12px; }
+.ch-sa-empty .material-symbols-outlined { font-size: 46px; color: var(--muted, #9a958c); }
+
+.ch-sa-winners { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 8px; }
+.ch-sa-winner {
+    flex: 1 1 200px; max-width: 240px; text-align: center; padding: 16px 12px; border-radius: 18px;
+    background: var(--surface, #fffdf8); border: 1px solid rgba(0,0,0,.06);
+}
+.ch-sa-winner .ch-avatar { width: 60px; height: 60px; margin: 6px auto; }
+.ch-sa-winner-stats { font-size: 12px; margin-top: 4px; }
+.ch-sa-winner-gift { margin-top: 10px; }
+
+.ch-sa-gift-forms { display: flex; flex-direction: column; gap: 12px; }
+.ch-sa-gift-form { padding: 14px; }
+.ch-sa-gift-who { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.ch-form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.ch-form-row label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; flex: 1 1 200px; }
+.ch-form-row input {
+    padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15);
+    font: inherit; background: #fff;
+}
+
+.ch-sa-summary { margin: 18px 0; padding: 14px 16px; border-radius: 14px; background: rgba(27,77,62,.06); }
+.ch-sa-summary-title { margin: 0 0 8px; font-size: 15px; }
+.ch-sa-summary-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ch-sa-summary-list li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.ch-sa-summary-list .material-symbols-outlined { font-size: 18px; color: var(--accent, #e8703a); }
+
+.ch-sa-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }

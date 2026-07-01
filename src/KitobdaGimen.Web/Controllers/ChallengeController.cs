@@ -4,6 +4,7 @@ using KitobdaGimen.Application.Features.Challenge.Commands.FinalizeChallengeMont
 using KitobdaGimen.Application.Features.Challenge.Commands.SetWinnerGiftBook;
 using KitobdaGimen.Application.Features.Challenge.Commands.ToggleChallengeWinnerLike;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetAnnouncedWinners;
+using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeBoard;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeStandings;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetRandomBookCovers;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeStats;
@@ -49,9 +50,9 @@ public class ChallengeController : AppController
     {
         var (year, month) = ChallengeCalendar.CurrentPeriod();
 
-        var standings = await Mediator.Send(new GetChallengeStandingsQuery
+        var board = await Mediator.Send(new GetChallengeBoardQuery
         {
-            Year = year, Month = month, Limit = 3
+            Year = year, Month = month, PodiumCount = 3, ListCount = 20
         });
 
         var announced = await Mediator.Send(new GetAnnouncedWinnersQuery());
@@ -68,7 +69,9 @@ public class ChallengeController : AppController
             CurrentYear = year,
             CurrentMonth = month,
             CurrentPeriodLabel = ChallengeCalendar.PeriodLabel(year, month),
-            LiveStandings = standings,
+            LiveStandings = board.Podium,
+            OtherStandings = board.Others,
+            MyStanding = board.MyStanding,
             Announced = announced,
             Stats = stats,
             DecorationCovers = covers,

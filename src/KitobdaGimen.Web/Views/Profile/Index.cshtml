@@ -163,11 +163,24 @@
                         <div class="pw-body">
                             <strong class="pw-period">@win.PeriodLabel</strong>
                             <span class="muted pw-stats">@win.Rank-o'rin · @win.PagesRead bet · @win.BooksRead kitob</span>
-                            @if (win.Rank == 1 && !string.IsNullOrEmpty(win.GiftBookCoverUrl))
+                            @if (!string.IsNullOrEmpty(win.GiftBookTitle))
                             {
                                 <div class="pw-gift">
-                                    <img src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
-                                    <span>🎁 @win.GiftBookTitle</span>
+                                    @if (!string.IsNullOrEmpty(win.GiftBookCoverUrl))
+                                    {
+                                        <img src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
+                                    }
+                                    else
+                                    {
+                                        <span class="pw-gift-noimg">🎁</span>
+                                    }
+                                    <span class="pw-gift-txt">
+                                        🎁 <strong>@win.GiftBookTitle</strong>
+                                        @if (!string.IsNullOrEmpty(win.GiftBookAuthor))
+                                        {
+                                            <span class="muted"> — @win.GiftBookAuthor</span>
+                                        }
+                                    </span>
                                 </div>
                             }
                         </div>
@@ -185,6 +198,8 @@
             .pw-stats { font-size: 12px; }
             .pw-gift { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; }
             .pw-gift img { width: 34px; height: 48px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+            .pw-gift-noimg { width: 34px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 4px; background: rgba(242,193,78,.25); font-size: 18px; }
+            .pw-gift-txt { min-width: 0; }
         </style>
     }
 
