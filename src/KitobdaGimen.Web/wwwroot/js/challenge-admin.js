@@ -3,7 +3,10 @@
 (function () {
     "use strict";
 
-    function medal(rank) { return rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"; }
+    function medal(rank) {
+        var cls = rank === 1 ? "ch-medal-gold" : rank === 2 ? "ch-medal-silver" : "ch-medal-bronze";
+        return '<span class="material-symbols-outlined ch-medal-ic ' + cls + '">workspace_premium</span>';
+    }
     function initial(name) { return name && name.trim() ? name.trim()[0].toUpperCase() : "?"; }
     function esc(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -72,15 +75,25 @@
                 host.className = "ch-festive";
                 host.setAttribute("data-ch-festive", "");
                 document.body.appendChild(host);
-                const emojis = ["🎉", "🎊", "✨", "🎈", "📚", "⭐"];
-                for (let i = 0; i < 26; i++) {
+                const icons = [
+                    { icon: "celebration", cls: "c-accent" },
+                    { icon: "auto_awesome", cls: "c-gold" },
+                    { icon: "star", cls: "c-gold" },
+                    { icon: "emoji_events", cls: "c-gold" },
+                    { icon: "workspace_premium", cls: "c-silver" },
+                    { icon: "menu_book", cls: "c-primary" },
+                    { icon: "redeem", cls: "c-accent" },
+                    { icon: "local_fire_department", cls: "c-accent" }
+                ];
+                for (let i = 0; i < 30; i++) {
+                    const pick = icons[i % icons.length];
                     const s = document.createElement("span");
-                    s.className = "ch-spark";
-                    s.textContent = emojis[i % emojis.length];
+                    s.className = "ch-spark material-symbols-outlined " + pick.cls;
+                    s.textContent = pick.icon;
                     s.style.left = Math.random() * 100 + "vw";
                     s.style.animationDuration = (5 + Math.random() * 7) + "s";
                     s.style.animationDelay = (Math.random() * 6) + "s";
-                    s.style.fontSize = (16 + Math.random() * 18) + "px";
+                    s.style.fontSize = (18 + Math.random() * 20) + "px";
                     host.appendChild(s);
                 }
             } else if (!festiveOn && host) {

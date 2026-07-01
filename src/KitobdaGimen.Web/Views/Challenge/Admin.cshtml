@@ -7,7 +7,11 @@
     ViewData["Robots"] = "noindex, nofollow";
 
     string Initial(string name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();
-    string Medal(int rank) => rank == 1 ? "🥇" : rank == 2 ? "🥈" : "🥉";
+    string MedalIcon(int rank)
+    {
+        var cls = rank switch { 1 => "ch-medal-gold", 2 => "ch-medal-silver", _ => "ch-medal-bronze" };
+        return $"<span class=\"material-symbols-outlined ch-medal-ic {cls}\">workspace_premium</span>";
+    }
 
     var (prevY, prevM) = ChallengeCalendar.PreviousPeriod(Model.Year, Model.Month);
     var (nextY, nextM) = ChallengeCalendar.NextPeriod(Model.Year, Model.Month);
@@ -60,15 +64,15 @@
             <span class="muted">
                 @if (Model.Announced is not null)
                 {
-                    <text>✅ E'lon qilingan</text>
+                    <span class="ch-status is-announced"><span class="material-symbols-outlined">check_circle</span> E'lon qilingan</span>
                 }
                 else if (Model.IsPeriodCompleted)
                 {
-                    <text>⏳ Yakunlangan — e'lon qilinmagan</text>
+                    <span class="ch-status is-completed"><span class="material-symbols-outlined">hourglass_top</span> Yakunlangan — e'lon qilinmagan</span>
                 }
                 else
                 {
-                    <text>🟢 Davom etmoqda (jonli)</text>
+                    <span class="ch-status is-live"><span class="material-symbols-outlined">radio_button_checked</span> Davom etmoqda (jonli)</span>
                 }
             </span>
         </div>
@@ -129,7 +133,7 @@
                     var u = Model.Standings.FirstOrDefault(x => x.Rank == slot);
                     if (u is null) { continue; }
                     <div class="ch-podium-card ch-place-@u.Rank">
-                        <div class="ch-medal">@Medal(u.Rank)</div>
+                        <div class="ch-medal">@Html.Raw(MedalIcon(u.Rank))</div>
                         <div class="ch-avatar-wrap">
                             @if (!string.IsNullOrEmpty(u.AvatarUrl))
                             {
@@ -195,7 +199,7 @@
                     <div class="ch-gift" style="margin-top:14px;max-width:320px">
                         <img src="@rank1.GiftBookCoverUrl" alt="@rank1.GiftBookTitle" referrerpolicy="no-referrer" />
                         <div>
-                            <span class="ch-gift-label">🎁 Joriy sovg'a</span>
+                            <span class="ch-gift-label"><span class="material-symbols-outlined">redeem</span> Joriy sovg'a</span>
                             <strong>@rank1.GiftBookTitle</strong>
                             <span class="muted">@rank1.GiftBookAuthor</span>
                         </div>
@@ -214,11 +218,15 @@
 <div class="ch-modal" data-preview-modal-box hidden>
     <div class="ch-modal-backdrop" data-preview-close></div>
     <div class="ch-modal-box" role="dialog" aria-modal="true">
-        <button type="button" class="ch-modal-x" data-preview-close aria-label="Yopish">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-        <h2 class="ch-modal-title">🎉 @Model.PeriodLabel g'oliblari (preview)</h2>
-        <p class="ch-modal-sub muted">Foydalanuvchilar shu ko'rinishni ko'radi.</p>
+        <div class="ch-modal-header">
+            <div class="ch-modal-confetti" aria-hidden="true"></div>
+            <button type="button" class="ch-modal-x" data-preview-close aria-label="Yopish">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <span class="material-symbols-outlined ch-modal-crown">workspace_premium</span>
+            <h2 class="ch-modal-title">@Model.PeriodLabel g'oliblari (preview)</h2>
+            <p class="ch-modal-sub">Foydalanuvchilar shu ko'rinishni ko'radi.</p>
+        </div>
         <div class="ch-modal-winners" data-preview-winners></div>
         <button type="button" class="btn btn-accent" data-preview-close>Yopish</button>
     </div>

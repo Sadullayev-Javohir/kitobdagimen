@@ -1,35 +1,35 @@
 namespace KitobdaGimen.Application.Common;
 
 /// <summary>
-/// Challenge davri bilan ishlash uchun yagona yordamchi. Har bir davr — 2 oy: oyning
-/// 1-kunidan keyingi oyning oxirgi kunigacha (masalan Yanvar 1 – Fevral 28/29). G'oliblar
-/// davrning oxirgi kunida aniqlanadi. Davrlar takrorlanmaydigan 2 oylik bloklar sifatida
-/// belgilanadi va boshlanish oyi (Year, Month) bo'yicha saqlanadi (Month — toq: 1,3,5,7,9,11).
-/// "Hozir" tushunchasi O'zbekiston vaqtiga (<see cref="UzTime"/>) bog'langan.
+/// Challenge davri bilan ishlash uchun yagona yordamchi. Har bir davr — 1 oy: oyning
+/// 1-kunidan o'sha oyning oxirgi kunigacha (masalan Iyul 1 – Iyul 31). G'oliblar davrning
+/// oxirgi kunida aniqlanadi. Davrlar takrorlanmaydigan oylik bloklar sifatida belgilanadi
+/// va (Year, Month) bo'yicha saqlanadi. "Hozir" tushunchasi O'zbekiston vaqtiga
+/// (<see cref="UzTime"/>) bog'langan.
 /// </summary>
 public static class ChallengeCalendar
 {
     /// <summary>Davr uzunligi — oylarda.</summary>
-    public const int PeriodMonths = 2;
+    public const int PeriodMonths = 1;
 
-    /// <summary>Berilgan oy uchun davr boshlanish oyi (toq oy: 1,3,5,7,9,11).</summary>
-    private static int StartMonthOf(int month) => month % 2 == 1 ? month : month - 1;
+    /// <summary>Berilgan oy uchun davr boshlanish oyi. Oylik davrda — o'sha oyning o'zi.</summary>
+    private static int StartMonthOf(int month) => month;
 
     /// <summary>Hozirgi (davom etayotgan) challenge davri — boshlanish (yil, oy).</summary>
     public static (int Year, int Month) CurrentPeriod()
     {
         var today = UzTime.Today;
-        return (today.Year, StartMonthOf(today.Month));
+        return (today.Year, today.Month);
     }
 
-    /// <summary>Berilgan davrdan bir davr (2 oy) oldingi davr.</summary>
+    /// <summary>Berilgan davrdan bir davr (1 oy) oldingi davr.</summary>
     public static (int Year, int Month) PreviousPeriod(int year, int month)
     {
         var d = new DateOnly(year, StartMonthOf(month), 1).AddMonths(-PeriodMonths);
         return (d.Year, d.Month);
     }
 
-    /// <summary>Berilgan davrdan bir davr (2 oy) keyingi davr.</summary>
+    /// <summary>Berilgan davrdan bir davr (1 oy) keyingi davr.</summary>
     public static (int Year, int Month) NextPeriod(int year, int month)
     {
         var d = new DateOnly(year, StartMonthOf(month), 1).AddMonths(PeriodMonths);
@@ -43,7 +43,7 @@ public static class ChallengeCalendar
         return PreviousPeriod(y, m);
     }
 
-    /// <summary>Davrning sana chegaralari: [birinchi kun .. oxirgi kun] (2 oylik).</summary>
+    /// <summary>Davrning sana chegaralari: [birinchi kun .. oxirgi kun] (1 oylik).</summary>
     public static (DateOnly From, DateOnly To) Range(int year, int month)
     {
         var start = StartMonthOf(month);
@@ -95,11 +95,9 @@ public static class ChallengeCalendar
         _ => month.ToString()
     };
 
-    /// <summary>"Iyul–Avgust 2026" ko'rinishidagi davr sarlavhasi (2 oy).</summary>
+    /// <summary>"Iyul 2026" ko'rinishidagi davr sarlavhasi (1 oy).</summary>
     public static string PeriodLabel(int year, int month)
     {
-        var start = StartMonthOf(month);
-        var endMonth = start + 1;
-        return $"{MonthName(start)}–{MonthName(endMonth)} {year}";
+        return $"{MonthName(StartMonthOf(month))} {year}";
     }
 }

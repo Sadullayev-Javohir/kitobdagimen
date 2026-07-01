@@ -10,7 +10,25 @@
 
     string Initial(string name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();
 
-    string Medal(int rank) => rank == 1 ? "🥇" : rank == 2 ? "🥈" : "🥉";
+    // Zamonaviy medal ikonlari (emoji o'rniga)
+    string MedalIcon(int rank)
+    {
+        var (icon, cls) = rank switch
+        {
+            1 => ("workspace_premium", "ch-medal-gold"),
+            2 => ("workspace_premium", "ch-medal-silver"),
+            _ => ("workspace_premium", "ch-medal-bronze")
+        };
+        return $"<span class=\"material-symbols-outlined ch-medal-ic {cls}\">{icon}</span>";
+    }
+
+    // G'olib kartochkasi uchun bezak ikoni (turli xil)
+    string DecoIcon(int rank) => rank switch
+    {
+        1 => "emoji_events",
+        2 => "workspace_premium",
+        _ => "military_tech"
+    };
 
     var announced = Model.Announced;
     var festive = announced?.IsAnnouncementActive == true;
@@ -21,9 +39,9 @@
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     var coversJson = Html.Raw(JsonSerializer.Serialize(Model.DecorationCovers, jsonOpts));
     var dailyJson = Html.Raw(JsonSerializer.Serialize(Model.Stats.Daily, jsonOpts));
-    var monthlyJson = Html.Raw(JsonSerializer.Serialize(Model.Stats.Monthly, jsonOpts));
+    var yearJson = Html.Raw(JsonSerializer.Serialize(Model.Stats.Year, jsonOpts));
+    var availableYearsJson = Html.Raw(JsonSerializer.Serialize(Model.Stats.AvailableYears, jsonOpts));
     var announcedJson = Html.Raw(JsonSerializer.Serialize(announced, jsonOpts));
-    // Har e'lon uchun unikal kalit — modalni bir marta avtomatik ochish (localStorage)
     var announceKey = announced is null ? "" : $"{announced.Year}-{announced.Month}-{announced.AnnouncedAt.Ticks}";
 }
 
@@ -45,8 +63,8 @@
                 Challenge
             </h1>
             <p class="muted ch-sub">
-                Har bir davr — 2 oy: oyning 1-kunidan keyingi oyning oxirgi kunigacha. Eng ko'p
-                kitob o'qigan 3 kitobxon g'olib bo'ladi va davrning oxirgi kunida e'lon qilinadi.
+                Har bir davr — 1 oy: oyning 1-kunidan o'sha oyning oxirgi kunigacha. Eng ko'p
+                kitob o'qigan 3 kitobxon g'olib bo'ladi va oyning oxirgi kunida e'lon qilinadi.
                 Joriy davr: <strong>@Model.CurrentPeriodLabel</strong>.
             </p>
         </div>
@@ -62,10 +80,10 @@
     @if (festive && announced is not null)
     {
         <div class="ch-banner">
-            <span class="material-symbols-outlined">celebration</span>
+            <span class="material-symbols-outlined ch-banner-ic">celebration</span>
             <div>
                 <strong>@announced.PeriodLabel challenge g'oliblari e'lon qilindi!</strong>
-                <span class="muted"> Tabriklaymiz! 🎉</span>
+                <span class="muted">Tabriklaymiz!</span>
             </div>
             <button type="button" class="btn btn-accent btn-sm" data-open-winners>Ko'rish</button>
         </div>
@@ -77,7 +95,7 @@
             <span class="material-symbols-outlined">trending_up</span>
             Joriy davr reytingi — @Model.CurrentPeriodLabel
         </h2>
-        <p class="muted ch-note">Bu — hozircha yetakchilar. Davr (2 oy) tugagach g'oliblar rasman e'lon qilinadi.</p>
+        <p class="muted ch-note">Bu — hozircha yetakchilar. Davr (1 oy) tugagach g'oliblar rasman e'lon qilinadi.</p>
 
         @if (Model.LiveStandings.Count == 0)
         {
@@ -97,7 +115,7 @@
                     var u = Model.LiveStandings.FirstOrDefault(x => x.Rank == slot);
                     if (u is null) { continue; }
                     <a class="ch-podium-card ch-place-@u.Rank" href="@ProfileUrl(u.UserId, u.Username)">
-                        <div class="ch-medal">@Medal(u.Rank)</div>
+                        <div class="ch-medal">@Html.Raw(MedalIcon(u.Rank))</div>
                         <div class="ch-avatar-wrap">
                             @if (!string.IsNullOrEmpty(u.AvatarUrl))
                             {
@@ -131,8 +149,9 @@
                 @foreach (var w in announced.Winners)
                 {
                     <div class="card ch-winner ch-place-@w.Rank" data-winner-id="@w.Id">
+                        <span class="material-symbols-outlined ch-winner-deco">@DecoIcon(w.Rank)</span>
                         <div class="ch-winner-top">
-                            <span class="ch-medal">@Medal(w.Rank)</span>
+                            <span class="ch-medal">@Html.Raw(MedalIcon(w.Rank))</span>
                             <a class="ch-winner-user" href="@ProfileUrl(w.UserId, w.Username)">
                                 @if (!string.IsNullOrEmpty(w.AvatarUrl))
                                 {
@@ -154,12 +173,19 @@
                             <div><strong>@w.AvgPagesPerDay</strong><span class="muted">bet/kun</span></div>
                         </div>
 
-                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookCoverUrl))
+                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookTitle))
                         {
                             <div class="ch-gift">
-                                <img src="@w.GiftBookCoverUrl" alt="@w.GiftBookTitle" referrerpolicy="no-referrer" />
+                                @if (!string.IsNullOrEmpty(w.GiftBookCoverUrl))
+                                {
+                                    <img src="@w.GiftBookCoverUrl" alt="@w.GiftBookTitle" referrerpolicy="no-referrer" />
+                                }
+                                else
+                                {
+                                    <span class="ch-gift-noimg"><span class="material-symbols-outlined">menu_book</span></span>
+                                }
                                 <div>
-                                    <span class="ch-gift-label">🎁 Sovg'a kitob</span>
+                                    <span class="ch-gift-label"><span class="material-symbols-outlined">redeem</span> Sovg'a kitob</span>
                                     <strong>@w.GiftBookTitle</strong>
                                     @if (!string.IsNullOrEmpty(w.GiftBookAuthor))
                                     {
@@ -182,54 +208,71 @@
         </section>
     }
 
-    @* ================= STATISTIKA (three.js) ================= *@
+    @* ================= STATISTIKA — GitHub uslubidagi heatmap ================= *@
     <section class="ch-section ch-stats-section">
         <h2 class="ch-h2">
             <span class="material-symbols-outlined">insights</span>
             Mening o'qish statistikam
         </h2>
+
         <div class="ch-stats-tabs">
-            <button type="button" class="ch-stat-tab is-active" data-stat-tab="daily">1 oylik (30 kun)</button>
-            <button type="button" class="ch-stat-tab" data-stat-tab="monthly">1 yillik (12 oy)</button>
+            <button type="button" class="ch-stat-tab" data-stat-tab="year">
+                <span class="material-symbols-outlined">calendar_month</span> 1 yillik
+            </button>
+            <button type="button" class="ch-stat-tab" data-stat-tab="daily">
+                <span class="material-symbols-outlined">date_range</span> 30 kunlik
+            </button>
         </div>
 
-        <div class="ch-stats-summary">
-            <div class="ch-stat-chip" data-summary="daily">
-                So'nggi 30 kun: <strong>@Model.Stats.MonthPages</strong> bet · <strong>@Model.Stats.MonthActiveDays</strong> kun o'qildi
-            </div>
-            <div class="ch-stat-chip" data-summary="monthly" hidden>
-                So'nggi 12 oy: <strong>@Model.Stats.YearPages</strong> bet · <strong>@Model.Stats.YearActiveMonths</strong> oy o'qildi
+        <div class="ch-stats-bar">
+            <div class="ch-stat-summary" data-stat-summary></div>
+            <div class="ch-year-nav" data-year-nav>
+                <button type="button" data-year-prev aria-label="Avvalgi yil">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                <span class="ch-year-label" data-year-label></span>
+                <button type="button" data-year-next aria-label="Keyingi yil">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
             </div>
         </div>
 
-        <div class="ch-canvas-wrap">
-            <canvas data-stats-canvas></canvas>
-            <div class="ch-canvas-fallback" data-stats-fallback hidden>
-                <p class="muted">3D grafik yuklanmadi — pastda oddiy ko'rinish:</p>
-                <div class="ch-bars2d" data-bars2d></div>
-            </div>
+        <div class="ch-heatmap" data-heatmap></div>
+
+        <div class="gh-legend">
+            <span>Kam</span>
+            <span class="gh-day lv-0"></span>
+            <span class="gh-day lv-1"></span>
+            <span class="gh-day lv-2"></span>
+            <span class="gh-day lv-3"></span>
+            <span class="gh-day lv-4"></span>
+            <span>Ko'p</span>
         </div>
-        <p class="muted ch-note" data-stats-hint>Yashil ustunlar — o'qigan kunlaringiz/oylaringiz. Balandligi — betlar soni.</p>
+
+        <div class="gh-detail" data-day-detail></div>
     </section>
 </div>
 
-@* ================= G'OLIBLAR MODALI ================= *@
+@* ================= G'OLIBLAR MODALI (yangi dizayn) ================= *@
 @if (announced is not null)
 {
     <div class="ch-modal" data-winners-modal hidden>
         <div class="ch-modal-backdrop" data-modal-close></div>
         <div class="ch-modal-box" role="dialog" aria-modal="true" aria-label="Challenge g'oliblari">
-            <button type="button" class="ch-modal-x" data-modal-close aria-label="Yopish">
-                <span class="material-symbols-outlined">close</span>
-            </button>
-            <div class="ch-modal-confetti" aria-hidden="true"></div>
-            <h2 class="ch-modal-title">🎉 @announced.PeriodLabel g'oliblari</h2>
-            <p class="ch-modal-sub muted">Bu oyda eng ko'p kitob o'qigan kitobxonlar. Tabriklaymiz!</p>
+            <div class="ch-modal-header">
+                <div class="ch-modal-confetti" aria-hidden="true"></div>
+                <button type="button" class="ch-modal-x" data-modal-close aria-label="Yopish">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+                <span class="material-symbols-outlined ch-modal-crown">workspace_premium</span>
+                <h2 class="ch-modal-title">@announced.PeriodLabel g'oliblari</h2>
+                <p class="ch-modal-sub">Bu oyda eng ko'p kitob o'qigan kitobxonlar. Tabriklaymiz!</p>
+            </div>
             <div class="ch-modal-winners">
                 @foreach (var w in announced.Winners)
                 {
                     <div class="ch-modal-winner ch-place-@w.Rank">
-                        <div class="ch-medal">@Medal(w.Rank)</div>
+                        <div class="ch-medal">@Html.Raw(MedalIcon(w.Rank))</div>
                         @if (!string.IsNullOrEmpty(w.AvatarUrl))
                         {
                             <img class="avatar ch-avatar" src="@w.AvatarUrl" alt="@w.FullName" referrerpolicy="no-referrer" />
@@ -242,11 +285,25 @@
                         <div class="ch-modal-stats muted">
                             @w.PagesRead bet · @w.BooksRead kitob · kuniga @w.AvgPagesPerDay bet
                         </div>
-                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookCoverUrl))
+                        @if (w.Rank == 1 && !string.IsNullOrEmpty(w.GiftBookTitle))
                         {
                             <div class="ch-modal-gift">
-                                <img src="@w.GiftBookCoverUrl" alt="@w.GiftBookTitle" referrerpolicy="no-referrer" />
-                                <span>🎁 @w.GiftBookTitle</span>
+                                @if (!string.IsNullOrEmpty(w.GiftBookCoverUrl))
+                                {
+                                    <img src="@w.GiftBookCoverUrl" alt="@w.GiftBookTitle" referrerpolicy="no-referrer" />
+                                }
+                                else
+                                {
+                                    <span class="ch-modal-gift-noimg"><span class="material-symbols-outlined">menu_book</span></span>
+                                }
+                                <div class="ch-modal-gift-info">
+                                    <span class="ch-modal-gift-label"><span class="material-symbols-outlined">redeem</span> Sovg'a kitob</span>
+                                    <span class="ch-modal-gift-title">@w.GiftBookTitle</span>
+                                    @if (!string.IsNullOrEmpty(w.GiftBookAuthor))
+                                    {
+                                        <span class="ch-modal-gift-author">@w.GiftBookAuthor</span>
+                                    }
+                                </div>
                             </div>
                         }
                     </div>
@@ -264,7 +321,11 @@
         {
             "covers": @coversJson,
             "daily": @dailyJson,
-            "monthly": @monthlyJson,
+            "year": @yearJson,
+            "availableYears": @availableYearsJson,
+            "monthPages": @Model.Stats.MonthPages,
+            "monthActiveDays": @Model.Stats.MonthActiveDays,
+            "monthBooks": @Model.Stats.MonthBooks,
             "announced": @announcedJson,
             "announceKey": "@announceKey"
         }

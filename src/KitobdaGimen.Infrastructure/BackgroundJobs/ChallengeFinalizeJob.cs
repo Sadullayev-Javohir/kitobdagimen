@@ -7,7 +7,7 @@ namespace KitobdaGimen.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Challenge g'oliblarini avtomatik aniqlash jobi. Har kuni (O'zbekiston vaqti bilan kech soatda)
-/// ishga tushadi va davr (2 oy) oxirgi kunida joriy davrni e'lon qiladi; qo'shimcha ravishda
+/// ishga tushadi va davr (1 oy) oxirgi kunida joriy davrni e'lon qiladi; qo'shimcha ravishda
 /// oxirgi yakunlangan davrni ham "catch-up" tarzida e'lon qiladi (agar bir kun o'tkazib
 /// yuborilgan bo'lsa). Amal idempotent: allaqachon e'lon qilingan davr qayta yaratilmaydi.
 /// Avtomatik jarayon ishlamay qolsa, super admin qo'lda ishga tushira oladi (/challenge/admin).

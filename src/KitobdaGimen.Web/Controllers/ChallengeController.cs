@@ -7,6 +7,7 @@ using KitobdaGimen.Application.Features.Challenge.Queries.GetAnnouncedWinners;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeStandings;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetRandomBookCovers;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeStats;
+using KitobdaGimen.Application.Features.Challenge.Queries.GetUserYearCalendar;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Domain.Enums;
 using KitobdaGimen.Web.Models;
@@ -30,7 +31,7 @@ namespace KitobdaGimen.Web.Controllers;
 [Route("challenge")]
 public class ChallengeController : AppController
 {
-    private const int DecorationCoverCount = 18;
+    private const int DecorationCoverCount = 60;
     private const long MaxGiftCoverBytes = 5 * 1024 * 1024; // 5 MB
     private const int MaxCoverDimension = 1200;
 
@@ -86,6 +87,25 @@ public class ChallengeController : AppController
     {
         var covers = await Mediator.Send(new GetRandomBookCoversQuery { Count = DecorationCoverCount });
         return Json(covers);
+    }
+
+    /// <summary>Berilgan yil uchun o'qish kalendari (GitHub uslubidagi heatmap) — JSON.
+    /// Avvalgi yillarni ko'rish uchun mijoz AJAX bilan chaqiradi.</summary>
+    [HttpGet("stats/{year:int}")]
+    public async Task<IActionResult> YearStats(int year)
+    {
+        if (CurrentUserId is not int uid)
+        {
+            return Unauthorized();
+        }
+
+        if (year < 2000 || year > UzTime.Today.Year + 1)
+        {
+            return BadRequest();
+        }
+
+        var calendar = await Mediator.Send(new GetUserYearCalendarQuery(uid, year));
+        return Json(calendar);
     }
 
     /// <summary>Challenge g'olibiga like (toggle) — JSON.</summary>

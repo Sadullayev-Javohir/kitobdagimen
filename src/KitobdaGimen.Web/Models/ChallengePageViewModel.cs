@@ -25,7 +25,7 @@ public class ChallengePageViewModel
     /// <summary>Oxirgi e'lon qilingan g'oliblar (bo'lmasa null).</summary>
     public AnnouncedChallengeDto? Announced { get; init; }
 
-    /// <summary>Joriy foydalanuvchining o'qish statistikasi (30 kun + 12 oy).</summary>
+    /// <summary>Joriy foydalanuvchining o'qish statistikasi (30 kun + yillik heatmap kalendar).</summary>
     public UserChallengeStatsDto Stats { get; init; } = new();
 
     /// <summary>Dekoratsiya uchun kitob muqovalari (asaxiy.uz).</summary>

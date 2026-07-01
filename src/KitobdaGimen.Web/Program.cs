@@ -199,7 +199,7 @@ if (hangfireEnabled)
         new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
     // Challenge g'oliblarini avtomatik aniqlash: har kuni O'zbekiston vaqti bilan 23:30 da
-    // (UTC 18:30). Davr (2 oy) oxirgi kunida joriy davrni, hamda oxirgi yakunlangan davrni
+    // (UTC 18:30). Davr (1 oy) oxirgi kunida joriy davrni, hamda oxirgi yakunlangan davrni
     // (catch-up) e'lon qiladi. Idempotent — takror e'lon qilmaydi.
     RecurringJob.AddOrUpdate<ChallengeFinalizeJob>(
         ChallengeFinalizeJob.RecurringJobId,
