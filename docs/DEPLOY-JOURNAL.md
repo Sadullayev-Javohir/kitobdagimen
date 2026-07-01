@@ -170,6 +170,34 @@ Saqlangach (~5 daqiqa), Google login ishladi.
 
 ---
 
+### Xato #7 — `dotnet publish` fayl band xatosi (`MSB3021` / `MSB3027`) ⚠️
+
+**Belgisi (redeploy paytida):**
+```
+error MSB3027: Could not copy "obj/Release/net8.0/KitobdaGimen.Web.pdb" to
+"/var/www/kitobdagimen/publish/KitobdaGimen.Web.pdb". Exceeded retry count of 10.
+error MSB3021: Unable to copy file ... The process cannot access the file
+'.../publish/KitobdaGimen.Web.pdb' because it is being used by another process.
+```
+(Xuddi shu `KitobdaGimen.Application.pdb`/`.dll` uchun ham takrorlanadi.)
+
+**Sabab:** Redeploy buyrug'ida `systemctl restart` **publishdan keyin** turgan edi.
+Ya'ni `dotnet publish` ishga tushganda `kitobdagimen` servisi hamon ishlab turgan
+va `publish/` ichidagi `.dll`/`.pdb` fayllarni **band qilib** turgan. Publish o'sha
+fayllar ustiga yoza olmay, 10 marta urinib xato bilan to'xtaydi.
+
+**Yechim:** Publishdan **oldin** servisni to'xtatish, publishdan **keyin** ishga
+tushirish. To'g'ri tartib: `stop → publish → chown → start`:
+```bash
+cd /var/www/kitobdagimen && git pull && systemctl stop kitobdagimen && dotnet publish src/KitobdaGimen.Web -c Release -o publish && chown -R kitobapp:kitobapp publish && systemctl start kitobdagimen
+```
+
+> **Saboq:** running servis publish papkasidagi fayllarni lock qiladi — HECH QACHON
+> ishlab turgan servis ustiga publish qilmang; avval `systemctl stop`, keyin publish,
+> oxirida `systemctl start`.
+
+---
+
 ## 3. Yakuniy xavfsizlik holati
 
 Deploy tugagach faol bo'lgan himoyalar:
@@ -200,6 +228,9 @@ Deploy tugagach faol bo'lgan himoyalar:
 5. **DNS'ni deploydan oldin tekshiring** — Let's Encrypt domen serverга
    ishlashini talab qiladi; pochta yozuvlariga tegmang.
 6. **.NET Google OAuth redirect URI = `/signin-google`**, `/auth/google-callback` emas.
+7. **Redeploy tartibi: `stop → publish → start`** — ishlab turgan servis `publish/`
+   fayllarini lock qiladi; publishdan oldin `systemctl stop` qilmasa `MSB3021`/`MSB3027`
+   (file in use) xatosi chiqadi.
 
 ---
 
@@ -209,5 +240,5 @@ Deploy tugagach faol bo'lgan himoyalar:
 - `docs/PROGRESS.md` — sessiya tarixi (eng yuqori yozuv = deploy)
 - Redeploy buyrug'i:
   ```bash
-  cd /var/www/kitobdagimen && git pull && dotnet publish src/KitobdaGimen.Web -c Release -o publish && chown -R kitobapp:kitobapp publish && systemctl restart kitobdagimen
+  cd /var/www/kitobdagimen && git pull && systemctl stop kitobdagimen && dotnet publish src/KitobdaGimen.Web -c Release -o publish && chown -R kitobapp:kitobapp publish && systemctl start kitobdagimen
   ```

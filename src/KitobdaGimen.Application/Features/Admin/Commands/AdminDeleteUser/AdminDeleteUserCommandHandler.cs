@@ -56,6 +56,12 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
 
+        // Message reactions left by this user (Restrict FK). Reactions on this user's messages
+        // cascade from the conversation delete below, but reactions the user placed elsewhere must
+        // be removed explicitly or the User delete is blocked.
+        _db.MessageReactions.RemoveRange(await _db.MessageReactions
+            .Where(r => r.UserId == userId).ToListAsync(cancellationToken));
+
         _db.Conversations.RemoveRange(await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId).ToListAsync(cancellationToken));
 
@@ -70,6 +76,23 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
 
         _db.SavedQuotes.RemoveRange(await _db.SavedQuotes
             .Where(sq => sq.UserId == userId).ToListAsync(cancellationToken));
+
+        // Quote likes placed by this user (Restrict FK). Likes on the user's own quotes cascade
+        // when the quotes are removed; likes on other users' quotes must be removed explicitly.
+        _db.QuoteLikes.RemoveRange(await _db.QuoteLikes
+            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
+
+        // Quote comments authored by the user, on the user's quotes, or replying to the user's
+        // comments (Restrict FKs — mirror the post-comment cleanup above).
+        _db.QuoteComments.RemoveRange(await _db.QuoteComments
+            .Where(c => c.UserId == userId || c.Quote.UserId == userId ||
+                        (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
+            .ToListAsync(cancellationToken));
+
+        // Challenge winner likes placed by this user (Restrict FK). Likes on the user's own
+        // winner rows cascade from the winner; likes elsewhere must be removed explicitly.
+        _db.ChallengeWinnerLikes.RemoveRange(await _db.ChallengeWinnerLikes
+            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
 
         _db.PushSubscriptions.RemoveRange(await _db.PushSubscriptions
             .Where(ps => ps.UserId == userId).ToListAsync(cancellationToken));
