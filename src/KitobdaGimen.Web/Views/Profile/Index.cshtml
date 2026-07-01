@@ -147,6 +147,47 @@
         </div>
     </section>
 
+    @if (Model.ChallengeWins.Count > 0)
+    {
+        <section class="profile-wins card">
+            <h2 class="section-title" style="display:flex;align-items:center;gap:8px;margin:0 0 12px">
+                <span class="material-symbols-outlined" style="color:var(--accent)">military_tech</span>
+                Challenge g'oliblari
+            </h2>
+            <div class="pw-grid">
+                @foreach (var win in Model.ChallengeWins)
+                {
+                    var medal = win.Rank == 1 ? "🥇" : win.Rank == 2 ? "🥈" : "🥉";
+                    <div class="pw-item">
+                        <div class="pw-medal">@medal</div>
+                        <div class="pw-body">
+                            <strong class="pw-period">@win.PeriodLabel</strong>
+                            <span class="muted pw-stats">@win.Rank-o'rin · @win.PagesRead bet · @win.BooksRead kitob</span>
+                            @if (win.Rank == 1 && !string.IsNullOrEmpty(win.GiftBookCoverUrl))
+                            {
+                                <div class="pw-gift">
+                                    <img src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
+                                    <span>🎁 @win.GiftBookTitle</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+        <style>
+            .profile-wins { padding: 16px; margin: 16px 0; }
+            .pw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+            .pw-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 12px; background: rgba(242,193,78,.10); }
+            .pw-medal { font-size: 28px; line-height: 1; }
+            .pw-body { display: flex; flex-direction: column; min-width: 0; }
+            .pw-period { font-size: 15px; }
+            .pw-stats { font-size: 12px; }
+            .pw-gift { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; }
+            .pw-gift img { width: 34px; height: 48px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+        </style>
+    }
+
     <!-- Tablar + postlar | Hozir o'qiyapti -->
     <div class="profile-layout">
         <div class="profile-main">

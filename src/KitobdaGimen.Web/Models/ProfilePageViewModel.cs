@@ -25,4 +25,8 @@ public class ProfilePageViewModel
 
     /// <summary>The profile owner's quotes (public — shown on both /profile and /u/{username}).</summary>
     public IReadOnlyList<QuoteDto> MyQuotes { get; init; } = Array.Empty<QuoteDto>();
+
+    /// <summary>Challenge g'oliblik tarixi (qaysi oylarda g'olib bo'lgan) — profilda ko'rsatiladi.</summary>
+    public IReadOnlyList<KitobdaGimen.Application.Features.Challenge.Dtos.UserChallengeWinDto> ChallengeWins { get; init; }
+        = Array.Empty<KitobdaGimen.Application.Features.Challenge.Dtos.UserChallengeWinDto>();
 }

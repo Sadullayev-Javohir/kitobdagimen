@@ -44,6 +44,8 @@ public class PublicProfileController : AppController
         var activeBooks = await Mediator.Send(new GetActiveReadingGoalsQuery(id));
         var stories = await Mediator.Send(new GetUserStoryHistoryQuery(id));
         var quotes = (await Mediator.Send(new GetUserQuotesQuery(id) { PageSize = 50 })).Items;
+        var challengeWins = await Mediator.Send(
+            new KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins.GetUserChallengeWinsQuery(id));
 
         return View("~/Views/Profile/Index.cshtml", new ProfilePageViewModel
         {
@@ -52,7 +54,8 @@ public class PublicProfileController : AppController
             FinishedBooks = finishedBooks,
             CurrentBooks = activeBooks,
             Stories = stories,
-            MyQuotes = quotes
+            MyQuotes = quotes,
+            ChallengeWins = challengeWins
         });
     }
 }

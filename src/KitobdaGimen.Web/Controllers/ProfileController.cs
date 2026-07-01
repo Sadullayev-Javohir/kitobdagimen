@@ -66,6 +66,8 @@ public class ProfileController : AppController
         // The viewed user's quotes are public — shown to everyone in the "Iqtiboslar" tab
         // (the delete control stays owner-only in the view).
         var quotes = (await Mediator.Send(new GetUserQuotesQuery(userId) { PageSize = 50 })).Items;
+        var challengeWins = await Mediator.Send(
+            new KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins.GetUserChallengeWinsQuery(userId));
 
         return View(new ProfilePageViewModel
         {
@@ -74,7 +76,8 @@ public class ProfileController : AppController
             FinishedBooks = finishedBooks,
             CurrentBooks = activeBooks,
             Stories = stories,
-            MyQuotes = quotes
+            MyQuotes = quotes,
+            ChallengeWins = challengeWins
         });
     }
 

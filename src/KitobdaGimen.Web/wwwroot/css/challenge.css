@@ -1,0 +1,155 @@
+/* Challenge sahifasi (foydalanuvchi + admin preview) uchun umumiy uslublar. */
+
+.ch-page { position: relative; z-index: 1; }
+.ch-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.ch-sub { margin: 6px 0 0; font-size: 14px; max-width: 640px; }
+.ch-admin-link { white-space: nowrap; }
+
+.ch-section { margin: 26px 0; }
+.ch-h2 { display: flex; align-items: center; gap: 8px; font-size: 20px; margin: 0 0 4px; }
+.ch-h2 .material-symbols-outlined { color: var(--accent, #e8703a); }
+.ch-note { font-size: 13px; margin: 0 0 14px; }
+
+/* Bayram banneri */
+.ch-banner {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 20px;
+    border-radius: 16px; border: 1px solid #f2c14e;
+    background: linear-gradient(135deg, rgba(242,193,78,.18), rgba(232,112,58,.12));
+    animation: chGlow 2.4s ease-in-out infinite;
+}
+.ch-banner .material-symbols-outlined { font-size: 30px; color: #e8703a; }
+@keyframes chGlow { 0%,100% { box-shadow: 0 0 0 rgba(242,193,78,0); } 50% { box-shadow: 0 0 22px rgba(242,193,78,.55); } }
+
+/* Podium */
+.ch-podium { display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin: 10px 0 8px; }
+.ch-podium-card {
+    flex: 1 1 0; max-width: 210px; text-align: center; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; align-items: center; padding: 10px 8px 0; border-radius: 18px;
+    transition: transform .15s ease;
+}
+.ch-podium-card:hover { transform: translateY(-3px); }
+.ch-medal { font-size: 28px; line-height: 1; }
+.ch-avatar-wrap { position: relative; margin: 6px 0 8px; }
+.ch-avatar { width: 64px; height: 64px; font-size: 26px; border: 3px solid var(--surface, #fffdf8); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+.ch-place-1 .ch-avatar { width: 86px; height: 86px; font-size: 34px; border-color: #f2c14e; }
+.ch-place-2 .ch-avatar { border-color: #c7ccd1; }
+.ch-place-3 .ch-avatar { border-color: #d7a06b; }
+.ch-rank-badge {
+    position: absolute; bottom: -4px; right: -4px; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent, #e8703a); color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface, #fffdf8);
+}
+.ch-name { font-weight: 600; font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.ch-score { font-size: 14px; margin-top: 2px; }
+.ch-score strong { color: var(--accent, #e8703a); font-size: 17px; }
+.ch-detail { font-size: 12px; }
+.ch-pillar {
+    margin-top: 10px; width: 100%; border-radius: 12px 12px 0 0;
+    background: linear-gradient(180deg, var(--primary, #1b4d3e), color-mix(in srgb, var(--primary,#1b4d3e) 60%, transparent));
+}
+.ch-place-1 .ch-pillar { height: 72px; }
+.ch-place-2 .ch-pillar { height: 48px; }
+.ch-place-3 .ch-pillar { height: 32px; }
+
+/* G'oliblar kartochkalari */
+.ch-winners-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.ch-winner { padding: 16px; position: relative; overflow: hidden; }
+.ch-winner.ch-place-1 { border: 1px solid #f2c14e; }
+.ch-winner-top { display: flex; align-items: center; gap: 10px; }
+.ch-winner-top .ch-medal { font-size: 30px; }
+.ch-winner-user { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; min-width: 0; }
+.ch-winner-user .ch-avatar { width: 48px; height: 48px; font-size: 20px; }
+.ch-winner-stats { display: flex; gap: 14px; margin: 14px 0 10px; }
+.ch-winner-stats > div { display: flex; flex-direction: column; }
+.ch-winner-stats strong { font-size: 18px; color: var(--accent, #e8703a); }
+.ch-winner-stats .muted { font-size: 12px; }
+.ch-gift { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(242,193,78,.14); margin-bottom: 10px; }
+.ch-gift img { width: 46px; height: 64px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+.ch-gift > div { display: flex; flex-direction: column; min-width: 0; }
+.ch-gift-label { font-size: 12px; color: #b26a1f; font-weight: 700; }
+
+.ch-like-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--border, #e6ddcd); background: var(--surface, #fffdf8); cursor: pointer;
+    font-weight: 600; color: var(--text, #2a2a2a); transition: all .15s ease;
+}
+.ch-like-btn .material-symbols-outlined { font-size: 20px; color: #c7ccd1; transition: color .15s ease; }
+.ch-like-btn:hover { border-color: #e8703a; }
+.ch-like-btn.is-liked { background: rgba(232,112,58,.12); border-color: #e8703a; }
+.ch-like-btn.is-liked .material-symbols-outlined { color: #e8703a; font-variation-settings: 'FILL' 1; }
+.ch-like-btn.pop { animation: chPop .3s ease; }
+@keyframes chPop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* Statistika */
+.ch-stats-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.ch-stat-tab {
+    padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--border, #e6ddcd); background: var(--surface, #fffdf8); color: var(--text, #2a2a2a);
+}
+.ch-stat-tab.is-active { background: var(--primary, #1b4d3e); color: #fff; border-color: var(--primary, #1b4d3e); }
+.ch-stats-summary { margin-bottom: 10px; }
+.ch-stat-chip { display: inline-block; padding: 6px 12px; border-radius: 10px; background: rgba(27,77,62,.08); font-size: 14px; }
+.ch-canvas-wrap { position: relative; width: 100%; height: 340px; border-radius: 16px; overflow: hidden; background: linear-gradient(180deg, rgba(27,77,62,.05), transparent); }
+.ch-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+.ch-canvas-fallback { position: absolute; inset: 0; padding: 16px; overflow: auto; }
+.ch-bars2d { display: flex; align-items: flex-end; gap: 3px; height: 220px; margin-top: 10px; }
+.ch-bars2d .b { flex: 1 1 0; background: #c7ccd1; border-radius: 3px 3px 0 0; min-height: 2px; }
+.ch-bars2d .b.read { background: var(--primary, #1b4d3e); }
+
+/* Bo'sh holat */
+.ch-empty { text-align: center; padding: 40px 20px; }
+.ch-empty .material-symbols-outlined { font-size: 48px; color: var(--accent, #e8703a); }
+.ch-empty h3 { margin: 10px 0 6px; }
+.ch-empty p { max-width: 420px; margin: 0 auto 16px; }
+
+/* Uchib yuruvchi kitob dekoratsiyalari */
+.ch-decor { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ch-decor .ch-book { position: absolute; opacity: .16; border-radius: 4px; box-shadow: 0 4px 14px rgba(0,0,0,.18); will-change: transform; top: 0; left: 0; }
+.is-festive .ch-decor .ch-book { opacity: .28; }
+
+/* Bayram — uchuvchi belgilar */
+.ch-festive { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ch-festive .ch-spark { position: absolute; top: 0; font-size: 22px; opacity: 0; animation: chFall linear infinite; }
+@keyframes chFall { 0% { transform: translateY(-10vh) rotate(0); opacity: 0; } 10% { opacity: .9; } 100% { transform: translateY(110vh) rotate(360deg); opacity: .5; } }
+
+/* Modal */
+.ch-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.ch-modal[hidden] { display: none; }
+.ch-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(3px); }
+.ch-modal-box {
+    position: relative; z-index: 1; width: min(680px, 92vw); max-height: 88vh; overflow: auto;
+    background: var(--surface, #fffdf8); border-radius: 22px; padding: 26px 22px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35); animation: chModalIn .35s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes chModalIn { from { transform: translateY(20px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+.ch-modal-x { position: absolute; top: 12px; right: 12px; border: none; background: transparent; cursor: pointer; color: var(--muted, #8a8473); }
+.ch-modal-title { margin: 4px 0 2px; font-size: 24px; }
+.ch-modal-sub { margin: 0 0 18px; font-size: 14px; }
+.ch-modal-winners { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.ch-modal-winner { display: flex; flex-direction: column; align-items: center; width: 170px; }
+.ch-modal-winner .ch-avatar { width: 72px; height: 72px; font-size: 28px; margin: 4px 0 6px; }
+.ch-modal-winner.ch-place-1 { order: -1; transform: scale(1.06); }
+.ch-modal-winner.ch-place-1 .ch-avatar { width: 88px; height: 88px; border: 3px solid #f2c14e; }
+.ch-modal-name { font-weight: 700; }
+.ch-modal-stats { font-size: 12px; margin-top: 2px; }
+.ch-modal-gift { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; }
+.ch-modal-gift img { width: 54px; height: 74px; object-fit: cover; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+.ch-modal-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 22px; }
+
+/* Admin preview */
+.ch-msg { padding: 12px 16px; margin-bottom: 16px; border-left: 4px solid var(--accent, #e8703a); }
+.ch-period-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.ch-period-label { text-align: center; display: flex; flex-direction: column; }
+.ch-period-label strong { font-size: 18px; }
+.ch-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.ch-gift-form { padding: 16px; }
+.ch-form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.ch-form-row label { flex: 1 1 220px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+.ch-form-row input[type=text] { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border, #e6ddcd); background: var(--surface, #fffdf8); }
+
+@media (max-width: 560px) {
+    .ch-podium { gap: 8px; }
+    .ch-avatar { width: 54px; height: 54px; font-size: 22px; }
+    .ch-place-1 .ch-avatar { width: 70px; height: 70px; font-size: 28px; }
+    .ch-canvas-wrap { height: 280px; }
+}

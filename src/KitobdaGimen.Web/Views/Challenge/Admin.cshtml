@@ -1,0 +1,236 @@
+@using System.Text.Json
+@using KitobdaGimen.Application.Common
+@using KitobdaGimen.Application.Features.Challenge.Dtos
+@model KitobdaGimen.Web.Models.ChallengeAdminViewModel
+@{
+    ViewData["Title"] ??= "Challenge — admin";
+    ViewData["Robots"] = "noindex, nofollow";
+
+    string Initial(string name) => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();
+    string Medal(int rank) => rank == 1 ? "🥇" : rank == 2 ? "🥈" : "🥉";
+
+    var (prevY, prevM) = ChallengeCalendar.PreviousPeriod(Model.Year, Model.Month);
+    var (nextY, nextM) = ChallengeCalendar.NextPeriod(Model.Year, Model.Month);
+    var podiumOrder = new[] { 2, 1, 3 };
+
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var coversJson = Html.Raw(JsonSerializer.Serialize(Model.DecorationCovers, jsonOpts));
+    var standingsJson = Html.Raw(JsonSerializer.Serialize(Model.Standings, jsonOpts));
+
+    var msg = TempData["ChallengeMsg"] as string;
+    var rank1 = Model.Announced?.Winners.FirstOrDefault(w => w.Rank == 1);
+}
+
+@Html.AntiForgeryToken()
+<div class="ch-decor" data-ch-decor aria-hidden="true"></div>
+
+<div class="container page ch-page ch-admin">
+    <header class="ch-head">
+        <div>
+            <h1 class="section-title" style="margin:0">
+                <span class="material-symbols-outlined" style="vertical-align:-4px;color:var(--accent)">visibility</span>
+                Challenge — admin oldindan ko'rish
+            </h1>
+            <p class="muted ch-sub">
+                G'oliblar qanday ko'rinishini oldindan ko'ring, oyni e'lon qiling.
+                @if (Model.IsSuperAdmin)
+                {
+                    <text>Super admin sifatida 1-o'rin g'olibiga kitob sovg'a qila olasiz.</text>
+                }
+            </p>
+        </div>
+        <a class="btn btn-outline" href="/challenge">
+            <span class="material-symbols-outlined" style="vertical-align:-4px">arrow_back</span>
+            Challenge sahifasi
+        </a>
+    </header>
+
+    @if (!string.IsNullOrEmpty(msg))
+    {
+        <div class="card ch-msg">@msg</div>
+    }
+
+    @* Davr navigatsiyasi *@
+    <div class="ch-period-nav card">
+        <a class="btn btn-sm btn-outline" href="/challenge/admin?year=@prevY&month=@prevM">
+            <span class="material-symbols-outlined" style="vertical-align:-4px">chevron_left</span> Oldingi davr
+        </a>
+        <div class="ch-period-label">
+            <strong>@Model.PeriodLabel</strong>
+            <span class="muted">
+                @if (Model.Announced is not null)
+                {
+                    <text>✅ E'lon qilingan</text>
+                }
+                else if (Model.IsPeriodCompleted)
+                {
+                    <text>⏳ Yakunlangan — e'lon qilinmagan</text>
+                }
+                else
+                {
+                    <text>🟢 Davom etmoqda (jonli)</text>
+                }
+            </span>
+        </div>
+        <a class="btn btn-sm btn-outline" href="/challenge/admin?year=@nextY&month=@nextM">
+            Keyingi davr <span class="material-symbols-outlined" style="vertical-align:-4px">chevron_right</span>
+        </a>
+    </div>
+
+    @* Amallar *@
+    <div class="ch-actions">
+        <button type="button" class="btn btn-accent" data-preview-modal>
+            <span class="material-symbols-outlined" style="vertical-align:-4px">slideshow</span>
+            G'olib modalini ko'rish (preview)
+        </button>
+        <button type="button" class="btn btn-outline" data-festive-toggle>
+            <span class="material-symbols-outlined" style="vertical-align:-4px">celebration</span>
+            Bayram ko'rinishini sinash
+        </button>
+        @if (Model.Announced is null && Model.IsSuperAdmin)
+        {
+            <form method="post" action="/challenge/admin/finalize" style="display:inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="year" value="@Model.Year" />
+                <input type="hidden" name="month" value="@Model.Month" />
+                <button type="submit" class="btn btn-primary" onclick="return confirm('@Model.PeriodLabel uchun g\'oliblarni e\'lon qilishni tasdiqlaysizmi? Bu amalni orqaga qaytarib bo\'lmaydi.');">
+                    <span class="material-symbols-outlined" style="vertical-align:-4px">campaign</span>
+                    G'oliblarni e'lon qilish
+                </button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Announced is null && !Model.IsSuperAdmin)
+    {
+        <p class="muted">
+            <span class="material-symbols-outlined" style="vertical-align:-4px;font-size:18px">info</span>
+            G'oliblar odatda davr oxirida avtomatik e'lon qilinadi. Avtomatik jarayon ishlamay qolsa,
+            faqat <strong>super admin</strong> qo'lda e'lon qila oladi.
+        </p>
+    }
+
+    @* Reyting preview (podium) *@
+    <section class="ch-section">
+        <h2 class="ch-h2"><span class="material-symbols-outlined">leaderboard</span> Reyting (top 3)</h2>
+        @if (Model.Standings.Count == 0)
+        {
+            <div class="card ch-empty">
+                <span class="material-symbols-outlined">auto_stories</span>
+                <h3>Bu davrda o'qish yozuvi yo'q</h3>
+                <p class="muted">Bu oy uchun hali reyting shakllanmagan.</p>
+            </div>
+        }
+        else
+        {
+            <div class="ch-podium">
+                @foreach (var slot in podiumOrder)
+                {
+                    var u = Model.Standings.FirstOrDefault(x => x.Rank == slot);
+                    if (u is null) { continue; }
+                    <div class="ch-podium-card ch-place-@u.Rank">
+                        <div class="ch-medal">@Medal(u.Rank)</div>
+                        <div class="ch-avatar-wrap">
+                            @if (!string.IsNullOrEmpty(u.AvatarUrl))
+                            {
+                                <img class="avatar ch-avatar" src="@u.AvatarUrl" alt="@u.FullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="avatar ch-avatar">@Initial(u.FullName)</span>
+                            }
+                            <span class="ch-rank-badge">@u.Rank</span>
+                        </div>
+                        <div class="ch-name" title="@u.FullName">@u.FullName</div>
+                        <div class="ch-score"><strong>@u.PagesRead</strong> bet</div>
+                        <div class="ch-detail muted">@u.BooksRead kitob · kuniga @u.AvgPagesPerDay bet</div>
+                        <div class="ch-pillar"></div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    @* Super admin: sovg'a kitob (faqat e'lon qilingandan keyin, 1-o'rin uchun) *@
+    @if (Model.IsSuperAdmin && Model.Announced is not null && rank1 is not null)
+    {
+        <section class="ch-section">
+            <h2 class="ch-h2"><span class="material-symbols-outlined">redeem</span> 1-o'rin g'olibiga kitob sovg'a qilish</h2>
+            <div class="card ch-gift-form">
+                <p class="muted">
+                    G'olib: <strong>@rank1.FullName</strong>.
+                    @if (!string.IsNullOrEmpty(rank1.GiftBookTitle))
+                    {
+                        <text> Joriy sovg'a: <strong>@rank1.GiftBookTitle</strong>.</text>
+                    }
+                </p>
+                <form method="post" action="/challenge/admin/gift" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="year" value="@Model.Year" />
+                    <input type="hidden" name="month" value="@Model.Month" />
+                    <input type="hidden" name="rank" value="1" />
+                    <div class="ch-form-row">
+                        <label>Kitob nomi
+                            <input type="text" name="title" value="@rank1.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
+                        </label>
+                        <label>Muallif
+                            <input type="text" name="author" value="@rank1.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
+                        </label>
+                    </div>
+                    <div class="ch-form-row">
+                        <label>Muqova rasmi (yuklash)
+                            <input type="file" name="cover" accept="image/*" />
+                        </label>
+                        <label>yoki muqova URL manzili
+                            <input type="text" name="coverUrl" value="@rank1.GiftBookCoverUrl" placeholder="https://..." />
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-accent">
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
+                        Sovg'ani saqlash
+                    </button>
+                </form>
+                @if (!string.IsNullOrEmpty(rank1.GiftBookCoverUrl))
+                {
+                    <div class="ch-gift" style="margin-top:14px;max-width:320px">
+                        <img src="@rank1.GiftBookCoverUrl" alt="@rank1.GiftBookTitle" referrerpolicy="no-referrer" />
+                        <div>
+                            <span class="ch-gift-label">🎁 Joriy sovg'a</span>
+                            <strong>@rank1.GiftBookTitle</strong>
+                            <span class="muted">@rank1.GiftBookAuthor</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else if (Model.IsSuperAdmin && Model.Announced is null)
+    {
+        <p class="muted">Sovg'a kitob kiritish uchun avval oyni e'lon qiling.</p>
+    }
+</div>
+
+@* Preview modal (standings'dan quriladi) *@
+<div class="ch-modal" data-preview-modal-box hidden>
+    <div class="ch-modal-backdrop" data-preview-close></div>
+    <div class="ch-modal-box" role="dialog" aria-modal="true">
+        <button type="button" class="ch-modal-x" data-preview-close aria-label="Yopish">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h2 class="ch-modal-title">🎉 @Model.PeriodLabel g'oliblari (preview)</h2>
+        <p class="ch-modal-sub muted">Foydalanuvchilar shu ko'rinishni ko'radi.</p>
+        <div class="ch-modal-winners" data-preview-winners></div>
+        <button type="button" class="btn btn-accent" data-preview-close>Yopish</button>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/css/challenge.css" asp-append-version="true" />
+
+@section Scripts {
+    <script type="application/json" data-ch-data>
+        { "covers": @coversJson, "daily": [], "monthly": [], "announced": null, "announceKey": "" }
+    </script>
+    <script type="module" src="~/js/challenge.js" asp-append-version="true"></script>
+    <script type="application/json" data-preview-standings>@standingsJson</script>
+    <script src="~/js/challenge-admin.js" asp-append-version="true"></script>
+}

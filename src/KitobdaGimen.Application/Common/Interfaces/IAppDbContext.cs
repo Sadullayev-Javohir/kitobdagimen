@@ -30,6 +30,8 @@ public interface IAppDbContext
     DbSet<StoryLike> StoryLikes { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<PushSubscription> PushSubscriptions { get; }
+    DbSet<ChallengeWinner> ChallengeWinners { get; }
+    DbSet<ChallengeWinnerLike> ChallengeWinnerLikes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -36,6 +36,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<StoryLike> StoryLikes => Set<StoryLike>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<ChallengeWinner> ChallengeWinners => Set<ChallengeWinner>();
+    public DbSet<ChallengeWinnerLike> ChallengeWinnerLikes => Set<ChallengeWinnerLike>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
