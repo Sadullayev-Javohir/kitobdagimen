@@ -36,15 +36,18 @@
     // ── Bayram effekti (yog'ayotgan qor) ───────────────────────────────────────
     function spawnFx(host) {
         if (!host) { return; }
-        var pool = ["❄", "❅", "❆", "✦", "✧"];
+        // Emoji/glif ishlatmaymiz — sof CSS "qor" nuqtalari (yumaloq, yumshoq porlash).
         var count = 34;
         for (var i = 0; i < count; i++) {
             var f = document.createElement("span");
             f.className = "yr-flake";
-            f.textContent = pool[Math.floor(Math.random() * pool.length)];
+            var size = (4 + Math.random() * 6).toFixed(1);
+            var op = (0.4 + Math.random() * 0.5).toFixed(2);
             f.style.left = (Math.random() * 100) + "%";
-            f.style.color = "rgba(255,255,255," + (0.4 + Math.random() * 0.5).toFixed(2) + ")";
-            f.style.fontSize = (9 + Math.random() * 16) + "px";
+            f.style.width = size + "px";
+            f.style.height = size + "px";
+            f.style.background = "rgba(255,255,255," + op + ")";
+            f.style.boxShadow = "0 0 6px rgba(255,255,255," + op + ")";
             f.style.animationDuration = (5 + Math.random() * 7) + "s";
             f.style.animationDelay = (Math.random() * 7) + "s";
             host.appendChild(f);
@@ -59,30 +62,54 @@
 
     function renderCanvas(card) {
         var target = card.querySelector("[data-yr-capture]") || card;
-        return loadScript(H2C_SRC).then(function () {
-            // Doim keng (laptop) tartibda tortamiz — telefonda ham dizayn buzilmasin,
-            // matnlar joyida qolsin. windowWidth media-so'rovlarni "desktop" qiladi;
-            // onclone esa poster kengligini qat'iy 1080px ga o'rnatadi.
-            return window.html2canvas(target, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: null,
-                logging: false,
-                windowWidth: 1200,
-                windowHeight: 1600,
-                scrollX: 0,
-                scrollY: 0,
-                onclone: function (doc, el) {
-                    var node = el || doc.querySelector("[data-yr-capture]");
-                    if (node) {
-                        node.style.width = "1080px";
-                        node.style.maxWidth = "none";
-                        node.style.margin = "0";
-                        node.style.transform = "none";
+        // 1) Shriftlar (Lora / Source Sans 3) to'liq yuklanguncha kutamiz — aks holda
+        //    html2canvas matnlarni noto'g'ri o'lchamda/zaxira shriftda chizishi mumkin.
+        var fontsReady = (document.fonts && document.fonts.ready)
+            ? document.fonts.ready.catch(function () {})
+            : Promise.resolve();
+
+        return fontsReady
+            .then(function () { return loadScript(H2C_SRC); })
+            .then(function () {
+                // Ekran-effektlarini (qor + Three.js Qorbobo) eksport paytida yashiramiz.
+                card.classList.add("yr-capturing");
+                // Doim keng (laptop) tartibda tortamiz — telefonda ham dizayn buzilmasin,
+                // matnlar joyida qolsin. windowWidth media-so'rovlarni "desktop" qiladi;
+                // onclone esa poster kengligini qat'iy 1080px ga o'rnatadi.
+                return window.html2canvas(target, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: null,
+                    logging: false,
+                    windowWidth: 1200,
+                    windowHeight: 1600,
+                    scrollX: 0,
+                    scrollY: 0,
+                    onclone: function (doc, el) {
+                        // Klon ichida ham ekran-effektlarini kafolatli o'chiramiz.
+                        var clonedCard = doc.querySelector(".yr-card");
+                        if (clonedCard) { clonedCard.classList.add("yr-capturing"); }
+                        doc.querySelectorAll("[data-yr-fx]").forEach(function (fx) {
+                            fx.style.display = "none";
+                        });
+                        var node = el || doc.querySelector("[data-yr-capture]");
+                        if (node) {
+                            node.style.width = "1080px";
+                            node.style.maxWidth = "none";
+                            node.style.margin = "0";
+                            node.style.transform = "none";
+                        }
                     }
-                }
+                });
+            })
+            .then(function (canvas) {
+                card.classList.remove("yr-capturing");
+                return canvas;
+            })
+            .catch(function (e) {
+                card.classList.remove("yr-capturing");
+                throw e;
             });
-        });
     }
 
     function downloadDataUrl(dataUrl, name) {
@@ -166,6 +193,13 @@
         card.setAttribute("data-yr-enhanced", "1");
 
         spawnFx(card.querySelector("[data-yr-fx]"));
+
+        // Uchayotgan Qorbobo (Three.js ekran-effekti) — poster tashqarisida, rasmga tushmaydi.
+        // Three.js/WebGL bo'lmasa jimgina chekinadi; SVG chana CSS'da uchishda davom etadi.
+        var threeHost = card.querySelector("[data-yr-three]");
+        if (threeHost && window.YearReviewScene) {
+            try { window.YearReviewScene.mount(threeHost); } catch (e) { /* zaxira SVG uchadi */ }
+        }
 
         card.querySelectorAll("[data-yr-download]").forEach(function (btn) {
             btn.addEventListener("click", function () {

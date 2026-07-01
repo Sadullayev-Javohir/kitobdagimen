@@ -1,8 +1,11 @@
 /* =============================================================================
-   Yillik Kitob Yakuni (Year in Review) — YANGI DIZAYN.
-   Keng "poster" (laptopda header kengligi = 1100px bilan teng), boy statistika,
-   to'liq yangi-yil bezaklari (chiroq gulchambar, qor, Qorbobo + bug'ular),
-   html2canvas eksporti uchun barqaror tuzilma (matnlar tushib ketmaydi).
+   Yillik Kitob Yakuni (Year in Review) — ZAMONAVIY DIZAYN.
+   • Barcha bezaklar inline SVG (Bootstrap Icons, MIT) yoki CSS shakl — EMOJI YO'Q.
+     Shu sababli html2canvas rasm/PDF eksporti hech qachon buzilmaydi (emoji/ikon-shrift
+     rasmga tushmaydi, SVG esa piksel-aniq tushadi).
+   • Uchayotgan Qorbobo + bug'ular — Three.js (year-review-scene.js) ekran-effekti,
+     posterdan tashqarida — rasmga tushmaydi.
+   • To'liq responsive: laptop / planshet / telefon.
    ============================================================================= */
 
 /* ── Modal overlay ──────────────────────────────────────────────────────────── */
@@ -80,6 +83,16 @@
 .yr-preview-banner strong { display: block; margin-bottom: 4px; }
 .yr-preview-banner p { margin: 0; font-size: 13px; line-height: 1.5; }
 
+/* ── Inline SVG ikon — barcha "yr-ic" (Bootstrap Icons) ─────────────────────── */
+.yr-ic {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -0.135em;
+    fill: currentColor;
+    flex: 0 0 auto;
+}
+
 /* ── Kartochka konteyneri ───────────────────────────────────────────────────── */
 .yr-card {
     position: relative;
@@ -110,7 +123,7 @@
     padding: 30px 40px 42px;
 }
 
-/* ── Osmon bezaklari (poster ichida, statik — rasmga tushadi) ───────────────── */
+/* ── Osmon bezaklari (poster ichida, statik SVG — rasmga tushadi) ───────────── */
 .yr-sky { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
 /* Chiroq gulchambari */
@@ -135,11 +148,11 @@
 .yr-bulb-2 { color: #7ad9a5; background: #7ad9a5; }
 .yr-bulb-3 { color: #7ab8ff; background: #7ab8ff; }
 
-.yr-star { position: absolute; color: rgba(255,255,255,.65); font-size: 18px; }
-.yr-star-1 { top: 60px; left: 12%; }
-.yr-star-2 { top: 120px; right: 20%; font-size: 13px; }
+.yr-star { position: absolute; color: rgba(255,255,255,.7); font-size: 18px; line-height: 0; }
+.yr-star-1 { top: 58px; left: 12%; }
+.yr-star-2 { top: 120px; right: 22%; font-size: 13px; }
 .yr-star-3 { top: 200px; left: 46%; font-size: 15px; }
-.yr-flurry { position: absolute; color: rgba(255,255,255,.5); }
+.yr-flurry { position: absolute; color: rgba(255,255,255,.5); line-height: 0; }
 .yr-flurry-1 { top: 90px; left: 30%; font-size: 22px; }
 .yr-flurry-2 { top: 150px; right: 8%; font-size: 16px; }
 .yr-flurry-3 { top: 260px; right: 34%; font-size: 20px; }
@@ -154,10 +167,10 @@
     background: radial-gradient(120% 100% at 50% 100%, rgba(255,255,255,.9), rgba(255,255,255,.75) 55%, transparent 72%);
     pointer-events: none;
 }
-.yr-drift-tree { position: absolute; bottom: 8px; font-size: 26px; }
+.yr-drift-tree { position: absolute; bottom: 8px; font-size: 26px; line-height: 0; color: #1B4D3E; }
 .yr-drift-tree-1 { left: 6%; }
 .yr-drift-tree-2 { left: 24%; font-size: 22px; }
-.yr-drift-tree-3 { right: 24%; font-size: 24px; }
+.yr-drift-tree-3 { right: 24%; font-size: 22px; color: #E8703A; }
 .yr-drift-tree-4 { right: 7%; }
 
 /* ── Topbar ─────────────────────────────────────────────────────────────────── */
@@ -173,6 +186,9 @@
 .yr-brand { font-family: "Lora", serif; font-weight: 700; font-size: 21px; }
 .yr-brand-accent { color: #ffd9a8; }
 .yr-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: rgba(255, 255, 255, .16);
     border: 1px solid rgba(255, 255, 255, .28);
     border-radius: 999px;
@@ -181,6 +197,7 @@
     font-weight: 700;
     white-space: nowrap;
 }
+.yr-badge-ic { font-size: 15px; color: #bfe3ff; }
 
 /* ── Hero ───────────────────────────────────────────────────────────────────── */
 .yr-hero {
@@ -219,20 +236,14 @@
 .yr-username { font-weight: 700; font-size: 18px; }
 .yr-handle { font-size: 13px; opacity: .75; }
 
-/* Qorbobo / bug'u sahnasi (statik, poster ichida) */
+/* Statik SVG yangi-yil sahnasi (poster ichida — rasmga tushadi) */
 .yr-hero-right { flex: 0 0 auto; }
-.yr-scene {
-    position: relative;
-    width: 200px; height: 120px;
-    font-size: 46px;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,.3));
+.yr-scene-svg {
+    width: 220px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 6px 10px rgba(0,0,0,.28));
 }
-.yr-scene span { position: absolute; }
-.yr-scene-deer  { left: 6px;  top: 34px; }
-.yr-scene-santa { left: 58px; top: 22px; }
-.yr-scene-ski   { left: 66px; top: 62px; font-size: 30px; }
-.yr-scene-gift  { left: 120px; top: 60px; font-size: 34px; }
-.yr-scene-tree  { left: 150px; top: 18px; }
 
 /* ── Statistika tiles ───────────────────────────────────────────────────────── */
 .yr-stats {
@@ -248,7 +259,14 @@
     padding: 16px 12px 14px;
     text-align: center;
 }
-.yr-stat-ic { display: block; font-size: 26px; }
+.yr-stat-ic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: #ffd9a8;
+    margin-bottom: 2px;
+}
 .yr-stat-num {
     display: block;
     font-family: "Lora", serif;
@@ -279,8 +297,23 @@
     border-radius: 18px;
     padding: 16px 18px;
 }
-.yr-col-head { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-.yr-col-empty { font-size: 14px; opacity: .85; line-height: 1.5; }
+.yr-col-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.yr-head-ic { font-size: 18px; color: #ffd9a8; }
+.yr-col-empty {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 14px; opacity: .85; line-height: 1.5;
+}
+.yr-inline-ic { font-size: 1.05em; color: #ffd9a8; vertical-align: -0.135em; }
 
 .yr-booklist { display: flex; flex-direction: column; gap: 11px; }
 .yr-bookrow-top {
@@ -318,9 +351,11 @@
 }
 .yr-highlight-head {
     display: flex; align-items: center; justify-content: space-between;
+    gap: 8px;
     font-size: 13px; font-weight: 700; margin-bottom: 6px;
 }
-.yr-likes { color: #ffd9a8; white-space: nowrap; }
+.yr-highlight-title { display: inline-flex; align-items: center; gap: 6px; }
+.yr-likes { display: inline-flex; align-items: center; gap: 4px; color: #ffd9a8; white-space: nowrap; }
 .yr-highlight-body { font-size: 14px; line-height: 1.45; font-style: italic; }
 .yr-highlight-meta { font-size: 12px; opacity: .78; margin-top: 6px; }
 .yr-topbook {
@@ -331,10 +366,10 @@
     padding: 10px 12px;
     font-size: 13.5px;
 }
-.yr-topbook-ic { font-size: 18px; }
+.yr-topbook-ic { display: inline-flex; font-size: 18px; color: #ffd27a; }
 
 .yr-empty { text-align: center; margin: 22px 0 8px; }
-.yr-empty-emoji { font-size: 56px; }
+.yr-empty-ic { display: flex; justify-content: center; font-size: 52px; color: #ffd9a8; }
 .yr-empty p { font-size: 15px; line-height: 1.55; opacity: .92; margin: 10px auto 0; max-width: 560px; }
 
 /* ── Motivatsiya ────────────────────────────────────────────────────────────── */
@@ -392,7 +427,7 @@
 .yr-btn-primary:hover { background: #d2602d; }
 .yr-btn[disabled] { opacity: .6; cursor: default; transform: none; }
 
-/* ── Ekran-effektlari (rasmga tushmaydi): qor + uchuvchi Qorbobo ─────────────── */
+/* ── Ekran-effektlari (rasmga tushmaydi): qor + Three.js Qorbobo ─────────────── */
 .yr-fx {
     position: absolute;
     inset: 0;
@@ -404,6 +439,10 @@
 .yr-flake {
     position: absolute;
     top: -20px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .8);
     opacity: 0;
     animation: yr-fall linear infinite;
     will-change: transform;
@@ -415,28 +454,41 @@
     100% { transform: translateY(760px) rotate(360deg); opacity: 0; }
 }
 
-/* Qorbobo bug'ular bilan uchib o'tadi */
-.yr-sleigh {
-    position: absolute;
-    top: 40px;
-    left: -280px;
-    white-space: nowrap;
-    font-size: 34px;
-    animation: yr-fly 11s linear infinite;
-    will-change: transform;
-    filter: drop-shadow(0 4px 6px rgba(0,0,0,.3));
+/* Three.js sahna hosti (uchuvchi Qorbobo). Canvas'ni JS shu ichga qo'yadi. */
+.yr-three { position: absolute; inset: 0; pointer-events: none; }
+.yr-three canvas {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
 }
-.yr-sleigh span { display: inline-block; }
-.yr-sleigh-santa { transform: rotate(-8deg); }
-.yr-sleigh-trail { font-size: 20px; opacity: .8; }
+
+/* SVG chana zaxira (Three.js yuklanmasa/WebGL yo'q bo'lsa) — CSS'da uchadi */
+.yr-sleigh-fallback {
+    position: absolute;
+    top: 34px;
+    left: -260px;
+    width: 200px;
+    animation: yr-fly 12s linear infinite;
+    will-change: transform;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,.3));
+}
+.yr-sleigh-fallback .yr-scene-svg { width: 100%; }
+.yr-has-three .yr-sleigh-fallback { display: none; }   /* Three.js ishlaganda zaxira yashiriladi */
 @keyframes yr-fly {
-    0% { transform: translateX(0) translateY(0); }
-    50% { transform: translateX(60vw) translateY(-14px); }
-    100% { transform: translateX(140vw) translateY(6px); }
+    0% { transform: translateX(0) translateY(0) rotate(-3deg); }
+    50% { transform: translateX(60vw) translateY(-16px) rotate(2deg); }
+    100% { transform: translateX(140vw) translateY(8px) rotate(-3deg); }
 }
 
 /* Eksport paytida (onclone) ekran-effektlarini yashiramiz */
 .yr-capturing .yr-fx { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+    .yr-sleigh-fallback, .yr-flake { animation: none; }
+    .yr-sleigh-fallback { left: auto; right: 20px; top: 24px; }
+}
 
 /* ── 8 ta dizayn varianti (kechki osmon gradientlari) ───────────────────────── */
 .yr-theme-0 { --yr-grad: linear-gradient(155deg, #123a5e 0%, #1B4D3E 55%, #0c2a22 100%); }
@@ -448,21 +500,53 @@
 .yr-theme-6 { --yr-grad: linear-gradient(155deg, #1a1e30 0%, #2a2f45 55%, #4a5178 100%); }
 .yr-theme-7 { --yr-grad: linear-gradient(155deg, #3a0f0f 0%, #7a1f1f 45%, #a83232 75%, #d99a3a 100%); }
 
-/* ── Responsiv (telefon/planshet) — ekranda o'qilishi uchun ─────────────────── */
+/* ── Responsiv (planshet) ───────────────────────────────────────────────────── */
 @media (max-width: 860px) {
     .yr-poster-inner { padding: 22px 20px 34px; }
     .yr-year { font-size: 74px; }
     .yr-hero { gap: 14px; }
-    .yr-scene { width: 132px; height: 96px; font-size: 34px; }
-    .yr-scene-gift, .yr-scene-tree { display: none; }
+    .yr-scene-svg { width: 150px; }
     .yr-stats { grid-template-columns: repeat(2, 1fr); }
     .yr-grid { grid-template-columns: 1fr; }
     .yr-stat-num { font-size: 34px; }
     .yr-badge { font-size: 12px; padding: 6px 12px; }
 }
-@media (max-width: 500px) {
-    .yr-year { font-size: 58px; }
-    .yr-hero-right { display: none; }
+
+/* ── Responsiv (telefon) ────────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+    .yr-overlay { padding: 14px 10px 40px; }
+    .yr-overlay-close { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 22px; }
+    .yr-poster { border-radius: 20px; }
+    .yr-fx { border-radius: 20px; }
+    .yr-poster-inner { padding: 20px 15px 30px; }
+    .yr-topbar { gap: 8px; }
+    .yr-brand { font-size: 17px; }
+    .yr-logo svg { width: 30px; height: 30px; }
+    .yr-year { font-size: 58px; letter-spacing: -1px; }
+    .yr-hero-right { display: none; }              /* telefonda statik sahna yashiriladi */
     .yr-hero-sub { letter-spacing: 4px; font-size: 13px; }
-    .yr-motivation { font-size: 15px; padding: 16px 16px 16px 46px; }
+    .yr-user { margin-top: 12px; }
+    .yr-avatar { width: 40px; height: 40px; font-size: 17px; }
+    .yr-username { font-size: 16px; }
+    .yr-stats { gap: 10px; margin-top: 20px; }
+    .yr-stat { border-radius: 14px; padding: 12px 8px 11px; }
+    .yr-stat-ic { font-size: 22px; }
+    .yr-stat-num { font-size: 30px; }
+    .yr-stat-label { font-size: 11px; letter-spacing: .5px; }
+    .yr-col { padding: 14px 14px; border-radius: 14px; }
+    .yr-motivation { font-size: 15px; padding: 16px 16px 16px 46px; margin-top: 18px; }
+    .yr-quote-mark { font-size: 40px; }
+    .yr-actions { gap: 8px; }
+    .yr-btn { padding: 10px 16px; font-size: 13px; }
+    .yr-drift { height: 46px; }
+    .yr-drift-tree { font-size: 20px; }
+}
+
+/* Juda kichik telefonlar */
+@media (max-width: 380px) {
+    .yr-year { font-size: 48px; }
+    .yr-stats { grid-template-columns: repeat(2, 1fr); }
+    .yr-brand { font-size: 15px; }
+    .yr-badge { font-size: 11px; padding: 5px 10px; }
+    .yr-btn { padding: 9px 13px; }
 }

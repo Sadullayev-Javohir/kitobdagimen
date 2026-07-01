@@ -10,6 +10,7 @@
     var shownBooks = Model.Books.Take(5).ToList();
     var moreBooks = Model.Books.Count - shownBooks.Count;
 
+    // ── kitobdagimen.uz logotipi (bayqush) — inline SVG ──────────────────────────────
     string LogoSvg(int size) =>
         $"<svg viewBox=\"0 0 100 100\" xmlns=\"http://www.w3.org/2000/svg\" width=\"{size}\" height=\"{size}\">" +
         "<g transform=\"translate(8,4)\">" +
@@ -31,20 +32,93 @@
         "<ellipse cx=\"29.5\" cy=\"100\" rx=\"5.2\" ry=\"2.6\" fill=\"#d2602d\"/>" +
         "<ellipse cx=\"54.5\" cy=\"100\" rx=\"5.2\" ry=\"2.6\" fill=\"#d2602d\"/>" +
         "</g></svg>";
+
+    // ── Bootstrap Icons (MIT) — inline SVG. html2canvas ularni ideal render qiladi ──
+    // (emoji va ikon-shriftlardan farqli o'laroq — shuning uchun rasm yuklab olishda buzilmaydi).
+    var iconPaths = new Dictionary<string, string>
+    {
+        ["book"] = "<path d=\"M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783\"/>",
+        ["journal-text"] = "<path d=\"M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5m0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5\"/><path d=\"M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2\"/><path d=\"M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z\"/>",
+        ["journals"] = "<path d=\"M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1H1a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1H3a2 2 0 0 1 2-2\"/><path d=\"M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 2.5v.5H.5a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1H2v-.5a.5.5 0 0 0-1 0\"/>",
+        ["fire"] = "<path d=\"M8 16c3.314 0 6-2 6-5.5 0-1.5-.5-4-2.5-6 .25 1.5-1.25 2-1.25 2C11 4 9 .5 6 0c.357 2 .5 4-2 6-1.25 1-2 2.729-2 4.5C2 14 4.686 16 8 16m0-1c-1.657 0-3-1-3-2.75 0-.75.25-2 1.25-3C6.125 10 7 10.5 7 10.5c-.375-1.25.5-3.25 2-3.5-.179 1-.25 2 1 3 .625.5 1 1.364 1 2.25C11 14 9.657 15 8 15\"/>",
+        ["lightning"] = "<path d=\"M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z\"/>",
+        ["trophy"] = "<path d=\"M2.5.5A.5.5 0 0 1 3 0h10a.5.5 0 0 1 .5.5q0 .807-.034 1.536a3 3 0 1 1-1.133 5.89c-.79 1.865-1.878 2.777-2.833 3.011v2.173l1.425.356c.194.048.377.135.537.255L13.3 15.1a.5.5 0 0 1-.3.9H3a.5.5 0 0 1-.3-.9l1.838-1.379c.16-.12.343-.207.537-.255L6.5 13.11v-2.173c-.955-.234-2.043-1.146-2.833-3.012a3 3 0 1 1-1.132-5.89A33 33 0 0 1 2.5.5m.099 2.54a2 2 0 0 0 .72 3.935c-.333-1.05-.588-2.346-.72-3.935m10.083 3.935a2 2 0 0 0 .72-3.935c-.133 1.59-.388 2.885-.72 3.935\"/>",
+        ["chat-quote"] = "<path d=\"M16 8c0 3.866-3.582 7-8 7a9 9 0 0 1-2.347-.306c-.584.296-1.925.864-4.181 1.234-.2.032-.352-.176-.273-.362.354-.836.674-1.95.77-2.966C.744 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7M7.194 6.766a1.7 1.7 0 0 0-.227-.272 1.5 1.5 0 0 0-.469-.324l-.008-.004A1.8 1.8 0 0 0 5.734 6C4.776 6 4 6.746 4 7.667c0 .92.776 1.666 1.734 1.666.343 0 .662-.095.931-.26-.137.389-.39.804-.81 1.22a.405.405 0 0 0 .011.59c.173.16.447.155.614-.01 1.334-1.329 1.37-2.758.941-3.706a2.5 2.5 0 0 0-.227-.4zM11 9.073c-.136.389-.39.804-.81 1.22a.405.405 0 0 0 .012.59c.172.16.446.155.613-.01 1.334-1.329 1.37-2.758.942-3.706a2.5 2.5 0 0 0-.228-.4 1.7 1.7 0 0 0-.227-.273 1.5 1.5 0 0 0-.469-.324l-.008-.004A1.8 1.8 0 0 0 10.07 6c-.957 0-1.734.746-1.734 1.667 0 .92.777 1.666 1.734 1.666.343 0 .662-.095.931-.26z\"/>",
+        ["heart"] = "<path fill-rule=\"evenodd\" d=\"M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314\"/>",
+        ["stars"] = "<path d=\"M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z\"/>",
+        ["star"] = "<path d=\"M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z\"/>",
+        ["snow"] = "<path d=\"M8 16a.5.5 0 0 1-.5-.5v-1.293l-.646.647a.5.5 0 0 1-.707-.708L7.5 12.793V8.866l-3.4 1.963-.496 1.85a.5.5 0 1 1-.966-.26l.237-.882-1.12.646a.5.5 0 0 1-.5-.866l1.12-.646-.884-.237a.5.5 0 1 1 .26-.966l1.848.495L7 8 3.6 6.037l-1.85.495a.5.5 0 0 1-.258-.966l.883-.237-1.12-.646a.5.5 0 1 1 .5-.866l1.12.646-.237-.883a.5.5 0 1 1 .966-.258l.495 1.849L7.5 7.134V3.207L6.147 1.854a.5.5 0 1 1 .707-.708l.646.647V.5a.5.5 0 1 1 1 0v1.293l.647-.647a.5.5 0 1 1 .707.708L8.5 3.207v3.927l3.4-1.963.496-1.85a.5.5 0 1 1 .966.26l-.236.882 1.12-.646a.5.5 0 0 1 .5.866l-1.12.646.883.237a.5.5 0 1 1-.26.966l-1.848-.495L9 8l3.4 1.963 1.849-.495a.5.5 0 0 1 .259.966l-.883.237 1.12.646a.5.5 0 0 1-.5.866l-1.12-.646.236.883a.5.5 0 1 1-.966.258l-.495-1.849-3.4-1.963v3.927l1.353 1.353a.5.5 0 0 1-.707.708l-.647-.647V15.5a.5.5 0 0 1-.5.5z\"/>",
+        ["gift"] = "<path d=\"M3 2.5a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 1 5 0v.006c0 .07 0 .27-.038.494H15a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2.038A3 3 0 0 1 3 2.506zm1.068.5H7v-.5a1.5 1.5 0 1 0-3 0c0 .085.002.274.045.43zM9 3h2.932l.023-.07c.043-.156.045-.345.045-.43a1.5 1.5 0 0 0-3 0zm6 4v7.5a1.5 1.5 0 0 1-1.5 1.5H9V7zM2.5 16A1.5 1.5 0 0 1 1 14.5V7h6v9z\"/>",
+        ["tree"] = "<path d=\"M8.416.223a.5.5 0 0 0-.832 0l-3 4.5A.5.5 0 0 0 5 5.5h.098L3.076 8.735A.5.5 0 0 0 3.5 9.5h.191l-1.638 3.276a.5.5 0 0 0 .447.724H7V16h2v-2.5h4.5a.5.5 0 0 0 .447-.724L12.31 9.5h.191a.5.5 0 0 0 .424-.765L10.902 5.5H11a.5.5 0 0 0 .416-.777z\"/>",
+        ["pencil"] = "<path d=\"M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.5.5 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11z\"/>",
+        ["flower"] = "<path d=\"M8 5.762 8.045 5.618c.248-.8.494-1.626.676-2.314.091-.345.164-.646.213-.887a5 5 0 0 0 .064-.386L9 2a1 1 0 0 0-2 0l.002.03q.005.058.017.152.037.29.117.626c.049.24.122.541.213.886.182.688.428 1.514.676 2.314zM8 10.238l-.045.144c-.248.8-.494 1.626-.676 2.314-.091.345-.164.646-.213.887a5 5 0 0 0-.064.386L7 14a1 1 0 1 0 2 0l-.002-.03a5 5 0 0 0-.064-.386 16 16 0 0 0-.213-.888 61 61 0 0 0-.676-2.314zM5.762 8l-.144-.045a61 61 0 0 0-2.314-.676 17 17 0 0 0-.887-.213 5 5 0 0 0-.386-.064L2 7a1 1 0 1 0 0 2l.03-.002a5 5 0 0 0 .386-.064c.24-.049.541-.122.886-.213.688-.182 1.514-.428 2.314-.676zM14 7l-.03.002a5 5 0 0 0-.386.064c-.242.049-.543.122-.888.213-.688.182-1.513.428-2.314.676L10.238 8l.144.045c.8.248 1.626.494 2.314.676.345.091.646.164.887.213a5 5 0 0 0 .386.064L14 9a1 1 0 1 0 0-2M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3\"/><path d=\"M6.174 1.184a2 2 0 0 1 3.652 0A2 2 0 0 1 12.99 3.01a2 2 0 0 1 1.826 3.164 2 2 0 0 1 0 3.652 2 2 0 0 1-1.826 3.164 2 2 0 0 1-3.164 1.826 2 2 0 0 1-3.652 0A2 2 0 0 1 3.01 12.99a2 2 0 0 1-1.826-3.164 2 2 0 0 1 0-3.652A2 2 0 0 1 3.01 3.01a2 2 0 0 1 3.164-1.826M8 1a1 1 0 0 0-.998 1.03q.003.055.017.15c.02.13.056.303.11.508a4 4 0 0 0 .87-.002c.055-.205.09-.379.11-.507a4 4 0 0 0 .017-.15A1 1 0 0 0 8 1M2 9a1 1 0 0 0 1.03-.998 4 4 0 0 0-.15-.017 4 4 0 0 0-.507-.11 4 4 0 0 0-.002.87c.205.055.379.09.507.11a4 4 0 0 0 .15.017A1 1 0 0 0 2 9m6 5a1 1 0 0 0 .998-1.03 4 4 0 0 0-.15.017 4 4 0 0 0-.507.11 4 4 0 0 0 .002-.87c-.205.055-.379.09-.507.11a4 4 0 0 0-.15.017A1 1 0 0 0 8 14m6-5a1 1 0 0 0-1.03.998q.055.003.15.017c.13.02.303.056.508.11a4 4 0 0 0-.002-.87 4 4 0 0 0-.507.11 4 4 0 0 0-.15.017A1 1 0 0 0 14 9\"/>",
+    };
+
+    string Icon(string name, string? cls = null)
+    {
+        var path = iconPaths.TryGetValue(name, out var p) ? p : "";
+        var extra = string.IsNullOrEmpty(cls) ? "" : $" {cls}";
+        return $"<svg class=\"yr-ic{extra}\" viewBox=\"0 0 16 16\" fill=\"currentColor\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">{path}</svg>";
+    }
+
+    // ── Poster ichidagi statik yangi-yil sahnasi (rasmga TUSHADI) — to'liq inline SVG,
+    //    solid ranglar (gradientsiz) — html2canvas har doim to'g'ri render qiladi ──────
+    const string SleighScene =
+        "<svg class=\"yr-scene-svg\" viewBox=\"0 0 260 150\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">" +
+        // oy (moon)
+        "<circle cx=\"210\" cy=\"40\" r=\"30\" fill=\"#fdf1d6\"/>" +
+        "<circle cx=\"221\" cy=\"33\" r=\"30\" fill=\"#f4e8c9\" opacity=\".55\"/>" +
+        // bug'u 1
+        "<g fill=\"#7b4a24\">" +
+        "<path d=\"M40 96 q10 -14 26 -8 q10 4 10 14 l-4 8 h-6 l1 -8 q-6 -6 -14 -2 l-3 10 h-6 z\"/>" +
+        "<path d=\"M36 90 l-6 -6 m6 6 l-9 -1 m9 1 l-4 -8\" stroke=\"#5c3717\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>" +
+        "<circle cx=\"38\" cy=\"92\" r=\"3\" fill=\"#3a230f\"/>" +
+        "</g>" +
+        // bug'u 2
+        "<g fill=\"#8a5629\">" +
+        "<path d=\"M84 96 q10 -14 26 -8 q10 4 10 14 l-4 8 h-6 l1 -8 q-6 -6 -14 -2 l-3 10 h-6 z\"/>" +
+        "<path d=\"M80 90 l-6 -6 m6 6 l-9 -1 m9 1 l-4 -8\" stroke=\"#5c3717\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>" +
+        "<circle cx=\"82\" cy=\"92\" r=\"3\" fill=\"#3a230f\"/>" +
+        "</g>" +
+        // jilov (reins)
+        "<path d=\"M52 96 Q100 70 150 104\" stroke=\"#c9a24a\" stroke-width=\"2\" fill=\"none\"/>" +
+        "<path d=\"M96 96 Q125 82 150 104\" stroke=\"#c9a24a\" stroke-width=\"2\" fill=\"none\"/>" +
+        // chana (sleigh)
+        "<path d=\"M150 104 q-8 0 -8 12 l0 8 q0 6 6 6 l44 0 q10 0 12 -10 l2 -12 q-14 -6 -30 -6 q-16 0 -26 2 z\" fill=\"#c0392b\"/>" +
+        "<path d=\"M142 130 q-4 8 4 8 l52 0\" stroke=\"#e0b44a\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/>" +
+        "<path d=\"M148 138 q0 4 4 4 l40 0 q6 0 6 -4\" stroke=\"#e0b44a\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"/>" +
+        // sovg'alar (gifts)
+        "<rect x=\"158\" y=\"92\" width=\"16\" height=\"16\" rx=\"2\" fill=\"#2e8b57\"/>" +
+        "<rect x=\"165\" y=\"92\" width=\"2\" height=\"16\" fill=\"#f4e8c9\"/>" +
+        "<rect x=\"176\" y=\"96\" width=\"12\" height=\"12\" rx=\"2\" fill=\"#e0b44a\"/>" +
+        // Qorbobo (santa)
+        "<circle cx=\"128\" cy=\"96\" r=\"11\" fill=\"#c0392b\"/>" +
+        "<circle cx=\"128\" cy=\"92\" r=\"6\" fill=\"#ffe0bd\"/>" +
+        "<path d=\"M121 94 q7 8 14 0 q-7 5 -14 0 z\" fill=\"#fbfbfb\"/>" +
+        "<path d=\"M122 87 q6 -8 12 0 z\" fill=\"#c0392b\"/>" +
+        "<circle cx=\"134\" cy=\"87\" r=\"2.4\" fill=\"#fbfbfb\"/>" +
+        // yulduzlar
+        "<g fill=\"#fdf1d6\">" +
+        "<circle cx=\"20\" cy=\"28\" r=\"2\"/><circle cx=\"70\" cy=\"20\" r=\"1.6\"/>" +
+        "<circle cx=\"120\" cy=\"30\" r=\"1.8\"/><circle cx=\"170\" cy=\"18\" r=\"1.5\"/>" +
+        "<circle cx=\"245\" cy=\"70\" r=\"1.6\"/>" +
+        "</g>" +
+        "</svg>";
 }
 <div class="yr-card yr-theme-@Model.ThemeVariant"
      data-yr-year="@Model.Year"
      data-yr-share-url="@shareUrl"
      data-yr-name="@Model.FullName">
 
-    @* ── Ekran-effektlari: yog'ayotgan qor + uchib ketayotgan Qorbobo va bug'ular (rasmga tushmaydi) ── *@
+    @* ── Ekran-effektlari: yog'ayotgan qor + Three.js'da uchayotgan Qorbobo (rasmga TUSHMAYDI) ── *@
     <div class="yr-fx" data-yr-fx aria-hidden="true">
-        <div class="yr-sleigh" aria-hidden="true">
-            <span class="yr-sleigh-deer">🦌</span><span class="yr-sleigh-deer">🦌</span><span class="yr-sleigh-sled">🛷</span><span class="yr-sleigh-santa">🎅</span><span class="yr-sleigh-trail">✨</span>
+        <div class="yr-three" data-yr-three>
+            @* Three.js bu yerga <canvas> qo'yadi. Agar yuklanmasa — quyidagi SVG chana uchadi. *@
+            <div class="yr-sleigh-fallback" data-yr-sleigh-fallback>@Html.Raw(SleighScene)</div>
         </div>
     </div>
 
-    @* ── html2canvas tortib oladigan poster (barcha bezaklar shu ichida) ── *@
+    @* ── html2canvas tortib oladigan poster (barcha bezaklar shu ichida, faqat SVG) ── *@
     <div class="yr-poster" data-yr-capture>
         <div class="yr-sky" aria-hidden="true">
             <div class="yr-garland">
@@ -53,13 +127,13 @@
                     <span class="yr-bulb yr-bulb-@(i % 4)"></span>
                 }
             </div>
-            <span class="yr-star yr-star-1">✦</span>
-            <span class="yr-star yr-star-2">✧</span>
-            <span class="yr-star yr-star-3">✦</span>
-            <span class="yr-flurry yr-flurry-1">❄</span>
-            <span class="yr-flurry yr-flurry-2">❄</span>
-            <span class="yr-flurry yr-flurry-3">❅</span>
-            <span class="yr-flurry yr-flurry-4">❆</span>
+            <span class="yr-star yr-star-1">@Html.Raw(Icon("stars"))</span>
+            <span class="yr-star yr-star-2">@Html.Raw(Icon("star"))</span>
+            <span class="yr-star yr-star-3">@Html.Raw(Icon("stars"))</span>
+            <span class="yr-flurry yr-flurry-1">@Html.Raw(Icon("snow"))</span>
+            <span class="yr-flurry yr-flurry-2">@Html.Raw(Icon("snow"))</span>
+            <span class="yr-flurry yr-flurry-3">@Html.Raw(Icon("snow"))</span>
+            <span class="yr-flurry yr-flurry-4">@Html.Raw(Icon("snow"))</span>
         </div>
 
         <div class="yr-poster-inner">
@@ -68,7 +142,7 @@
                     <span class="yr-logo">@Html.Raw(LogoSvg(38))</span>
                     <span class="yr-brand">kitobdagimen<span class="yr-brand-accent">.uz</span></span>
                 </div>
-                <div class="yr-badge">@Model.PrimaryEmoji Yangi yil yakuni</div>
+                <div class="yr-badge">@Html.Raw(Icon("snow", "yr-badge-ic")) Yangi yil yakuni</div>
             </div>
 
             <div class="yr-hero">
@@ -87,13 +161,7 @@
                     </div>
                 </div>
                 <div class="yr-hero-right" aria-hidden="true">
-                    <div class="yr-scene">
-                        <span class="yr-scene-deer">🦌</span>
-                        <span class="yr-scene-santa">🎅</span>
-                        <span class="yr-scene-ski">🎿</span>
-                        <span class="yr-scene-gift">🎁</span>
-                        <span class="yr-scene-tree">🎄</span>
-                    </div>
+                    @Html.Raw(SleighScene)
                 </div>
             </div>
 
@@ -101,22 +169,22 @@
             {
                 <div class="yr-stats">
                     <div class="yr-stat">
-                        <span class="yr-stat-ic">📚</span>
+                        <span class="yr-stat-ic">@Html.Raw(Icon("book"))</span>
                         <span class="yr-stat-num">@Model.BooksRead</span>
                         <span class="yr-stat-label">kitob o'qildi</span>
                     </div>
                     <div class="yr-stat">
-                        <span class="yr-stat-ic">📖</span>
+                        <span class="yr-stat-ic">@Html.Raw(Icon("journal-text"))</span>
                         <span class="yr-stat-num">@Model.TotalPages</span>
                         <span class="yr-stat-label">bet</span>
                     </div>
                     <div class="yr-stat">
-                        <span class="yr-stat-ic">🔥</span>
+                        <span class="yr-stat-ic">@Html.Raw(Icon("fire"))</span>
                         <span class="yr-stat-num">@Model.ActiveDays</span>
                         <span class="yr-stat-label">faol kun</span>
                     </div>
                     <div class="yr-stat">
-                        <span class="yr-stat-ic">⚡</span>
+                        <span class="yr-stat-ic">@Html.Raw(Icon("lightning"))</span>
                         <span class="yr-stat-num">@avgPerDay</span>
                         <span class="yr-stat-label">kunlik o'rtacha</span>
                     </div>
@@ -124,7 +192,7 @@
 
                 <div class="yr-grid">
                     <div class="yr-col">
-                        <div class="yr-col-head">📚 O'qigan kitoblaring</div>
+                        <div class="yr-col-head">@Html.Raw(Icon("journals", "yr-head-ic")) O'qigan kitoblaring</div>
                         @if (shownBooks.Count > 0)
                         {
                             <div class="yr-booklist">
@@ -147,18 +215,18 @@
                         }
                         else
                         {
-                            <div class="yr-col-empty">Bu yil o'qish yo'lini boshlading 🌱</div>
+                            <div class="yr-col-empty">Bu yil o'qish yo'lini boshlading @Html.Raw(Icon("flower", "yr-inline-ic"))</div>
                         }
                     </div>
 
                     <div class="yr-col">
-                        <div class="yr-col-head">✨ Yilning eng zo'rlari</div>
+                        <div class="yr-col-head">@Html.Raw(Icon("stars", "yr-head-ic")) Yilning eng zo'rlari</div>
                         @if (Model.TopPost is not null)
                         {
                             <div class="yr-highlight">
                                 <div class="yr-highlight-head">
-                                    <span>🏆 Eng mashhur posting</span>
-                                    <span class="yr-likes">❤ @Model.TopPost.LikeCount</span>
+                                    <span class="yr-highlight-title">@Html.Raw(Icon("trophy", "yr-inline-ic")) Eng mashhur posting</span>
+                                    <span class="yr-likes">@Html.Raw(Icon("heart", "yr-inline-ic")) @Model.TopPost.LikeCount</span>
                                 </div>
                                 <div class="yr-highlight-body">“@Model.TopPost.Snippet”</div>
                                 <div class="yr-highlight-meta">@Model.TopPost.BookTitle</div>
@@ -168,8 +236,8 @@
                         {
                             <div class="yr-highlight">
                                 <div class="yr-highlight-head">
-                                    <span>💬 Eng mashhur iqtibosing</span>
-                                    <span class="yr-likes">❤ @Model.TopQuote.LikeCount</span>
+                                    <span class="yr-highlight-title">@Html.Raw(Icon("chat-quote", "yr-inline-ic")) Eng mashhur iqtibosing</span>
+                                    <span class="yr-likes">@Html.Raw(Icon("heart", "yr-inline-ic")) @Model.TopQuote.LikeCount</span>
                                 </div>
                                 <div class="yr-highlight-body">“@Model.TopQuote.Snippet”</div>
                                 <div class="yr-highlight-meta">@Model.TopQuote.BookTitle</div>
@@ -178,13 +246,13 @@
                         @if (Model.TopPost is null && Model.TopQuote is null)
                         {
                             <div class="yr-col-empty">
-                                Post va iqtibos ulashib, kelasi yakuningni yanada boyit! ✍️
+                                Post va iqtibos ulashib, kelasi yakuningni yanada boyit! @Html.Raw(Icon("pencil", "yr-inline-ic"))
                             </div>
                         }
                         @if (topBook is not null)
                         {
                             <div class="yr-topbook">
-                                <span class="yr-topbook-ic">👑</span>
+                                <span class="yr-topbook-ic">@Html.Raw(Icon("star"))</span>
                                 <span>Eng ko'p o'qigan kitobing — <strong>@topBook.Title</strong></span>
                             </div>
                         }
@@ -194,7 +262,7 @@
             else
             {
                 <div class="yr-empty">
-                    <div class="yr-empty-emoji">@Model.PrimaryEmoji</div>
+                    <div class="yr-empty-ic">@Html.Raw(Icon("book"))</div>
                     <p>Bu yil o'qish sari ilk qadamlaringni qo'yding. Kelasi yil yakuning
                         kitoblar bilan to'lib-toshsin!</p>
                 </div>
@@ -214,10 +282,10 @@
         </div>
 
         <div class="yr-drift" aria-hidden="true">
-            <span class="yr-drift-tree yr-drift-tree-1">🎄</span>
-            <span class="yr-drift-tree yr-drift-tree-2">🌲</span>
-            <span class="yr-drift-tree yr-drift-tree-3">⛄</span>
-            <span class="yr-drift-tree yr-drift-tree-4">🎄</span>
+            <span class="yr-drift-tree yr-drift-tree-1">@Html.Raw(Icon("tree"))</span>
+            <span class="yr-drift-tree yr-drift-tree-2">@Html.Raw(Icon("tree"))</span>
+            <span class="yr-drift-tree yr-drift-tree-3">@Html.Raw(Icon("gift"))</span>
+            <span class="yr-drift-tree yr-drift-tree-4">@Html.Raw(Icon("tree"))</span>
         </div>
     </div>
 
