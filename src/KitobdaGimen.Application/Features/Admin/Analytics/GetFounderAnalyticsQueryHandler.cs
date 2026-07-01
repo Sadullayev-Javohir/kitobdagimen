@@ -44,7 +44,11 @@ public class GetFounderAnalyticsQueryHandler : IRequestHandler<GetFounderAnalyti
 
         var earliestLocal = chartStart < cohortStart ? chartStart : cohortStart;
         // Lower bound in UTC for timestamp columns (local midnight shifted back by the offset).
-        var earliestUtc = earliestLocal.ToDateTime(TimeOnly.MinValue).AddHours(-UzOffsetHours);
+        // Must be Kind=Utc — the timestamp columns are 'timestamp with time zone' and Npgsql
+        // rejects DateTimes with Kind=Unspecified (which DateOnly.ToDateTime produces).
+        var earliestUtc = DateTime.SpecifyKind(
+            earliestLocal.ToDateTime(TimeOnly.MinValue).AddHours(-UzOffsetHours),
+            DateTimeKind.Utc);
 
         // ---- Totals (all-time) ------------------------------------------
         var totalUsers = await _db.Users.CountAsync(ct);

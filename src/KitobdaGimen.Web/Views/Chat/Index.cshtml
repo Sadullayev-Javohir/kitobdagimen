@@ -518,6 +518,12 @@
         lightboxImg.onload = () => lightbox.classList.remove("is-loading", "is-error");
         lightboxImg.onerror = () => { lightbox.classList.remove("is-loading"); lightbox.classList.add("is-error"); };
         lightboxImg.src = url;
+        // Keshdagi rasm uchun `load` hodisasi ba'zi brauzerlarda ishga tushmaydi — bu holda
+        // `is-loading` qolib ketib rasm `visibility:hidden` bilan ko'rinmay qolardi. Shuning uchun
+        // src o'rnatilgandan keyin darhol `complete`ni tekshiramiz.
+        if (lightboxImg.complete && lightboxImg.naturalWidth > 0) {
+            lightbox.classList.remove("is-loading", "is-error");
+        }
         lightbox.hidden = false;
         document.body.classList.add("chat-lightbox-open");
     }

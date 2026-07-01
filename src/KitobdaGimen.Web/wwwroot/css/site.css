@@ -1587,7 +1587,8 @@ textarea.input { resize: vertical; min-height: 90px; }
     min-width: 0; min-height: 0; width: 168px; height: 96px; object-fit: contain; cursor: default;
     background: #fff; padding: 24px; border: 1px solid var(--border);
 }
-.msg.has-image .meta-row { position: absolute; right: 10px; bottom: 8px; float: none; margin: 0;
+.msg.has-image .meta-row { position: absolute; right: 10px; bottom: 8px; top: auto; left: auto; float: none; margin: 0;
+    display: inline-flex; width: auto; height: auto;
     background: rgba(0,0,0,.42); color: #fff; padding: 1px 6px; border-radius: 10px; }
 .msg.has-image .msg-time { color: rgba(255,255,255,.92); }
 
