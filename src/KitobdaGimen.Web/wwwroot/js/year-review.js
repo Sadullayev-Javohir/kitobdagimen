@@ -33,30 +33,22 @@
         if (typeof window.showToast === "function") { window.showToast(msg); }
     }
 
-    // ── Bayram effekti ─────────────────────────────────────────────────────────
-    function spawnFx(host, emojis) {
+    // ── Bayram effekti (yog'ayotgan qor) ───────────────────────────────────────
+    function spawnFx(host) {
         if (!host) { return; }
-        var pool = (emojis && emojis.length) ? emojis : ["❄️", "✨", "⭐"];
-        var count = 26;
+        var pool = ["❄", "❅", "❆", "✦", "✧"];
+        var count = 34;
         for (var i = 0; i < count; i++) {
             var f = document.createElement("span");
             f.className = "yr-flake";
             f.textContent = pool[Math.floor(Math.random() * pool.length)];
             f.style.left = (Math.random() * 100) + "%";
-            f.style.fontSize = (10 + Math.random() * 16) + "px";
-            f.style.animationDuration = (5 + Math.random() * 6) + "s";
-            f.style.animationDelay = (Math.random() * 6) + "s";
+            f.style.color = "rgba(255,255,255," + (0.4 + Math.random() * 0.5).toFixed(2) + ")";
+            f.style.fontSize = (9 + Math.random() * 16) + "px";
+            f.style.animationDuration = (5 + Math.random() * 7) + "s";
+            f.style.animationDelay = (Math.random() * 7) + "s";
             host.appendChild(f);
         }
-    }
-
-    function emojisFromCard(card) {
-        var out = [];
-        card.querySelectorAll(".yr-corner").forEach(function (c) {
-            var t = (c.textContent || "").trim();
-            if (t) { out.push(t); }
-        });
-        return out;
     }
 
     // ── Yuklab olish ─────────────────────────────────────────────────────────────
@@ -68,11 +60,27 @@
     function renderCanvas(card) {
         var target = card.querySelector("[data-yr-capture]") || card;
         return loadScript(H2C_SRC).then(function () {
+            // Doim keng (laptop) tartibda tortamiz — telefonda ham dizayn buzilmasin,
+            // matnlar joyida qolsin. windowWidth media-so'rovlarni "desktop" qiladi;
+            // onclone esa poster kengligini qat'iy 1080px ga o'rnatadi.
             return window.html2canvas(target, {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: null,
-                logging: false
+                logging: false,
+                windowWidth: 1200,
+                windowHeight: 1600,
+                scrollX: 0,
+                scrollY: 0,
+                onclone: function (doc, el) {
+                    var node = el || doc.querySelector("[data-yr-capture]");
+                    if (node) {
+                        node.style.width = "1080px";
+                        node.style.maxWidth = "none";
+                        node.style.margin = "0";
+                        node.style.transform = "none";
+                    }
+                }
             });
         });
     }
@@ -157,7 +165,7 @@
         if (!card || card.hasAttribute("data-yr-enhanced")) { return; }
         card.setAttribute("data-yr-enhanced", "1");
 
-        spawnFx(card.querySelector("[data-yr-fx]"), emojisFromCard(card));
+        spawnFx(card.querySelector("[data-yr-fx]"));
 
         card.querySelectorAll("[data-yr-download]").forEach(function (btn) {
             btn.addEventListener("click", function () {

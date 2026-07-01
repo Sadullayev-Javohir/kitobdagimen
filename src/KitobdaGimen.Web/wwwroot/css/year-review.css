@@ -1,36 +1,33 @@
 /* =============================================================================
-   Yillik Kitob Yakuni (Year in Review) — bayramona kartochka, modal, animatsiyalar.
-   8 ta dizayn varianti (.yr-theme-0 .. .yr-theme-7). Kartochkaning ".yr-capture"
-   qismi html2canvas orqali rasmga tushiriladi (tugmalar kirmaydi).
+   Yillik Kitob Yakuni (Year in Review) — YANGI DIZAYN.
+   Keng "poster" (laptopda header kengligi = 1100px bilan teng), boy statistika,
+   to'liq yangi-yil bezaklari (chiroq gulchambar, qor, Qorbobo + bug'ular),
+   html2canvas eksporti uchun barqaror tuzilma (matnlar tushib ketmaydi).
    ============================================================================= */
 
-/* ── Modal overlay (auto-popup) ─────────────────────────────────────────────── */
+/* ── Modal overlay ──────────────────────────────────────────────────────────── */
 .yr-overlay {
     position: fixed;
     inset: 0;
     z-index: 2000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 20px;
-    background: rgba(12, 18, 16, .72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    padding: 28px 20px 60px;
+    background: rgba(8, 14, 12, .78);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
     overflow-y: auto;
-    animation: yr-fade .35s ease;
+    animation: yr-fade .3s ease;
 }
-
-@keyframes yr-fade {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+@keyframes yr-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .yr-overlay-close {
-    position: absolute;
+    position: fixed;
     top: 16px;
-    right: 16px;
-    width: 44px;
-    height: 44px;
+    right: 18px;
+    width: 46px;
+    height: 46px;
     border: none;
     border-radius: 50%;
     background: rgba(255, 255, 255, .16);
@@ -41,33 +38,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2010;
     transition: background .2s;
 }
 .yr-overlay-close:hover { background: rgba(255, 255, 255, .3); }
+.yr-modal-wrap { width: 100%; max-width: 1100px; }
 
 /* ── Standalone sahifa (share / preview) ────────────────────────────────────── */
 .yr-page {
     min-height: 100vh;
     display: flex;
-    align-items: flex-start;
     justify-content: center;
-    padding: 32px 16px 80px;
+    padding: 28px 16px 90px;
     background:
-        radial-gradient(1200px 600px at 50% -10%, rgba(232, 112, 58, .18), transparent 60%),
+        radial-gradient(1400px 700px at 50% -10%, rgba(232, 112, 58, .16), transparent 60%),
         var(--bg, #FAF6EE);
 }
 .yr-page-inner {
     width: 100%;
-    max-width: 460px;
+    max-width: 1100px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 22px;
 }
-.yr-page-cta {
-    text-align: center;
-    color: var(--text, #2b2b2b);
-}
+.yr-page-cta { text-align: center; color: var(--text, #2b2b2b); }
 .yr-page-cta p { margin: 0 0 12px; font-size: 15px; opacity: .85; }
 
 .yr-preview-banner {
@@ -85,307 +80,389 @@
 .yr-preview-banner strong { display: block; margin-bottom: 4px; }
 .yr-preview-banner p { margin: 0; font-size: 13px; line-height: 1.5; }
 
-/* ── Kartochka (asosiy) ─────────────────────────────────────────────────────── */
+/* ── Kartochka konteyneri ───────────────────────────────────────────────────── */
 .yr-card {
     position: relative;
     width: 100%;
-    max-width: 420px;
-    border-radius: 26px;
-    overflow: hidden;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    max-width: 1100px;              /* laptopda header kengligi bilan teng */
+    margin: 0 auto;
     color: #fff;
     font-family: "Source Sans 3", system-ui, sans-serif;
-    animation: yr-pop .5s cubic-bezier(.2, .9, .3, 1.3);
+    animation: yr-pop .5s cubic-bezier(.2, .9, .3, 1.25);
 }
-
 @keyframes yr-pop {
-    from { transform: scale(.9) translateY(14px); opacity: 0; }
-    to { transform: scale(1) translateY(0); opacity: 1; }
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-/* Rasmga tushadigan hudud — kartochka ko'rinishini o'zi belgilaydi (gradient fon) */
-.yr-capture {
+/* ── POSTER (html2canvas tortadigan hudud) ──────────────────────────────────── */
+.yr-poster {
     position: relative;
-    padding: 26px 24px 20px;
-    z-index: 1;
-    /* Gradient fonni har bir tema o'zi beradi (--yr-grad). */
-    background: var(--yr-grad, linear-gradient(160deg, #1B4D3E, #0d2a22));
+    width: 100%;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .4);
+    background: var(--yr-grad, linear-gradient(150deg, #123, #012));
+}
+.yr-poster-inner {
+    position: relative;
+    z-index: 2;
+    padding: 30px 40px 42px;
 }
 
-.yr-corner {
+/* ── Osmon bezaklari (poster ichida, statik — rasmga tushadi) ───────────────── */
+.yr-sky { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+/* Chiroq gulchambari */
+.yr-garland {
     position: absolute;
-    font-size: 26px;
-    opacity: .55;
-    z-index: 0;
-    pointer-events: none;
-    user-select: none;
+    top: 0; left: 0; right: 0;
+    height: 26px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 22px;
+    border-top: 3px solid rgba(255, 255, 255, .25);
 }
-.yr-corner-tl { top: 10px; left: 12px; }
-.yr-corner-tr { top: 10px; right: 12px; }
-.yr-corner-bl { bottom: 10px; left: 12px; }
-.yr-corner-br { bottom: 10px; right: 12px; }
+.yr-bulb {
+    width: 9px; height: 13px;
+    border-radius: 0 0 50% 50%;
+    margin-top: 6px;
+    box-shadow: 0 0 8px 2px currentColor;
+    color: #ffd27a;
+}
+.yr-bulb-0 { color: #ff6b6b; background: #ff6b6b; }
+.yr-bulb-1 { color: #ffd27a; background: #ffd27a; }
+.yr-bulb-2 { color: #7ad9a5; background: #7ad9a5; }
+.yr-bulb-3 { color: #7ab8ff; background: #7ab8ff; }
 
-.yr-head {
+.yr-star { position: absolute; color: rgba(255,255,255,.65); font-size: 18px; }
+.yr-star-1 { top: 60px; left: 12%; }
+.yr-star-2 { top: 120px; right: 20%; font-size: 13px; }
+.yr-star-3 { top: 200px; left: 46%; font-size: 15px; }
+.yr-flurry { position: absolute; color: rgba(255,255,255,.5); }
+.yr-flurry-1 { top: 90px; left: 30%; font-size: 22px; }
+.yr-flurry-2 { top: 150px; right: 8%; font-size: 16px; }
+.yr-flurry-3 { top: 260px; right: 34%; font-size: 20px; }
+.yr-flurry-4 { top: 320px; left: 8%; font-size: 15px; }
+
+/* Pastki qor uyumi + archalar */
+.yr-drift {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 60px;
+    z-index: 1;
+    background: radial-gradient(120% 100% at 50% 100%, rgba(255,255,255,.9), rgba(255,255,255,.75) 55%, transparent 72%);
+    pointer-events: none;
+}
+.yr-drift-tree { position: absolute; bottom: 8px; font-size: 26px; }
+.yr-drift-tree-1 { left: 6%; }
+.yr-drift-tree-2 { left: 24%; font-size: 22px; }
+.yr-drift-tree-3 { right: 24%; font-size: 24px; }
+.yr-drift-tree-4 { right: 7%; }
+
+/* ── Topbar ─────────────────────────────────────────────────────────────────── */
+.yr-topbar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    position: relative;
-    z-index: 2;
+    justify-content: space-between;
+    margin-top: 6px;
 }
+.yr-brandbox { display: flex; align-items: center; gap: 9px; }
 .yr-logo { display: inline-flex; }
-.yr-logo svg { display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.25)); }
-.yr-brand {
-    font-family: "Lora", serif;
-    font-weight: 700;
-    font-size: 20px;
-    letter-spacing: .2px;
-}
+.yr-logo svg { display: block; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+.yr-brand { font-family: "Lora", serif; font-weight: 700; font-size: 21px; }
 .yr-brand-accent { color: #ffd9a8; }
-
-.yr-title {
-    text-align: center;
-    margin-top: 14px;
-    position: relative;
-    z-index: 2;
+.yr-badge {
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    padding: 7px 15px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
 }
+
+/* ── Hero ───────────────────────────────────────────────────────────────────── */
+.yr-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 18px;
+}
+.yr-hero-left { min-width: 0; }
 .yr-year {
-    display: block;
     font-family: "Lora", serif;
     font-weight: 700;
-    font-size: 54px;
-    line-height: 1;
-    text-shadow: 0 3px 10px rgba(0, 0, 0, .3);
+    font-size: 108px;
+    line-height: .92;
+    letter-spacing: -2px;
+    text-shadow: 0 6px 20px rgba(0, 0, 0, .35);
 }
-.yr-title-sub {
-    display: block;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-size: 12px;
-    opacity: .85;
+.yr-hero-sub {
+    letter-spacing: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    opacity: .9;
     margin-top: 4px;
 }
-
-.yr-user {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 16px;
-    position: relative;
-    z-index: 2;
-}
+.yr-user { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
 .yr-avatar {
-    width: 34px;
-    height: 34px;
+    width: 46px; height: 46px;
     border-radius: 50%;
     background: rgba(255, 255, 255, .22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 16px;
+    border: 2px solid rgba(255, 255, 255, .4);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 20px;
 }
-.yr-username { font-weight: 600; font-size: 16px; }
+.yr-user-meta { display: flex; flex-direction: column; line-height: 1.15; }
+.yr-username { font-weight: 700; font-size: 18px; }
+.yr-handle { font-size: 13px; opacity: .75; }
 
-.yr-stats {
-    display: flex;
-    justify-content: space-around;
-    gap: 8px;
-    margin: 20px 0 6px;
+/* Qorbobo / bug'u sahnasi (statik, poster ichida) */
+.yr-hero-right { flex: 0 0 auto; }
+.yr-scene {
     position: relative;
-    z-index: 2;
+    width: 200px; height: 120px;
+    font-size: 46px;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.3));
+}
+.yr-scene span { position: absolute; }
+.yr-scene-deer  { left: 6px;  top: 34px; }
+.yr-scene-santa { left: 58px; top: 22px; }
+.yr-scene-ski   { left: 66px; top: 62px; font-size: 30px; }
+.yr-scene-gift  { left: 120px; top: 60px; font-size: 34px; }
+.yr-scene-tree  { left: 150px; top: 18px; }
+
+/* ── Statistika tiles ───────────────────────────────────────────────────────── */
+.yr-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 26px;
 }
 .yr-stat {
-    flex: 1;
-    text-align: center;
     background: rgba(255, 255, 255, .12);
-    border: 1px solid rgba(255, 255, 255, .18);
-    border-radius: 16px;
-    padding: 12px 6px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 18px;
+    padding: 16px 12px 14px;
+    text-align: center;
 }
+.yr-stat-ic { display: block; font-size: 26px; }
 .yr-stat-num {
     display: block;
     font-family: "Lora", serif;
     font-weight: 700;
-    font-size: 28px;
-    line-height: 1;
+    font-size: 40px;
+    line-height: 1.05;
+    margin-top: 2px;
 }
 .yr-stat-label {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 1px;
     opacity: .82;
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
-.yr-section { margin-top: 16px; position: relative; z-index: 2; }
-.yr-section-head {
-    font-size: 13px;
-    font-weight: 700;
-    opacity: .92;
-    margin-bottom: 8px;
+/* ── 2 ustunli grid ─────────────────────────────────────────────────────────── */
+.yr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 20px;
 }
-.yr-books {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+.yr-col {
+    background: rgba(0, 0, 0, .14);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 18px;
+    padding: 16px 18px;
 }
-.yr-book-chip {
-    background: rgba(255, 255, 255, .16);
-    border: 1px solid rgba(255, 255, 255, .2);
-    border-radius: 999px;
-    padding: 5px 11px;
-    font-size: 12.5px;
-    font-weight: 600;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+.yr-col-head { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+.yr-col-empty { font-size: 14px; opacity: .85; line-height: 1.5; }
 
-.yr-highlights {
+.yr-booklist { display: flex; flex-direction: column; gap: 11px; }
+.yr-bookrow-top {
     display: flex;
-    flex-direction: column;
+    align-items: baseline;
+    justify-content: space-between;
     gap: 10px;
-    margin-top: 16px;
-    position: relative;
-    z-index: 2;
+    margin-bottom: 5px;
 }
+.yr-book-title {
+    font-size: 14px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.yr-book-pages { font-size: 12px; opacity: .8; white-space: nowrap; }
+.yr-book-bar {
+    height: 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, .16);
+    overflow: hidden;
+}
+.yr-book-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #ffd27a, #E8703A);
+}
+.yr-more { font-size: 12.5px; opacity: .8; margin-top: 10px; }
+
 .yr-highlight {
     background: rgba(255, 255, 255, .1);
     border: 1px solid rgba(255, 255, 255, .16);
-    border-radius: 16px;
+    border-radius: 14px;
     padding: 12px 14px;
+    margin-bottom: 10px;
 }
 .yr-highlight-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12.5px;
-    font-weight: 700;
-    margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 700; margin-bottom: 6px;
 }
 .yr-likes { color: #ffd9a8; white-space: nowrap; }
-.yr-highlight-body {
-    font-size: 14px;
-    line-height: 1.45;
-    font-style: italic;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.yr-highlight-body { font-size: 14px; line-height: 1.45; font-style: italic; }
+.yr-highlight-meta { font-size: 12px; opacity: .78; margin-top: 6px; }
+.yr-topbook {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255, 210, 122, .16);
+    border: 1px solid rgba(255, 210, 122, .3);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13.5px;
 }
-.yr-highlight-meta {
-    font-size: 11.5px;
-    opacity: .78;
-    margin-top: 6px;
-}
+.yr-topbook-ic { font-size: 18px; }
 
-.yr-empty {
-    text-align: center;
-    margin: 18px 0 6px;
-    position: relative;
-    z-index: 2;
-}
-.yr-empty-emoji { font-size: 44px; }
-.yr-empty p { font-size: 14px; line-height: 1.5; opacity: .9; margin: 8px 4px 0; }
+.yr-empty { text-align: center; margin: 22px 0 8px; }
+.yr-empty-emoji { font-size: 56px; }
+.yr-empty p { font-size: 15px; line-height: 1.55; opacity: .92; margin: 10px auto 0; max-width: 560px; }
 
+/* ── Motivatsiya ────────────────────────────────────────────────────────────── */
 .yr-motivation {
-    margin-top: 18px;
-    background: rgba(0, 0, 0, .18);
-    border-radius: 16px;
-    padding: 14px 16px;
-    font-size: 14px;
-    line-height: 1.55;
-    text-align: center;
     position: relative;
-    z-index: 2;
+    margin-top: 22px;
+    background: rgba(0, 0, 0, .22);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 18px;
+    padding: 18px 22px 18px 54px;
+    font-size: 16px;
+    line-height: 1.6;
+}
+.yr-quote-mark {
+    position: absolute;
+    left: 16px; top: 6px;
+    font-family: "Lora", serif;
+    font-size: 46px;
+    color: #ffd9a8;
+    opacity: .85;
+    line-height: 1;
 }
 
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
 .yr-foot {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 18px;
-    font-size: 12px;
-    letter-spacing: .5px;
-    opacity: .82;
-    position: relative;
-    z-index: 2;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    margin-top: 22px;
+    font-size: 13px; letter-spacing: .3px; opacity: .9;
 }
-.yr-foot-dot { opacity: .6; }
+.yr-foot-logo { display: inline-flex; }
+.yr-foot-brand { font-weight: 700; }
+.yr-foot-dot { opacity: .55; }
 
-/* ── Amallar (tugmalar) — rasmga tushmaydi ─────────────────────────────────── */
+/* ── Amallar (tugmalar) — rasmga tushmaydi ──────────────────────────────────── */
 .yr-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    padding: 16px;
-    background: rgba(0, 0, 0, .28);
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+    margin-top: 16px;
 }
 .yr-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid rgba(255, 255, 255, .35);
-    background: rgba(255, 255, 255, .12);
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid rgba(255, 255, 255, .5);
+    background: rgba(20, 30, 26, .55);
     color: #fff;
     border-radius: 999px;
-    padding: 9px 16px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 11px 20px;
+    font-size: 14px; font-weight: 700;
     cursor: pointer;
     transition: transform .12s, background .2s;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
 }
-.yr-btn:hover { background: rgba(255, 255, 255, .24); transform: translateY(-1px); }
-.yr-btn:active { transform: translateY(0); }
+.yr-btn:hover { background: rgba(20, 30, 26, .8); transform: translateY(-1px); }
 .yr-btn .material-symbols-outlined { font-size: 18px; }
-.yr-btn-primary {
-    background: #E8703A;
-    border-color: #E8703A;
-}
+.yr-btn-primary { background: #E8703A; border-color: #E8703A; }
 .yr-btn-primary:hover { background: #d2602d; }
 .yr-btn[disabled] { opacity: .6; cursor: default; transform: none; }
 
-/* ── Bayram effektlari (qor/uchqun) — yuklab olishga kirmaydi ───────────────── */
+/* ── Ekran-effektlari (rasmga tushmaydi): qor + uchuvchi Qorbobo ─────────────── */
 .yr-fx {
     position: absolute;
     inset: 0;
-    z-index: 3;
+    z-index: 5;
     pointer-events: none;
     overflow: hidden;
+    border-radius: 28px;
 }
 .yr-flake {
     position: absolute;
-    top: -18px;
-    font-size: 14px;
+    top: -20px;
     opacity: 0;
     animation: yr-fall linear infinite;
     will-change: transform;
 }
 @keyframes yr-fall {
-    0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+    0% { transform: translateY(-24px) rotate(0deg); opacity: 0; }
     10% { opacity: .9; }
     90% { opacity: .9; }
-    100% { transform: translateY(560px) rotate(360deg); opacity: 0; }
+    100% { transform: translateY(760px) rotate(360deg); opacity: 0; }
 }
 
-/* ── 8 ta dizayn varianti (gradient fon + aksent) ───────────────────────────── */
-.yr-theme-0 { --yr-grad: linear-gradient(160deg, #1B4D3E 0%, #0d2a22 100%); }
-.yr-theme-1 { --yr-grad: linear-gradient(160deg, #7a1f3d 0%, #b23a5b 55%, #e86a86 100%); }
-.yr-theme-2 { --yr-grad: linear-gradient(160deg, #12395e 0%, #1d6fa5 100%); }
-.yr-theme-3 { --yr-grad: linear-gradient(160deg, #4a2c74 0%, #7b46b8 100%); }
-.yr-theme-4 { --yr-grad: linear-gradient(160deg, #8a3b12 0%, #E8703A 100%); }
-.yr-theme-5 { --yr-grad: linear-gradient(160deg, #0f4d4d 0%, #148f8f 100%); }
-.yr-theme-6 { --yr-grad: linear-gradient(160deg, #2a2f45 0%, #4a5178 100%); }
-.yr-theme-7 { --yr-grad: linear-gradient(160deg, #5c1e1e 0%, #a83232 60%, #d99a3a 100%); }
+/* Qorbobo bug'ular bilan uchib o'tadi */
+.yr-sleigh {
+    position: absolute;
+    top: 40px;
+    left: -280px;
+    white-space: nowrap;
+    font-size: 34px;
+    animation: yr-fly 11s linear infinite;
+    will-change: transform;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,.3));
+}
+.yr-sleigh span { display: inline-block; }
+.yr-sleigh-santa { transform: rotate(-8deg); }
+.yr-sleigh-trail { font-size: 20px; opacity: .8; }
+@keyframes yr-fly {
+    0% { transform: translateX(0) translateY(0); }
+    50% { transform: translateX(60vw) translateY(-14px); }
+    100% { transform: translateX(140vw) translateY(6px); }
+}
 
-/* Kichik ekran */
-@media (max-width: 420px) {
-    .yr-year { font-size: 46px; }
-    .yr-card { border-radius: 22px; }
+/* Eksport paytida (onclone) ekran-effektlarini yashiramiz */
+.yr-capturing .yr-fx { display: none !important; }
+
+/* ── 8 ta dizayn varianti (kechki osmon gradientlari) ───────────────────────── */
+.yr-theme-0 { --yr-grad: linear-gradient(155deg, #123a5e 0%, #1B4D3E 55%, #0c2a22 100%); }
+.yr-theme-1 { --yr-grad: linear-gradient(155deg, #3a1030 0%, #7a1f3d 55%, #b23a5b 100%); }
+.yr-theme-2 { --yr-grad: linear-gradient(155deg, #0b2447 0%, #19376d 55%, #1d6fa5 100%); }
+.yr-theme-3 { --yr-grad: linear-gradient(155deg, #2a1a52 0%, #4a2c74 55%, #7b46b8 100%); }
+.yr-theme-4 { --yr-grad: linear-gradient(155deg, #4a1e0a 0%, #8a3b12 55%, #E8703A 100%); }
+.yr-theme-5 { --yr-grad: linear-gradient(155deg, #06322f 0%, #0f4d4d 55%, #148f8f 100%); }
+.yr-theme-6 { --yr-grad: linear-gradient(155deg, #1a1e30 0%, #2a2f45 55%, #4a5178 100%); }
+.yr-theme-7 { --yr-grad: linear-gradient(155deg, #3a0f0f 0%, #7a1f1f 45%, #a83232 75%, #d99a3a 100%); }
+
+/* ── Responsiv (telefon/planshet) — ekranda o'qilishi uchun ─────────────────── */
+@media (max-width: 860px) {
+    .yr-poster-inner { padding: 22px 20px 34px; }
+    .yr-year { font-size: 74px; }
+    .yr-hero { gap: 14px; }
+    .yr-scene { width: 132px; height: 96px; font-size: 34px; }
+    .yr-scene-gift, .yr-scene-tree { display: none; }
+    .yr-stats { grid-template-columns: repeat(2, 1fr); }
+    .yr-grid { grid-template-columns: 1fr; }
+    .yr-stat-num { font-size: 34px; }
+    .yr-badge { font-size: 12px; padding: 6px 12px; }
+}
+@media (max-width: 500px) {
+    .yr-year { font-size: 58px; }
+    .yr-hero-right { display: none; }
+    .yr-hero-sub { letter-spacing: 4px; font-size: 13px; }
+    .yr-motivation { font-size: 15px; padding: 16px 16px 16px 46px; }
 }
