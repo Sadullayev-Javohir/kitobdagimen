@@ -48,15 +48,18 @@ public class YearReviewController : AppController
             return NoContent();
         }
 
-        var windowOpen = YearReviewCalendar.IsWindowOpenNow();
+        var year = YearReviewCalendar.CurrentReportYear();
+
+        // Hisobot faqat super admin uni "yuborgan" (e'lon qilgan) bo'lsa foydalanuvchilarga
+        // ko'rsatiladi. Admin/super admin esa istalgan payt ?preview=1 orqali sinab ko'radi.
+        var published = await IsPublishedAsync(year);
         var canPreview = preview && await IsAtLeastAdminAsync(uid);
 
-        if (!windowOpen && !canPreview)
+        if (!published && !canPreview)
         {
             return NoContent();
         }
 
-        var year = YearReviewCalendar.CurrentReportYear();
         var review = await Mediator.Send(new GetYearReviewQuery(uid, year));
 
         ViewData["ShareUrl"] = BuildShareUrl(uid, year);
@@ -147,6 +150,16 @@ public class YearReviewController : AppController
     {
         var role = await _db.Users.Where(u => u.Id == uid).Select(u => u.Role).FirstOrDefaultAsync();
         return role >= UserRole.Admin;
+    }
+
+    /// <summary>Yillik yakun berilgan yil uchun super admin tomonidan e'lon qilinganmi.</summary>
+    private async Task<bool> IsPublishedAsync(int year)
+    {
+        var val = await _db.AppSettings
+            .Where(s => s.Key == AppSettingKeys.YearReviewPublishedYear)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync();
+        return int.TryParse(val, out var publishedYear) && publishedYear == year;
     }
 
     private string BuildShareUrl(int uid, int year)

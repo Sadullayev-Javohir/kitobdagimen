@@ -1,5 +1,6 @@
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeletePost;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteQuote;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteUser;
@@ -7,6 +8,7 @@ using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
 using KitobdaGimen.Application.Features.Admin.Analytics;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
+using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -53,6 +55,18 @@ public class AdminController : AppController
             {
                 var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
                 ViewData["ServerSnapshot"] = snapshot;
+            }
+
+            // Yillik yakun hisobotini boshqarish holati — faqat super admin uchun.
+            if (myRole == UserRole.SuperAdmin)
+            {
+                var reportYear = YearReviewCalendar.CurrentReportYear();
+                ViewData["YrReportYear"] = reportYear;
+                var pubVal = await _db.AppSettings
+                    .Where(s => s.Key == AppSettingKeys.YearReviewPublishedYear)
+                    .Select(s => s.Value)
+                    .FirstOrDefaultAsync();
+                ViewData["YrPublished"] = int.TryParse(pubVal, out var py) && py == reportYear;
             }
 
             return View(users);
@@ -217,6 +231,78 @@ public class AdminController : AppController
 
         await _db.SaveChangesAsync();
         return Json(new { fixedCount, attempted, remaining, totalAsaxiy = books.Count });
+    }
+
+    /// <summary>
+    /// SuperAdmin: yillik yakun hisobotini "yuborish" — barcha foydalanuvchilarga ochadi.
+    /// Odatda 20-dekabrda bosiladi. Boshqa hech qanday avtomatik tizimga bog'liq emas,
+    /// shuning uchun har qanday holatda ham (avtomatika ishlamay qolsa ham) ishlaydi.
+    /// </summary>
+    [HttpPost("year-review/publish")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PublishYearReview()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return Forbid();
+        }
+
+        var year = YearReviewCalendar.CurrentReportYear();
+        await SetSettingAsync(AppSettingKeys.YearReviewPublishedYear, year.ToString());
+        return Json(new
+        {
+            success = true,
+            year,
+            message = $"{year}-yil kitob yakuni barcha foydalanuvchilarga yuborildi."
+        });
+    }
+
+    /// <summary>SuperAdmin: yillik yakun hisobotini to'xtatish (foydalanuvchilarga ko'rinmaydi).</summary>
+    [HttpPost("year-review/unpublish")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnpublishYearReview()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return Forbid();
+        }
+
+        await SetSettingAsync(AppSettingKeys.YearReviewPublishedYear, null);
+        return Json(new
+        {
+            success = true,
+            message = "Yillik yakun to'xtatildi — foydalanuvchilarga ko'rinmaydi."
+        });
+    }
+
+    private async Task<bool> IsSuperAdminAsync()
+    {
+        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
+        return role == UserRole.SuperAdmin;
+    }
+
+    /// <summary>Kalit-qiymat sozlamani o'rnatadi (yozadi/yangilaydi); <c>value=null</c> — o'chiradi.</summary>
+    private async Task SetSettingAsync(string key, string? value)
+    {
+        var setting = await _db.AppSettings.FirstOrDefaultAsync(s => s.Key == key);
+        if (value is null)
+        {
+            if (setting is not null)
+            {
+                _db.AppSettings.Remove(setting);
+            }
+        }
+        else if (setting is null)
+        {
+            _db.AppSettings.Add(new AppSetting { Key = key, Value = value, UpdatedAt = DateTime.UtcNow });
+        }
+        else
+        {
+            setting.Value = value;
+            setting.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync();
     }
 
     private static async Task<string?> SaveCoverWebpAsync(byte[] bytes, string coversDir)

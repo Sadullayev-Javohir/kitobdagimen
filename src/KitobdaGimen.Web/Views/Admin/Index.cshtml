@@ -40,6 +40,41 @@
         </a>
     </div>
 
+    @if (isSuper)
+    {
+        var yrReportYear = (int)(ViewData["YrReportYear"] ?? 0);
+        var yrPublished = (bool)(ViewData["YrPublished"] ?? false);
+        <div class="card" style="margin-bottom:18px; padding:18px" data-yr-report-year="@yrReportYear">
+            <h2 style="margin:0 0 8px 0; font-size:18px; display:flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:22px">campaign</span>
+                Yillik kitob yakunini yuborish
+            </h2>
+            <p class="muted" style="font-size:13px; margin:0 0 14px 0; line-height:1.5">
+                <strong>@yrReportYear-yil</strong> yakuni. Uni <strong>faqat super admin</strong> yuboradi
+                (odatda <strong>20-dekabr</strong> kuni). Yuborilgach, barcha foydalanuvchilar saytga
+                kirganda hisobot kartochkasi avtomatik ko'rinadi. Bu tugma avtomatik tizimdan
+                mustaqil — agar boshqa narsa ishlamay qolsa ham, shu yerdan qo'lda yuborasiz.
+            </p>
+
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
+                <span id="yrStatusBadge" class="role-badge @(yrPublished ? "role-super" : "role-user")">
+                    @(yrPublished ? $"Yuborilgan ({yrReportYear})" : "Yuborilmagan")
+                </span>
+                <button type="button" id="yrPublishBtn" class="btn btn-primary btn-sm"
+                        style="@(yrPublished ? "display:none" : "")">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">send</span>
+                    Hisobotni yuborish
+                </button>
+                <button type="button" id="yrUnpublishBtn" class="btn btn-outline btn-sm"
+                        style="@(yrPublished ? "" : "display:none")">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">unpublished</span>
+                    To'xtatish
+                </button>
+            </div>
+            <div id="yrStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
+        </div>
+    }
+
     @if (serverSnapshot == null)
     {
         <div class="card" style="margin-bottom:18px; padding:16px; display:flex; align-items:center; gap:10px">
@@ -422,6 +457,61 @@
             } finally {
                 refreshCoversBtn.disabled = false;
             }
+        });
+    }
+    // Yillik yakunni yuborish / to'xtatish (faqat super admin)
+    var yrPublishBtn = document.getElementById("yrPublishBtn");
+    var yrUnpublishBtn = document.getElementById("yrUnpublishBtn");
+    var yrStatus = document.getElementById("yrStatus");
+    var yrBadge = document.getElementById("yrStatusBadge");
+
+    function yrPost(url, btn, confirmMsg, onOk) {
+        if (confirmMsg && !confirm(confirmMsg)) { return; }
+        if (btn) { btn.disabled = true; }
+        if (yrStatus) { yrStatus.textContent = "Bajarilmoqda..."; }
+        fetch(url, {
+            method: "POST",
+            headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+        }).then(function (r) {
+            if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
+            return r.json();
+        }).then(function (d) {
+            if (yrStatus) { yrStatus.textContent = (d.success ? "✓ " : "✗ ") + (d.message || ""); }
+            if (d.success && typeof onOk === "function") { onOk(d); }
+        }).catch(function (e) {
+            if (yrStatus) { yrStatus.textContent = "✗ Xato: " + e.message; }
+        }).finally(function () {
+            if (btn) { btn.disabled = false; }
+        });
+    }
+
+    if (yrPublishBtn) {
+        yrPublishBtn.addEventListener("click", function () {
+            yrPost("/admin/year-review/publish", yrPublishBtn,
+                "Yillik yakunni HOZIR barcha foydalanuvchilarga yuborishni tasdiqlaysizmi?",
+                function (d) {
+                    yrPublishBtn.style.display = "none";
+                    if (yrUnpublishBtn) { yrUnpublishBtn.style.display = ""; }
+                    if (yrBadge) {
+                        yrBadge.textContent = "Yuborilgan (" + d.year + ")";
+                        yrBadge.className = "role-badge role-super";
+                    }
+                });
+        });
+    }
+
+    if (yrUnpublishBtn) {
+        yrUnpublishBtn.addEventListener("click", function () {
+            yrPost("/admin/year-review/unpublish", yrUnpublishBtn,
+                "Yillik yakunni to'xtatishni tasdiqlaysizmi? Foydalanuvchilarga ko'rinmay qoladi.",
+                function () {
+                    yrUnpublishBtn.style.display = "none";
+                    if (yrPublishBtn) { yrPublishBtn.style.display = ""; }
+                    if (yrBadge) {
+                        yrBadge.textContent = "Yuborilmagan";
+                        yrBadge.className = "role-badge role-user";
+                    }
+                });
         });
     }
 })();

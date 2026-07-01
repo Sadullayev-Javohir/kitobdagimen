@@ -45,7 +45,7 @@
     transition: background .2s;
 }
 .yr-overlay-close:hover { background: rgba(255, 255, 255, .3); }
-.yr-modal-wrap { width: 100%; max-width: 1100px; }
+.yr-modal-wrap { width: 100%; max-width: 1080px; }
 
 /* ── Standalone sahifa (share / preview) ────────────────────────────────────── */
 .yr-page {
@@ -59,7 +59,7 @@
 }
 .yr-page-inner {
     width: 100%;
-    max-width: 1100px;
+    max-width: 1080px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -97,7 +97,7 @@
 .yr-card {
     position: relative;
     width: 100%;
-    max-width: 1100px;              /* laptopda header kengligi bilan teng */
+    max-width: 1080px;              /* qat'iy dizayn kengligi (poster bilan bir xil) */
     margin: 0 auto;
     color: #fff;
     font-family: "Source Sans 3", system-ui, sans-serif;
@@ -109,12 +109,28 @@
 }
 
 /* ── POSTER (html2canvas tortadigan hudud) ──────────────────────────────────── */
-.yr-poster {
+/* ── SAHNA: masshtablovchi konteyner ────────────────────────────────────────────
+   Poster doim 1080px kenglikda tuziladi; JS uni konteynerga sig'dirish uchun
+   transform: scale(...) bilan kichraytiradi. Overflow bilan kesiladi, soya shu
+   yerda (poster transform bilan masshtablanadi, soya esa turg'un qoladi). */
+.yr-stage {
     position: relative;
     width: 100%;
-    border-radius: 28px;
     overflow: hidden;
+    border-radius: 28px;
     box-shadow: 0 30px 70px rgba(0, 0, 0, .4);
+    /* JS balandlikni o'rnatmaguncha buzilmasin: taxminiy nisbat (1080:1440) */
+    aspect-ratio: 1080 / 1440;
+}
+
+/* ── POSTER (html2canvas tortadigan hudud) — QAT'IY 1080px ──────────────────────
+   Barcha ekranlarda AYNAN bir xil joylashuv. Media-so'rovlarga bog'liq emas,
+   shuning uchun eksportda matnlar hech qachon qayta oqmaydi/buzilmaydi. */
+.yr-poster {
+    position: relative;
+    width: 1080px;
+    transform-origin: top left;   /* JS: transform: scale(konteyner/1080) */
+    overflow: hidden;
     background: var(--yr-grad, linear-gradient(150deg, #123, #012));
 }
 .yr-poster-inner {
@@ -500,53 +516,24 @@
 .yr-theme-6 { --yr-grad: linear-gradient(155deg, #1a1e30 0%, #2a2f45 55%, #4a5178 100%); }
 .yr-theme-7 { --yr-grad: linear-gradient(155deg, #3a0f0f 0%, #7a1f1f 45%, #a83232 75%, #d99a3a 100%); }
 
-/* ── Responsiv (planshet) ───────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-    .yr-poster-inner { padding: 22px 20px 34px; }
-    .yr-year { font-size: 74px; }
-    .yr-hero { gap: 14px; }
-    .yr-scene-svg { width: 150px; }
-    .yr-stats { grid-template-columns: repeat(2, 1fr); }
-    .yr-grid { grid-template-columns: 1fr; }
-    .yr-stat-num { font-size: 34px; }
-    .yr-badge { font-size: 12px; padding: 6px 12px; }
-}
+/* ── Responsiv eslatma ──────────────────────────────────────────────────────────
+   Poster QAT'IY 1080px — uning ichki o'lchamlari (shrift, joylashuv) hech qachon
+   media-so'rov bilan o'zgarmaydi. Kichik ekranlarda JS uni butunicha masshtablaydi
+   (.yr-stage ichida transform: scale). Shu sababli ekran ↔ yuklab olingan rasm
+   AYNAN bir xil bo'ladi va matnlar buzilmaydi. Quyida faqat poster TASHQARISIDAGI
+   elementlar (modal, tugmalar) moslashtiriladi. */
 
 /* ── Responsiv (telefon) ────────────────────────────────────────────────────── */
 @media (max-width: 560px) {
     .yr-overlay { padding: 14px 10px 40px; }
     .yr-overlay-close { top: 10px; right: 10px; width: 40px; height: 40px; font-size: 22px; }
-    .yr-poster { border-radius: 20px; }
+    .yr-stage { border-radius: 20px; }
     .yr-fx { border-radius: 20px; }
-    .yr-poster-inner { padding: 20px 15px 30px; }
-    .yr-topbar { gap: 8px; }
-    .yr-brand { font-size: 17px; }
-    .yr-logo svg { width: 30px; height: 30px; }
-    .yr-year { font-size: 58px; letter-spacing: -1px; }
-    .yr-hero-right { display: none; }              /* telefonda statik sahna yashiriladi */
-    .yr-hero-sub { letter-spacing: 4px; font-size: 13px; }
-    .yr-user { margin-top: 12px; }
-    .yr-avatar { width: 40px; height: 40px; font-size: 17px; }
-    .yr-username { font-size: 16px; }
-    .yr-stats { gap: 10px; margin-top: 20px; }
-    .yr-stat { border-radius: 14px; padding: 12px 8px 11px; }
-    .yr-stat-ic { font-size: 22px; }
-    .yr-stat-num { font-size: 30px; }
-    .yr-stat-label { font-size: 11px; letter-spacing: .5px; }
-    .yr-col { padding: 14px 14px; border-radius: 14px; }
-    .yr-motivation { font-size: 15px; padding: 16px 16px 16px 46px; margin-top: 18px; }
-    .yr-quote-mark { font-size: 40px; }
     .yr-actions { gap: 8px; }
     .yr-btn { padding: 10px 16px; font-size: 13px; }
-    .yr-drift { height: 46px; }
-    .yr-drift-tree { font-size: 20px; }
 }
 
 /* Juda kichik telefonlar */
 @media (max-width: 380px) {
-    .yr-year { font-size: 48px; }
-    .yr-stats { grid-template-columns: repeat(2, 1fr); }
-    .yr-brand { font-size: 15px; }
-    .yr-badge { font-size: 11px; padding: 5px 10px; }
     .yr-btn { padding: 9px 13px; }
 }

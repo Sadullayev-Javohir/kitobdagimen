@@ -35,6 +35,7 @@ public interface IAppDbContext
     DbSet<PushSubscription> PushSubscriptions { get; }
     DbSet<ChallengeWinner> ChallengeWinners { get; }
     DbSet<ChallengeWinnerLike> ChallengeWinnerLikes { get; }
+    DbSet<AppSetting> AppSettings { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

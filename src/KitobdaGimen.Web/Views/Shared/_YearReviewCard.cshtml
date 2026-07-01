@@ -110,13 +110,10 @@
      data-yr-share-url="@shareUrl"
      data-yr-name="@Model.FullName">
 
-    @* ── Ekran-effektlari: yog'ayotgan qor + Three.js'da uchayotgan Qorbobo (rasmga TUSHMAYDI) ── *@
-    <div class="yr-fx" data-yr-fx aria-hidden="true">
-        <div class="yr-three" data-yr-three>
-            @* Three.js bu yerga <canvas> qo'yadi. Agar yuklanmasa — quyidagi SVG chana uchadi. *@
-            <div class="yr-sleigh-fallback" data-yr-sleigh-fallback>@Html.Raw(SleighScene)</div>
-        </div>
-    </div>
+    @* ── Sahna: qat'iy 1080px poster + ekran-effektlari. JS poster'ni konteyner kengligiga
+         qarab masshtablaydi (scale). Shu tufayli ekranda ko'ringan narsa aynan yuklab olinadi
+         (WYSIWYG) — matnlar hech qachon qayta oqmaydi va buzilmaydi. ── *@
+    <div class="yr-stage" data-yr-stage>
 
     @* ── html2canvas tortib oladigan poster (barcha bezaklar shu ichida, faqat SVG) ── *@
     <div class="yr-poster" data-yr-capture>
@@ -288,6 +285,15 @@
             <span class="yr-drift-tree yr-drift-tree-4">@Html.Raw(Icon("tree"))</span>
         </div>
     </div>
+
+        @* ── Ekran-effektlari: yog'ayotgan qor + Three.js Qorbobo (poster ustida, rasmga TUSHMAYDI) ── *@
+        <div class="yr-fx" data-yr-fx aria-hidden="true">
+            <div class="yr-three" data-yr-three>
+                @* Three.js bu yerga <canvas> qo'yadi. Agar yuklanmasa — quyidagi SVG chana uchadi. *@
+                <div class="yr-sleigh-fallback" data-yr-sleigh-fallback>@Html.Raw(SleighScene)</div>
+            </div>
+        </div>
+    </div>@* /.yr-stage *@
 
     @* ── Amallar — rasmga tushmaydi ── *@
     <div class="yr-actions" data-yr-actions>
