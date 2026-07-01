@@ -1,0 +1,87 @@
+name: CI/CD
+
+# Har push va pull request'da build + test.
+# main'ga push bo'lganda va testlar o'tgach — Hetzner serverga deploy.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Bir branch uchun eski run'larni bekor qilib, faqat oxirgisini qoldiradi.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test (.NET 8)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          # global.json rollForward=latestFeature — istalgan 8.0.x SDK yaraydi.
+          dotnet-version: '8.0.x'
+
+      - name: NuGet cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore KitobdaGimen.sln
+
+      - name: Build (Release)
+        run: dotnet build KitobdaGimen.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test KitobdaGimen.sln -c Release --no-build --verbosity normal
+
+  deploy:
+    name: Deploy to Hetzner
+    needs: build-test
+    runs-on: ubuntu-latest
+    # Faqat main'ga to'g'ridan-to'g'ri push'da (PR'da emas) va testlar o'tgach.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # 'production' environment'iga secret/approval qo'yish uchun (ixtiyoriy).
+    environment: production
+
+    steps:
+      - name: Deploy over SSH
+        # Uchinchi tomon action'i — versiyaga qotirilgan (supply-chain xavfsizligi).
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          # Hujjatlangan tartib: git pull -> stop -> publish -> chown -> start.
+          # Publish ishlab turgan servis fayllarini lock qilmasligi uchun
+          # servis publishdAN OLDIN to'xtatiladi (DEPLOY-JOURNAL Xato #7).
+          # Butun blok root sifatida bajariladi (manual jarayonga mos);
+          # deploy foydalanuvchisi root yoki passwordless-sudo bo'lishi kerak.
+          script: |
+            sudo bash -lc '
+              set -euo pipefail
+              cd /var/www/kitobdagimen
+              git fetch --all --prune
+              git reset --hard origin/main
+              systemctl stop kitobdagimen
+              if dotnet publish src/KitobdaGimen.Web -c Release -o publish; then
+                chown -R kitobapp:kitobapp publish
+                systemctl start kitobdagimen
+              else
+                echo "Publish FAILED — eski publish bilan servis qayta yoqilmoqda"
+                systemctl start kitobdagimen
+                exit 1
+              fi
+              systemctl is-active kitobdagimen
+            '
