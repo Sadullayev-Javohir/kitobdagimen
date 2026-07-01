@@ -85,6 +85,45 @@ public static class SeoJsonLd
         }
     });
 
+    /// <summary>
+    /// Kitob sahifasi (/kitob/{id}-{nom}): Book + uni tavsiflovchi CollectionPage.
+    /// Kitob nomi bo'yicha qidiruvda Google sahifani aynan shu kitob haqidagi
+    /// jamlovchi sahifa deb tushunishi uchun.
+    /// </summary>
+    public static string BookPage(
+        string url, string bookTitle, string bookAuthor, string? imageUrl,
+        int reviewCount, int quoteCount) => Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@graph"] = new object[]
+        {
+            new Dictionary<string, object?>
+            {
+                ["@type"] = "Book",
+                ["@id"] = url + "#book",
+                ["name"] = bookTitle,
+                ["image"] = imageUrl,
+                ["inLanguage"] = "uz",
+                ["author"] = new Dictionary<string, object?> { ["@type"] = "Person", ["name"] = bookAuthor },
+                ["url"] = url
+            },
+            new Dictionary<string, object?>
+            {
+                ["@type"] = "CollectionPage",
+                ["url"] = url,
+                ["name"] = $"{bookTitle} — {bookAuthor}: taqrizlar va iqtiboslar",
+                ["inLanguage"] = "uz",
+                ["about"] = new Dictionary<string, object?> { ["@id"] = url + "#book" },
+                ["description"] = $"\"{bookTitle}\" ({bookAuthor}) haqida {reviewCount} ta taqriz va {quoteCount} ta iqtibos.",
+                ["publisher"] = new Dictionary<string, object?>
+                {
+                    ["@type"] = "Organization",
+                    ["name"] = "kitobdagimen.uz"
+                }
+            }
+        }
+    });
+
     /// <summary>A public profile page: ProfilePage describing the Person.</summary>
     public static string ProfilePage(string url, string name, string? imageUrl, string? description) => Serialize(new Dictionary<string, object?>
     {
@@ -99,6 +138,47 @@ public static class SeoJsonLd
             ["image"] = imageUrl,
             ["description"] = description,
             ["url"] = url
+        }
+    });
+
+    /// <summary>
+    /// A quote detail page: schema.org <c>Quotation</c> that is <c>about</c> / <c>isPartOf</c> the
+    /// source book, so Google understands the page is a quote from that book (helps it surface for
+    /// book-title searches). The quoting user is the <c>creator</c>.
+    /// </summary>
+    public static string Quotation(
+        string url, string text, string authorName, string? authorUrl,
+        string datePublishedIso, string bookTitle, string bookAuthor, string? bookImageUrl) => Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Quotation",
+        ["mainEntityOfPage"] = url,
+        ["url"] = url,
+        ["text"] = text,
+        ["inLanguage"] = "uz",
+        ["datePublished"] = datePublishedIso,
+        ["about"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Book",
+            ["name"] = bookTitle,
+            ["image"] = bookImageUrl,
+            ["author"] = new Dictionary<string, object?> { ["@type"] = "Person", ["name"] = bookAuthor }
+        },
+        ["isPartOf"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Book",
+            ["name"] = bookTitle
+        },
+        ["creator"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Person",
+            ["name"] = authorName,
+            ["url"] = authorUrl
+        },
+        ["publisher"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Organization",
+            ["name"] = "kitobdagimen.uz"
         }
     });
 }

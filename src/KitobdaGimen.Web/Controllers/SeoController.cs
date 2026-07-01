@@ -41,9 +41,18 @@ public class SeoController : AppController
         urlset.Add(Url(baseUrl + "/", null, "daily", "1.0"));
         urlset.Add(Url(baseUrl + "/qollanma", null, "monthly", "0.7"));
 
+        // Kitob sahifalari (kanonik /kitob/{id}-{nom}) — kitob nomi qidiruvlari uchun
+        // eng qimmatli landing sahifalar, shuning uchun eng yuqori priority.
+        foreach (var b in data.Books)
+            urlset.Add(Url(baseUrl + ViewHelpers.BookUrl(b.Id, b.Title), b.LastModUtc, "weekly", "0.9"));
+
         // Postlar (kanonik /post/{username}/{slug})
         foreach (var p in data.Posts)
             urlset.Add(Url($"{baseUrl}/post/{Seg(p.AuthorRef)}/{Seg(p.Slug)}", p.LastModUtc, "weekly", "0.8"));
+
+        // Iqtiboslar (kanonik /iqtibos/{id})
+        foreach (var qt in data.Quotes)
+            urlset.Add(Url($"{baseUrl}/iqtibos/{qt.Id}", qt.LastModUtc, "weekly", "0.7"));
 
         // Ommaviy profillar (/u/{username})
         foreach (var u in data.Profiles)

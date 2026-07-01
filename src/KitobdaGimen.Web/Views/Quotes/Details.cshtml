@@ -3,14 +3,44 @@
 @model KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDetailDto
 @{
     var q = Model.Quote;
-    ViewData["Title"] = $"{q.Author.FullName} iqtibosi — {q.Book.Title}";
+    // Sarlavha kitob nomi bilan boshlanadi — foydalanuvchi Google'da kitob nomini yozganda
+    // shu iqtibos sahifasi kitob nomi + sayt bilan ko'rinsin.
+    ViewData["Title"] = $"\"{q.Book.Title}\" — {q.Book.Author} kitobidan iqtibos";
     var isAuth = CurrentUser.IsAuthenticated;
     var meId = CurrentUser.UserId;
-    var quoteUrl = $"/quotes/{q.Id}";
-    var quoteShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{quoteUrl}";
+    // Kanonik, Google'da indekslanadigan ommaviy URL (/iqtibos/{id}); eski /quotes/{id} ham
+    // shu sahifani ochadi, lekin canonical shu manzilga ishora qiladi.
+    var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Id);
+    var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var quoteShareUrl = $"{seoBase}{quoteUrl}";
     var loginUrl = "/auth/google-login?returnUrl=" + Uri.EscapeDataString(quoteUrl);
     // The quote owner may delete any comment on their quote.
     ViewData["ViewerIsQuoteOwner"] = q.IsAuthor;
+
+    // --- SEO: bu sahifa Google'da indekslanadi (ommaviy, ulashiladigan iqtibos) ---
+    // Quotes controlleri layout'da odatda "noindex" ro'yxatida (maxfiy /quotes ro'yxat sahifalari
+    // uchun); bu yerda ochiq detal sahifa uchun uni "index" ga majburan almashtiramiz.
+    var seoQuoteText = System.Text.RegularExpressions.Regex.Replace(q.Text ?? "", "\\s+", " ").Trim();
+    var seoQuoteExcerpt = seoQuoteText.Length > 150 ? seoQuoteText.Substring(0, 147).TrimEnd() + "…" : seoQuoteText;
+    var seoDesc = $"\"{seoQuoteExcerpt}\" — {q.Book.Title} ({q.Book.Author}) kitobidan iqtibos. kitobdagimen.uz da o'qing.";
+    string? seoImg = q.Book.CoverUrl;
+    if (!string.IsNullOrEmpty(seoImg) && seoImg.StartsWith("/")) seoImg = seoBase + seoImg;
+    var seoAuthorUrl = $"{seoBase}/u/{(string.IsNullOrWhiteSpace(q.Author.Username) ? q.Author.Id.ToString() : q.Author.Username)}";
+    ViewData["Description"] = seoDesc;
+    ViewData["Canonical"] = quoteShareUrl;
+    ViewData["OgType"] = "article";
+    ViewData["Robots"] = "index, follow, max-image-preview:large";
+    if (!string.IsNullOrEmpty(seoImg)) { ViewData["OgImage"] = seoImg; }
+    ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.Quotation(
+        url: quoteShareUrl,
+        text: seoQuoteText,
+        authorName: q.Author.FullName,
+        authorUrl: seoAuthorUrl,
+        datePublishedIso: q.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+        bookTitle: q.Book.Title,
+        bookAuthor: q.Book.Author,
+        bookImageUrl: seoImg);
+
     var avatarBody = !string.IsNullOrEmpty(q.Author.AvatarUrl)
         ? Html.Raw($"<img class=\"avatar\" src=\"{q.Author.AvatarUrl}\" alt=\"{Html.Encode(q.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")
         : Html.Raw($"<span class=\"avatar\">{Html.Encode(KitobdaGimen.Web.ViewHelpers.Initial(q.Author.FullName))}</span>");
@@ -66,7 +96,8 @@
                     <span class="quote-feed-mark material-symbols-outlined" aria-hidden="true">format_quote</span>
                     <blockquote class="quote-feed-text">@q.Text</blockquote>
                     <div class="quote-feed-book">
-                        <span class="qfb-title">@q.Book.Title</span>
+                        @* Ichki havola: kitob nomi jamlovchi kitob sahifasiga olib boradi (SEO + navigatsiya) *@
+                        <a class="qfb-title" href="@KitobdaGimen.Web.ViewHelpers.BookUrl(q.Book.Id, q.Book.Title)">@q.Book.Title</a>
                         <span class="qfb-author">@q.Book.Author</span>
                         @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(q.Book.Source))
                     </div>

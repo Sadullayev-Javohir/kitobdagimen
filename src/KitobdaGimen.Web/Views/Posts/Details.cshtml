@@ -88,6 +88,8 @@
                 <h1>@Model.Post.Book.Title</h1>
                 <p class="pd-book-author">@Model.Post.Book.Author</p>
                 @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Post.Book.Source))
+                @* Ichki havola: kitobning jamlovchi sahifasi — crawler va o'quvchi uchun *@
+                <a class="muted" style="font-size:.9em" href="@KitobdaGimen.Web.ViewHelpers.BookUrl(Model.Post.Book.Id, Model.Post.Book.Title)">"@Model.Post.Book.Title" — barcha taqriz va iqtiboslar →</a>
                 @if (!string.IsNullOrEmpty(Model.Post.Book.GenreName))
                 {
                     <div class="pd-genres">

@@ -115,4 +115,63 @@ public static class ViewHelpers
     /// <summary>Profile URL: /profile/{username}, falling back to /profile/{id} when no username is set.</summary>
     public static string ProfileUrl(string? username, int id)
         => $"/profile/{(string.IsNullOrWhiteSpace(username) ? id.ToString() : username)}";
+
+    /// <summary>
+    /// Canonical, shareable and Google-indexable quote URL: <c>/iqtibos/{id}</c>. Kept separate
+    /// from the private <c>/quotes</c> list pages (which stay behind auth / robots-disallowed) so
+    /// only the public quote detail page is crawled and indexed.
+    /// </summary>
+    public static string QuoteUrl(int id) => $"/iqtibos/{id}";
+
+    /// <summary>
+    /// Kanonik, Google indekslaydigan kitob sahifasi: <c>/kitob/{id}-{nom-slug}</c>.
+    /// Id yetakchi bo'lgani uchun kitob nomi keyin o'zgarsa ham eski havolalar ishlayveradi
+    /// (controller noto'g'ri slug'ni kanonik manzilga 301 qiladi). Kitob nomi URL'da
+    /// bo'lishi qidiruvda muhim signal.
+    /// </summary>
+    public static string BookUrl(int id, string title)
+    {
+        var slug = Slugify(title);
+        return slug.Length == 0 ? $"/kitob/{id}" : $"/kitob/{id}-{slug}";
+    }
+
+    /// <summary>
+    /// Matnni URL uchun slug'ga aylantiradi: kichik harf, o'zbek kirillini lotinga
+    /// o'girish, tutuq belgilarini tushirish (oʻ→o, gʻ→g), qolgan hamma narsa "-".
+    /// </summary>
+    public static string Slugify(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+
+        var sb = new System.Text.StringBuilder(text.Length);
+        foreach (var raw in text.Trim().ToLowerInvariant())
+        {
+            var ch = raw;
+            if (ch is >= 'a' and <= 'z' or >= '0' and <= '9')
+            {
+                sb.Append(ch);
+                continue;
+            }
+            // Tutuq/apostrof belgilari: oʻ, gʻ, so'z ichidagi ' — shunchaki tushiriladi.
+            if (ch is '\'' or 'ʻ' or 'ʼ' or '`' or '‘' or '’') continue;
+
+            var mapped = ch switch
+            {
+                'а' => "a", 'б' => "b", 'в' => "v", 'г' => "g", 'д' => "d",
+                'е' => "e", 'ё' => "yo", 'ж' => "j", 'з' => "z", 'и' => "i",
+                'й' => "y", 'к' => "k", 'л' => "l", 'м' => "m", 'н' => "n",
+                'о' => "o", 'п' => "p", 'р' => "r", 'с' => "s", 'т' => "t",
+                'у' => "u", 'ф' => "f", 'х' => "x", 'ц' => "ts", 'ч' => "ch",
+                'ш' => "sh", 'щ' => "sh", 'э' => "e", 'ю' => "yu", 'я' => "ya",
+                'ў' => "o", 'қ' => "q", 'ғ' => "g", 'ҳ' => "h",
+                'ъ' => "", 'ь' => "",
+                _ => "-"
+            };
+            sb.Append(mapped);
+        }
+
+        // Ketma-ket "-" larni bittaga tushirish, chetlarini kesish, uzunlikni cheklash.
+        var slug = System.Text.RegularExpressions.Regex.Replace(sb.ToString(), "-{2,}", "-").Trim('-');
+        return slug.Length > 80 ? slug[..80].TrimEnd('-') : slug;
+    }
 }

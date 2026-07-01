@@ -1,9 +1,16 @@
 # kitobdagimen.uz — robots.txt
-# Ommaviy (ulashiladigan) sahifalar indekslanadi: landing, qo'llanma, postlar, public profillar.
+# Ommaviy (ulashiladigan) sahifalar indekslanadi: landing, qo'llanma, postlar (/post/...),
+# iqtiboslar (/iqtibos/{id}) va public profillar (/u/...).
 # Maxfiy (kirish talab qiladigan) sahifalar va xizmat yo'llari indeksdan chiqariladi.
 
 User-agent: *
 Allow: /
+
+# Ommaviy iqtibos detali (/iqtibos/{id}) indekslanadi; /quotes ro'yxat sahifalari maxfiy.
+Allow: /iqtibos
+
+# Ommaviy kitob sahifasi (/kitob/{id}-{nom}) indekslanadi; /books xizmat yo'llari maxfiy.
+Allow: /kitob
 
 Disallow: /feed
 Disallow: /chat

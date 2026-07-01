@@ -38,6 +38,32 @@ public class GetSitemapQueryHandler : IRequestHandler<GetSitemapQuery, SitemapDt
             .Select(u => new SitemapProfileEntry(u.Username!, u.LastPost))
             .ToList();
 
-        return new SitemapDto { Posts = posts, Profiles = profiles };
+        // Ommaviy iqtiboslar (kanonik /iqtibos/{id}) — postlar kabi indekslanadi.
+        var quotes = await _db.Quotes
+            .OrderByDescending(q => q.CreatedAt)
+            .Take(MaxUrls)
+            .Select(q => new SitemapQuoteEntry(q.Id, q.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        // Kitob sahifalari (/kitob/{id}-{nom}) — faqat kontenti (taqriz yoki iqtibos) borlari;
+        // lastmod = oxirgi taqriz/iqtibos sanasi.
+        var rawBooks = await _db.Books
+            .Where(b => b.Posts.Any() || b.Quotes.Any())
+            .Select(b => new
+            {
+                b.Id, b.Title,
+                LastPost = b.Posts.Max(p => (DateTime?)p.CreatedAt),
+                LastQuote = b.Quotes.Max(q => (DateTime?)q.CreatedAt)
+            })
+            .Take(MaxUrls)
+            .ToListAsync(cancellationToken);
+
+        var books = rawBooks
+            .Select(b => new SitemapBookEntry(
+                b.Id, b.Title,
+                new[] { b.LastPost, b.LastQuote }.Max() ?? DateTime.UtcNow))
+            .ToList();
+
+        return new SitemapDto { Posts = posts, Profiles = profiles, Quotes = quotes, Books = books };
     }
 }

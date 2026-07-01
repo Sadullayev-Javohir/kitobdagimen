@@ -3,7 +3,9 @@
 @model QuoteDto
 @{
     var meId = CurrentUser.UserId;
-    var quoteUrl = $"/quotes/{Model.Id}";
+    // Kanonik, ommaviy iqtibos manzili (/iqtibos/{id}) — ichki havolalar ham indekslanadigan
+    // URL'ga ishora qilsin (crawler kuzatadi).
+    var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(Model.Id);
     var quoteShareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{quoteUrl}";
     var avatarBody = !string.IsNullOrEmpty(Model.Author.AvatarUrl)
         ? Html.Raw($"<img class=\"avatar\" src=\"{Model.Author.AvatarUrl}\" alt=\"{Html.Encode(Model.Author.FullName)}\" referrerpolicy=\"no-referrer\" />")

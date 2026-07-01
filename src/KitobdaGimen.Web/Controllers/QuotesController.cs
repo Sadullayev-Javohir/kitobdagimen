@@ -82,8 +82,14 @@ public class QuotesController : AppController
     }
 
     /// <summary>Quote detail page with its comment thread, by internal id. Viewable without
-    /// logging in so shared quotes (e.g. sent to someone in chat) open for anonymous visitors too.</summary>
+    /// logging in so shared quotes (e.g. sent to someone in chat) open for anonymous visitors too.
+    /// Two routes hit this action:
+    /// <list type="bullet">
+    /// <item><c>/iqtibos/{id}</c> — the canonical, Google-indexable public URL (see robots.txt / sitemap).</item>
+    /// <item><c>/quotes/{id}</c> — legacy/back-compat (older shared links); its canonical tag points to /iqtibos/{id}.</item>
+    /// </list></summary>
     [HttpGet("{id:int}")]
+    [HttpGet("/iqtibos/{id:int}")]
     [AllowAnonymous]
     public async Task<IActionResult> Details(int id)
     {
