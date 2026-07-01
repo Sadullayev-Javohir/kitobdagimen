@@ -22,7 +22,7 @@ public class GetUserStoriesQueryHandler : IRequestHandler<GetUserStoriesQuery, I
             .Where(s => s.UserId == request.UserId)
             .WhereActive()
             .OrderBy(s => s.CreatedAt)
-            .ToStoryDto(_currentUser.UserId)
+            .ToStoryDto(_currentUser.UserId, _currentUser.Email?.ToLowerInvariant())
             .ToListAsync(cancellationToken);
     }
 }

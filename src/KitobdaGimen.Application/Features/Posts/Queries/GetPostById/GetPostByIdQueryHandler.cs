@@ -19,5 +19,6 @@ public class GetPostByIdQueryHandler : IRequestHandler<GetPostByIdQuery, PostDet
         => PostDetailLoader.LoadAsync(
             _db.Posts.Where(p => p.Id == request.PostId),
             _currentUser.UserId,
+            _currentUser.Email?.ToLowerInvariant(),
             cancellationToken);
 }

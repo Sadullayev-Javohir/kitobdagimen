@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Quotes.Dtos;
 using KitobdaGimen.Domain.Entities;
@@ -6,8 +7,10 @@ namespace KitobdaGimen.Application.Features.Quotes;
 
 internal static class QuoteQueryableExtensions
 {
-    /// <summary>Projects quotes to <see cref="QuoteDto"/>, computing save count and save state.</summary>
-    public static IQueryable<QuoteDto> ToQuoteDto(this IQueryable<Quote> query, int? currentUserId)
+    /// <summary>Projects quotes to <see cref="QuoteDto"/>, computing save count and save state.
+    /// <paramref name="viewerEmail"/> — cheklangan foydalanuvchi avatarini yashirish uchun.</summary>
+    public static IQueryable<QuoteDto> ToQuoteDto(
+        this IQueryable<Quote> query, int? currentUserId, string? viewerEmail = null)
     {
         return query.Select(q => new QuoteDto
         {
@@ -19,7 +22,11 @@ internal static class QuoteQueryableExtensions
                 Id = q.User.Id,
                 Username = q.User.Username,
                 FullName = q.User.FullName,
-                AvatarUrl = q.User.AvatarUrl
+                AvatarUrl = (q.User.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : q.User.AvatarUrl
             },
             Book = new BookSummaryDto
             {

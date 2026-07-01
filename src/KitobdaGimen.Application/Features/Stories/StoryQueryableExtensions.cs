@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Stories.Dtos;
 using KitobdaGimen.Domain.Entities;
@@ -17,7 +18,8 @@ internal static class StoryQueryableExtensions
     /// Projects stories into <see cref="StoryDto"/>, computing engagement counts and whether the
     /// given user liked each story — all translated to SQL by EF Core.
     /// </summary>
-    public static IQueryable<StoryDto> ToStoryDto(this IQueryable<Story> query, int? currentUserId)
+    public static IQueryable<StoryDto> ToStoryDto(
+        this IQueryable<Story> query, int? currentUserId, string? viewerEmail = null)
     {
         return query.Select(s => new StoryDto
         {
@@ -31,7 +33,11 @@ internal static class StoryQueryableExtensions
                 Id = s.User.Id,
                 Username = s.User.Username,
                 FullName = s.User.FullName,
-                AvatarUrl = s.User.AvatarUrl
+                AvatarUrl = (s.User.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : s.User.AvatarUrl
             },
             ViewCount = s.Views.Count,
             LikeCount = s.Likes.Count,

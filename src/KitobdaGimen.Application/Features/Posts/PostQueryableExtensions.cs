@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Posts.Dtos;
 using KitobdaGimen.Domain.Entities;
@@ -9,8 +10,11 @@ internal static class PostQueryableExtensions
     /// <summary>
     /// Projects posts into <see cref="PostDto"/>, computing engagement counts and whether the
     /// given user liked each post — all translated to SQL by EF Core.
+    /// <paramref name="viewerEmail"/> — joriy ko'ruvchi email'i (kichik harflarda); cheklangan
+    /// foydalanuvchi avatarini yashirish uchun (<see cref="AvatarPrivacy"/>).
     /// </summary>
-    public static IQueryable<PostDto> ToPostDto(this IQueryable<Post> query, int? currentUserId)
+    public static IQueryable<PostDto> ToPostDto(
+        this IQueryable<Post> query, int? currentUserId, string? viewerEmail = null)
     {
         return query.Select(p => new PostDto
         {
@@ -24,7 +28,11 @@ internal static class PostQueryableExtensions
                 Id = p.User.Id,
                 Username = p.User.Username,
                 FullName = p.User.FullName,
-                AvatarUrl = p.User.AvatarUrl
+                AvatarUrl = (p.User.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : p.User.AvatarUrl
             },
             Book = new BookSummaryDto
             {

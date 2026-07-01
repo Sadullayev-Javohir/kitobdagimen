@@ -52,7 +52,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         SeedReading(db, goalId: 3, userId: 3, bookId: 3, date: today, pages: 80);
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.Daily, Limit = 23 }, CancellationToken.None);
 
@@ -76,7 +76,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         SeedReading(db, goalId: 2, userId: 1, bookId: 2, date: today, pages: 40);
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.Daily, Limit = 23 }, CancellationToken.None);
 
@@ -95,7 +95,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         SeedReading(db, goalId: 2, userId: 2, bookId: 2, date: today.AddDays(-3), pages: 999); // 3 kun oldin
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.Daily, Limit = 23 }, CancellationToken.None);
 
@@ -112,7 +112,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         SeedReading(db, goalId: 1, userId: 1, bookId: 1, date: today.AddDays(-3), pages: 25);
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.Weekly, Limit = 23 }, CancellationToken.None);
 
@@ -132,7 +132,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         }
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.Daily, Limit = 23 }, CancellationToken.None);
 
@@ -148,7 +148,7 @@ public class GetReadingLeaderboardQueryHandlerTests : TestBase
         SeedUser(db, 1);
         await db.SaveChangesAsync();
 
-        var handler = new GetReadingLeaderboardQueryHandler(db);
+        var handler = new GetReadingLeaderboardQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetReadingLeaderboardQuery { Period = LeaderboardPeriod.AllTime, Limit = 23 }, CancellationToken.None);
 

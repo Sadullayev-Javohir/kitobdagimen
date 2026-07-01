@@ -22,7 +22,7 @@ public class GetStoryByIdQueryHandler : IRequestHandler<GetStoryByIdQuery, Story
         // No WhereActive(): the detail page shows the story even after it has expired.
         return await _db.Stories
             .Where(s => s.Id == request.StoryId)
-            .ToStoryDto(_currentUser.UserId)
+            .ToStoryDto(_currentUser.UserId, _currentUser.Email?.ToLowerInvariant())
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Story", request.StoryId);
     }

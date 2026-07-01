@@ -33,7 +33,7 @@ public class GetUserPostsQueryHandler : IRequestHandler<GetUserPostsQuery, Paged
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToPostDto(_currentUser.UserId)
+            .ToPostDto(_currentUser.UserId, _currentUser.Email?.ToLowerInvariant())
             .ToListAsync(cancellationToken);
 
         return PagedResult<PostDto>.Create(items, page, pageSize, totalCount);

@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -74,7 +75,7 @@ public class ToggleFollowCommandHandler : IRequestHandler<ToggleFollowCommand, F
             {
                 Type = "follow",
                 ActorName = actor.FullName,
-                ActorAvatarUrl = actor.AvatarUrl,
+                ActorAvatarUrl = AvatarPrivacy.ForActor(_currentUser.Email?.ToLowerInvariant(), actor.AvatarUrl),
                 Message = $"{actor.FullName} sizni kuzata boshladi",
                 Url = $"/profile/{userId}"
             }, cancellationToken);

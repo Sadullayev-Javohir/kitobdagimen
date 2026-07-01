@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Chat.Dtos;
@@ -25,6 +26,8 @@ public class GetConversationsQueryHandler
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
+
         // Chat list is driven by accepted connections: the other participant must have an
         // accepted invite with the current user (so people appear only after "qabul qilish").
         var acceptedPartnerIds = await _db.Connections
@@ -47,14 +50,22 @@ public class GetConversationsQueryHandler
                             Id = c.User2.Id,
                             Username = c.User2.Username,
                             FullName = c.User2.FullName,
-                            AvatarUrl = c.User2.AvatarUrl
+                            AvatarUrl = (c.User2.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                                         && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                                         && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                                ? null
+                                : c.User2.AvatarUrl
                         }
                         : new UserSummaryDto
                         {
                             Id = c.User1.Id,
                             Username = c.User1.Username,
                             FullName = c.User1.FullName,
-                            AvatarUrl = c.User1.AvatarUrl
+                            AvatarUrl = (c.User1.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                                         && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                                         && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                                ? null
+                                : c.User1.AvatarUrl
                         },
                     LastSeenAt = c.User1Id == userId ? c.User2.LastSeenAt : c.User1.LastSeenAt,
                     LastMessageText = c.Messages

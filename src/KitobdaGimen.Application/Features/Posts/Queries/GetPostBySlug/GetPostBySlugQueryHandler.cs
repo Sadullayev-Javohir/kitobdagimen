@@ -20,5 +20,6 @@ public class GetPostBySlugQueryHandler : IRequestHandler<GetPostBySlugQuery, Pos
         => PostDetailLoader.LoadAsync(
             _db.Posts.Where(p => p.Slug == request.Slug),
             _currentUser.UserId,
+            _currentUser.Email?.ToLowerInvariant(),
             cancellationToken);
 }

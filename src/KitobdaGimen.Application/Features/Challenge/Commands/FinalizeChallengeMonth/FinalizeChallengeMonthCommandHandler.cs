@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Admin;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeStandings;
@@ -32,6 +33,12 @@ public class FinalizeChallengeMonthCommandHandler
         {
             // Qo'lda ishga tushirishni faqat super admin bajaradi (avtomatik job to'xtab qolsa).
             await AdminGuard.RequireAsync(_db, _currentUser, UserRole.SuperAdmin, cancellationToken);
+        }
+
+        // Challenge boshlanishidan (Iyul 2026) oldingi oylar uchun g'olib aniqlanmaydi.
+        if (ChallengeCalendar.IsBeforeStart(request.Year, request.Month))
+        {
+            return 0;
         }
 
         // Idempotent: allaqachon e'lon qilingan bo'lsa qayta yaratmaymiz.

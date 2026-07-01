@@ -32,7 +32,7 @@ public class GetUserQuotesQueryHandler : IRequestHandler<GetUserQuotesQuery, Pag
             .OrderByDescending(q => q.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToQuoteDto(_currentUser.UserId)
+            .ToQuoteDto(_currentUser.UserId, _currentUser.Email?.ToLowerInvariant())
             .ToListAsync(cancellationToken);
 
         return PagedResult<QuoteDto>.Create(items, page, pageSize, totalCount);

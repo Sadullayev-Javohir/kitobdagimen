@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -87,6 +88,17 @@ public class AddCommentCommandHandler : IRequestHandler<AddCommentCommand, Comme
                 IsPostAuthor = c.UserId == postAuthorId.Value
             })
             .FirstAsync(cancellationToken);
+
+        // Cheklangan foydalanuvchi izoh yozsa, uning avatari boshqalarga (post muallifiga
+        // real-time va bildirishnomada) ko'rsatilmasin.
+        var actorEmail = _currentUser.Email?.ToLowerInvariant();
+        dto = dto with
+        {
+            Author = dto.Author with
+            {
+                AvatarUrl = AvatarPrivacy.ForActor(actorEmail, dto.Author.AvatarUrl)
+            }
+        };
 
         // Notify the post author of a new comment (skip commenting on your own post).
         if (postAuthorId.Value != userId)

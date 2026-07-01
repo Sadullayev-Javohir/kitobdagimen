@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Users.Dtos;
@@ -42,6 +43,7 @@ public class SearchUsersQueryHandler
         var totalCount = await query.CountAsync(cancellationToken);
 
         var now = DateTime.UtcNow;
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         // Project users plus the raw connection info needed to derive the relationship state.
         var rows = await query
@@ -54,6 +56,7 @@ public class SearchUsersQueryHandler
                 u.Username,
                 u.FullName,
                 u.AvatarUrl,
+                u.Email,
                 u.Bio,
                 u.LastSeenAt,
                 HasStory = u.Stories.Any(s => s.ExpiresAt > now),
@@ -88,7 +91,7 @@ public class SearchUsersQueryHandler
                 Id = r.Id,
                 Username = r.Username,
                 FullName = r.FullName,
-                AvatarUrl = r.AvatarUrl,
+                AvatarUrl = AvatarPrivacy.Resolve(r.Email, r.AvatarUrl, viewerEmail),
                 Bio = r.Bio,
                 HasStory = r.HasStory,
                 LastSeenAt = r.LastSeenAt,

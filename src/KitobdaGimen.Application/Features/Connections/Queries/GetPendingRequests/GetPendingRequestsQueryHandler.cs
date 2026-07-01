@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Connections.Dtos;
@@ -25,6 +26,8 @@ public class GetPendingRequestsQueryHandler
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
+
         return await _db.Connections
             .Where(c => c.AddresseeId == userId && c.Status == ConnectionStatus.Pending)
             .OrderByDescending(c => c.CreatedAt)
@@ -40,7 +43,11 @@ public class GetPendingRequestsQueryHandler
                     Id = c.Requester.Id,
                     Username = c.Requester.Username,
                     FullName = c.Requester.FullName,
-                    AvatarUrl = c.Requester.AvatarUrl
+                    AvatarUrl = (c.Requester.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                                 && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                                 && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                        ? null
+                        : c.Requester.AvatarUrl
                 }
             })
             .ToListAsync(cancellationToken);

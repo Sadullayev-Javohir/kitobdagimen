@@ -12,6 +12,17 @@ public static class ChallengeCalendar
     /// <summary>Davr uzunligi — oylarda.</summary>
     public const int PeriodMonths = 1;
 
+    /// <summary>
+    /// Challenge rasman boshlanadigan birinchi davr (yil, oy). Bundan oldingi oylar uchun
+    /// g'olib aniqlanmaydi, e'lon qilinmaydi va reyting ko'rsatilmaydi. Challenge Iyul 2026 dan
+    /// boshlanadi.
+    /// </summary>
+    public static readonly (int Year, int Month) StartPeriod = (2026, 7);
+
+    /// <summary>Berilgan davr challenge boshlanishidan oldinmi (unda g'olib bo'lmaydi).</summary>
+    public static bool IsBeforeStart(int year, int month)
+        => year < StartPeriod.Year || (year == StartPeriod.Year && month < StartPeriod.Month);
+
     /// <summary>Berilgan oy uchun davr boshlanish oyi. Oylik davrda — o'sha oyning o'zi.</summary>
     private static int StartMonthOf(int month) => month;
 

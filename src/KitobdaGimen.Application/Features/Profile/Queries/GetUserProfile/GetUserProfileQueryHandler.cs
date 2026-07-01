@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Profile.Dtos;
@@ -20,6 +21,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, P
     public async Task<ProfileDto> Handle(GetUserProfileQuery request, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUser.UserId;
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         var profile = await _db.Users
             .Where(u => u.Id == request.UserId)
@@ -29,7 +31,11 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, P
                 Username = u.Username,
                 FullName = u.FullName,
                 Bio = u.Bio,
-                AvatarUrl = u.AvatarUrl,
+                AvatarUrl = (u.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : u.AvatarUrl,
                 CreatedAt = u.CreatedAt,
                 PostCount = u.Posts.Count,
                 FollowerCount = u.Followers.Count,

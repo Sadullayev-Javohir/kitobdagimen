@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -71,7 +72,7 @@ public class ToggleLikeCommandHandler : IRequestHandler<ToggleLikeCommand, LikeR
             {
                 Type = "like",
                 ActorName = actor.FullName,
-                ActorAvatarUrl = actor.AvatarUrl,
+                ActorAvatarUrl = AvatarPrivacy.ForActor(_currentUser.Email?.ToLowerInvariant(), actor.AvatarUrl),
                 Message = $"{actor.FullName} postingizni yoqtirdi",
                 Url = $"/posts/{request.PostId}"
             }, cancellationToken);

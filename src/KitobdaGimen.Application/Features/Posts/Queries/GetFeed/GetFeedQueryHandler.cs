@@ -33,6 +33,7 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
         var userId = _currentUser.UserId;
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
         var hasSearch = !string.IsNullOrWhiteSpace(request.Search);
 
         // ── Search: posts only, by recency (quotes are not searchable) ──
@@ -46,7 +47,7 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
                 p.User.FullName.ToLower().Contains(term));
 
             var total = await matches.CountAsync(cancellationToken);
-            var bucket = await TakeBucketAsync(matches, _db.Quotes.Where(_ => false), (page - 1) * pageSize, pageSize, userId, cancellationToken);
+            var bucket = await TakeBucketAsync(matches, _db.Quotes.Where(_ => false), (page - 1) * pageSize, pageSize, userId, viewerEmail, cancellationToken);
             return PagedResult<FeedItemDto>.Create(bucket, page, pageSize, total);
         }
 
@@ -62,7 +63,7 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
         {
             var postTotalG = await _db.Posts.CountAsync(cancellationToken);
             var quoteTotalG = await _db.Quotes.CountAsync(cancellationToken);
-            var itemsG = await TakeBucketAsync(_db.Posts, _db.Quotes, (page - 1) * pageSize, pageSize, userId, cancellationToken);
+            var itemsG = await TakeBucketAsync(_db.Posts, _db.Quotes, (page - 1) * pageSize, pageSize, userId, viewerEmail, cancellationToken);
             return PagedResult<FeedItemDto>.Create(itemsG, page, pageSize, postTotalG + quoteTotalG);
         }
 
@@ -78,10 +79,10 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
         var plan = FollowMixPlan.Build(page, pageSize, followedTotal, othersTotal);
 
         var followedItems = plan.FollowedTake > 0
-            ? await TakeBucketAsync(followedPosts, followedQuotes, plan.FollowedSkip, plan.FollowedTake, userId, cancellationToken)
+            ? await TakeBucketAsync(followedPosts, followedQuotes, plan.FollowedSkip, plan.FollowedTake, userId, viewerEmail, cancellationToken)
             : new List<FeedItemDto>();
         var otherItems = plan.NonFollowedTake > 0
-            ? await TakeBucketAsync(otherPosts, otherQuotes, plan.NonFollowedSkip, plan.NonFollowedTake, userId, cancellationToken)
+            ? await TakeBucketAsync(otherPosts, otherQuotes, plan.NonFollowedSkip, plan.NonFollowedTake, userId, viewerEmail, cancellationToken)
             : new List<FeedItemDto>();
 
         var items = Weave(plan.Order, followedItems, otherItems);
@@ -94,7 +95,7 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
     /// slice is exact.
     /// </summary>
     private static async Task<List<FeedItemDto>> TakeBucketAsync(
-        IQueryable<Post> posts, IQueryable<Quote> quotes, int skip, int take, int? userId, CancellationToken ct)
+        IQueryable<Post> posts, IQueryable<Quote> quotes, int skip, int take, int? userId, string? viewerEmail, CancellationToken ct)
     {
         var need = skip + take;
         if (need <= 0)
@@ -105,13 +106,13 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
         var postItems = await posts
             .OrderByDescending(p => p.CreatedAt).ThenByDescending(p => p.Id)
             .Take(need)
-            .ToPostDto(userId)
+            .ToPostDto(userId, viewerEmail)
             .ToListAsync(ct);
 
         var quoteItems = await quotes
             .OrderByDescending(q => q.CreatedAt).ThenByDescending(q => q.Id)
             .Take(need)
-            .ToQuoteDto(userId)
+            .ToQuoteDto(userId, viewerEmail)
             .ToListAsync(ct);
 
         return postItems.Select(FeedItemDto.FromPost)

@@ -16,10 +16,12 @@ public class GetReadingLeaderboardQueryHandler
     : IRequestHandler<GetReadingLeaderboardQuery, IReadOnlyList<LeaderboardUserDto>>
 {
     private readonly IAppDbContext _db;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetReadingLeaderboardQueryHandler(IAppDbContext db)
+    public GetReadingLeaderboardQueryHandler(IAppDbContext db, ICurrentUserService currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<LeaderboardUserDto>> Handle(
@@ -71,8 +73,10 @@ public class GetReadingLeaderboardQueryHandler
         // 3-bosqich: foydalanuvchi profil ma'lumotlari.
         var users = await _db.Users
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl })
+            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl, u.Email })
             .ToDictionaryAsync(u => u.Id, cancellationToken);
+
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         var result = new List<LeaderboardUserDto>(totals.Count);
         var rank = 0;
@@ -87,7 +91,7 @@ public class GetReadingLeaderboardQueryHandler
                 UserId = t.UserId,
                 FullName = u?.FullName ?? "Foydalanuvchi",
                 Username = u?.Username,
-                AvatarUrl = u?.AvatarUrl,
+                AvatarUrl = Common.AvatarPrivacy.Resolve(u?.Email, u?.AvatarUrl, viewerEmail),
                 Rank = rank,
                 Score = t.Pages,
                 Detail = $"{books} kitob"

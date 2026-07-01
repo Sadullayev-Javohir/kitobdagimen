@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -15,10 +16,11 @@ internal static class PostDetailLoader
     public static async Task<PostDetailDto> LoadAsync(
         IQueryable<Domain.Entities.Post> source,
         int? currentUserId,
+        string? viewerEmail,
         CancellationToken cancellationToken)
     {
         var post = await source
-            .ToPostDto(currentUserId)
+            .ToPostDto(currentUserId, viewerEmail)
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Post topilmadi.");
 
@@ -37,7 +39,11 @@ internal static class PostDetailLoader
                     Id = c.User.Id,
                     Username = c.User.Username,
                     FullName = c.User.FullName,
-                    AvatarUrl = c.User.AvatarUrl
+                    AvatarUrl = (c.User.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                                 && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                                 && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                        ? null
+                        : c.User.AvatarUrl
                 },
                 IsPostAuthor = c.UserId == post.Author.Id
             })

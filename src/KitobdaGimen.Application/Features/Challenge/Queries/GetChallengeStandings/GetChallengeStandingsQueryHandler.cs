@@ -10,15 +10,23 @@ public class GetChallengeStandingsQueryHandler
     : IRequestHandler<GetChallengeStandingsQuery, IReadOnlyList<ChallengeStandingDto>>
 {
     private readonly IAppDbContext _db;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetChallengeStandingsQueryHandler(IAppDbContext db)
+    public GetChallengeStandingsQueryHandler(IAppDbContext db, ICurrentUserService currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<IReadOnlyList<ChallengeStandingDto>> Handle(
         GetChallengeStandingsQuery request, CancellationToken cancellationToken)
     {
+        // Challenge boshlanishidan (Iyul 2026) oldingi oylar uchun reyting ko'rsatilmaydi.
+        if (ChallengeCalendar.IsBeforeStart(request.Year, request.Month))
+        {
+            return Array.Empty<ChallengeStandingDto>();
+        }
+
         var (from, to) = ChallengeCalendar.Range(request.Year, request.Month);
         var elapsedDays = Math.Max(1, ChallengeCalendar.ElapsedDays(request.Year, request.Month));
 
@@ -58,8 +66,10 @@ public class GetChallengeStandingsQueryHandler
         // 3-bosqich: profil ma'lumotlari.
         var users = await _db.Users
             .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl })
+            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl, u.Email })
             .ToDictionaryAsync(u => u.Id, cancellationToken);
+
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         var result = new List<ChallengeStandingDto>(totals.Count);
         var rank = 0;
@@ -74,7 +84,7 @@ public class GetChallengeStandingsQueryHandler
                 UserId = t.UserId,
                 FullName = u?.FullName ?? "Foydalanuvchi",
                 Username = u?.Username,
-                AvatarUrl = u?.AvatarUrl,
+                AvatarUrl = AvatarPrivacy.Resolve(u?.Email, u?.AvatarUrl, viewerEmail),
                 Rank = rank,
                 PagesRead = t.Pages,
                 BooksRead = books,

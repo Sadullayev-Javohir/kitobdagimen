@@ -45,7 +45,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, PagedRe
             .OrderByDescending(m => m.SentAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToMessageDto(userId)
+            .ToMessageDto(userId, _currentUser.Email?.ToLowerInvariant())
             .ToListAsync(cancellationToken);
 
         items.Reverse();

@@ -50,6 +50,7 @@ public class GetAnnouncedWinnersQueryHandler
         }
 
         var currentUserId = _currentUser.UserId;
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         var winners = await _db.ChallengeWinners
             .Where(w => w.Year == year && w.Month == month)
@@ -63,7 +64,11 @@ public class GetAnnouncedWinnersQueryHandler
                 UserId = w.UserId,
                 FullName = w.User.FullName,
                 Username = w.User.Username,
-                AvatarUrl = w.User.AvatarUrl,
+                AvatarUrl = (w.User.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : w.User.AvatarUrl,
                 PagesRead = w.PagesRead,
                 BooksRead = w.BooksRead,
                 ActiveDays = w.ActiveDays,

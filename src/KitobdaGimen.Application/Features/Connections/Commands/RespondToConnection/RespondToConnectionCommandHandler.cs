@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -51,8 +52,10 @@ public class RespondToConnectionCommandHandler
 
         var requester = await _db.Users
             .Where(u => u.Id == connection.RequesterId)
-            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl })
+            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl, u.Email })
             .FirstAsync(cancellationToken);
+
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         if (request.Accept)
         {
@@ -68,7 +71,7 @@ public class RespondToConnectionCommandHandler
                 Type = "connection_accepted",
                 ActorId = userId,
                 ActorName = me.FullName,
-                ActorAvatarUrl = me.AvatarUrl,
+                ActorAvatarUrl = AvatarPrivacy.ForActor(viewerEmail, me.AvatarUrl),
                 Message = $"{me.FullName} taklifingizni qabul qildi",
                 Url = "/chat"
             }, cancellationToken);
@@ -86,7 +89,7 @@ public class RespondToConnectionCommandHandler
                 Id = requester.Id,
                 Username = requester.Username,
                 FullName = requester.FullName,
-                AvatarUrl = requester.AvatarUrl
+                AvatarUrl = AvatarPrivacy.Resolve(requester.Email, requester.AvatarUrl, viewerEmail)
             }
         };
     }

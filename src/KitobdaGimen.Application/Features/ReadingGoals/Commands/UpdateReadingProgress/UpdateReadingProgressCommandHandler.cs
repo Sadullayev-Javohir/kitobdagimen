@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -110,7 +111,7 @@ public class UpdateReadingProgressCommandHandler : IRequestHandler<UpdateReading
             Type = "reading",
             ActorId = userId,
             ActorName = actor.FullName,
-            ActorAvatarUrl = actor.AvatarUrl,
+            ActorAvatarUrl = AvatarPrivacy.ForActor(_currentUser.Email?.ToLowerInvariant(), actor.AvatarUrl),
             Message = message,
             Url = $"/profile/{(string.IsNullOrWhiteSpace(actor.Username) ? userId.ToString() : actor.Username)}"
         }, cancellationToken);

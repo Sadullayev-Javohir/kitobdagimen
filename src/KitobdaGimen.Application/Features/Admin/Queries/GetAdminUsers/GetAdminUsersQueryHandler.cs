@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Admin.Dtos;
 using KitobdaGimen.Domain.Enums;
@@ -21,6 +22,8 @@ public class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQuery, IRe
     {
         await AdminGuard.RequireAsync(_db, _currentUser, UserRole.Admin, cancellationToken);
 
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
+
         return await _db.Users
             .OrderByDescending(u => u.CreatedAt)
             .Select(u => new AdminUserDto
@@ -29,7 +32,11 @@ public class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQuery, IRe
                 Username = u.Username,
                 FullName = u.FullName,
                 Email = u.Email,
-                AvatarUrl = u.AvatarUrl,
+                AvatarUrl = (u.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : u.AvatarUrl,
                 Role = u.Role,
                 CreatedAt = u.CreatedAt,
                 LastSeenAt = u.LastSeenAt,

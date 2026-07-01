@@ -59,7 +59,7 @@ public class ChallengeHandlerTests : TestBase
         SeedReading(db, 3, 3, 3, date, 80);
         await db.SaveChangesAsync();
 
-        var handler = new GetChallengeStandingsQueryHandler(db);
+        var handler = new GetChallengeStandingsQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetChallengeStandingsQuery { Year = y, Month = m, Limit = 3 }, CancellationToken.None);
 
@@ -82,7 +82,7 @@ public class ChallengeHandlerTests : TestBase
         SeedReading(db, 2, 2, 2, date.AddMonths(-6), 999); // davrdan tashqarida
         await db.SaveChangesAsync();
 
-        var handler = new GetChallengeStandingsQueryHandler(db);
+        var handler = new GetChallengeStandingsQueryHandler(db, new FakeCurrentUserService());
         var result = await handler.Handle(
             new GetChallengeStandingsQuery { Year = y, Month = m, Limit = 3 }, CancellationToken.None);
 
@@ -183,7 +183,7 @@ public class ChallengeHandlerTests : TestBase
         {
             if (request is GetChallengeStandingsQuery q)
             {
-                var handler = new GetChallengeStandingsQueryHandler(_db);
+                var handler = new GetChallengeStandingsQueryHandler(_db, new FakeCurrentUserService());
                 var result = await handler.Handle(q, cancellationToken);
                 return (TResponse)result;
             }

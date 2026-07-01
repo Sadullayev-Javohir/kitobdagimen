@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -38,14 +39,20 @@ public class SendConnectionRequestCommandHandler
 
         var addressee = await _db.Users
             .Where(u => u.Id == request.AddresseeId)
-            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl })
+            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl, u.Email })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException("Foydalanuvchi", request.AddresseeId);
 
         var me = await _db.Users
             .Where(u => u.Id == userId)
-            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl })
+            .Select(u => new { u.Id, u.Username, u.FullName, u.AvatarUrl, u.Email })
             .FirstAsync(cancellationToken);
+
+        // Avatar maxfiyligi: joriy foydalanuvchi (viewer) uchun addressee avatari va
+        // actor (me) avatari cheklangan foydalanuvchi bo'lsa yashiriladi.
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
+        var addresseeAvatar = AvatarPrivacy.Resolve(addressee.Email, addressee.AvatarUrl, viewerEmail);
+        var meAvatar = AvatarPrivacy.ForActor(viewerEmail, me.AvatarUrl);
 
         // Any existing connection between the two, in either direction.
         var existing = await _db.Connections.FirstOrDefaultAsync(
@@ -58,7 +65,7 @@ public class SendConnectionRequestCommandHandler
             // Already connected — no-op.
             if (existing.Status == ConnectionStatus.Accepted)
             {
-                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addressee.AvatarUrl);
+                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addresseeAvatar);
             }
 
             // The other user already invited me → auto-accept.
@@ -70,15 +77,15 @@ public class SendConnectionRequestCommandHandler
                 await ConversationHelper.GetOrCreateAsync(_db, userId, request.AddresseeId, cancellationToken);
 
                 // Tell the original requester their invite was accepted.
-                await NotifyAcceptedAsync(existing.RequesterId, me.Id, me.FullName, me.AvatarUrl, cancellationToken);
+                await NotifyAcceptedAsync(existing.RequesterId, me.Id, me.FullName, meAvatar, cancellationToken);
 
-                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addressee.AvatarUrl);
+                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addresseeAvatar);
             }
 
             // I already sent a pending invite → return as-is.
             if (existing.Status == ConnectionStatus.Pending && existing.RequesterId == userId)
             {
-                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addressee.AvatarUrl);
+                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addresseeAvatar);
             }
 
             // Declined previously. Reuse the (me → other) row if that is the one that exists;
@@ -89,8 +96,8 @@ public class SendConnectionRequestCommandHandler
                 existing.CreatedAt = DateTime.UtcNow;
                 existing.RespondedAt = null;
                 await _db.SaveChangesAsync(cancellationToken);
-                await NotifyRequestAsync(existing, me.Id, me.FullName, me.AvatarUrl, cancellationToken);
-                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addressee.AvatarUrl);
+                await NotifyRequestAsync(existing, me.Id, me.FullName, meAvatar, cancellationToken);
+                return ToDto(existing, userId, addressee.Id, addressee.Username, addressee.FullName, addresseeAvatar);
             }
         }
 
@@ -104,9 +111,9 @@ public class SendConnectionRequestCommandHandler
         _db.Connections.Add(connection);
         await _db.SaveChangesAsync(cancellationToken);
 
-        await NotifyRequestAsync(connection, me.Id, me.FullName, me.AvatarUrl, cancellationToken);
+        await NotifyRequestAsync(connection, me.Id, me.FullName, meAvatar, cancellationToken);
 
-        return ToDto(connection, userId, addressee.Id, addressee.Username, addressee.FullName, addressee.AvatarUrl);
+        return ToDto(connection, userId, addressee.Id, addressee.Username, addressee.FullName, addresseeAvatar);
     }
 
     private Task NotifyRequestAsync(Connection connection, int actorId, string actorName, string? actorAvatar, CancellationToken ct)

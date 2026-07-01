@@ -94,7 +94,7 @@ public class GetQuotesQueryHandler : IRequestHandler<GetQuotesQuery, PagedResult
             .ThenByDescending(q => q.Id)
             .Skip(skip)
             .Take(take)
-            .ToQuoteDto(userId)
+            .ToQuoteDto(userId, _currentUser.Email?.ToLowerInvariant())
             .ToListAsync(ct);
 
     /// <summary>Interleaves the two buckets following the plan's cadence, falling back to

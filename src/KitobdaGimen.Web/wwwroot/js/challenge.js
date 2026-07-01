@@ -322,15 +322,37 @@
             }
         }
 
+        // Yillik kalendar gorizontal aylantiriladigan. Joriy yil ko'rsatilganda
+        // yanvar emas, balki hozirgi oy ko'rinadigan qilib aylantiramiz.
+        function scrollYearToMonth(calEl, year) {
+            const now = new Date();
+            if (year !== now.getFullYear()) {
+                host.scrollLeft = 0;
+                return;
+            }
+            const mm = String(now.getMonth() + 1).padStart(2, "0");
+            const ymPrefix = year + "-" + mm;
+            let cell = calEl.querySelector('.gh-day[data-date="' + ymPrefix + '-01"]')
+                || calEl.querySelector('.gh-day[data-date^="' + ymPrefix + '"]');
+            if (!cell) { return; }
+            const col = cell.closest(".gh-week");
+            if (!col) { return; }
+            const colRect = col.getBoundingClientRect();
+            const hostRect = host.getBoundingClientRect();
+            host.scrollLeft += (colRect.left - hostRect.left) - 40;
+        }
+
         function renderYear(cal) {
             host.innerHTML = "";
-            host.appendChild(buildHeatmap(cal.days || [], cal.maxPages || 0, detailEl, true));
+            const calEl = buildHeatmap(cal.days || [], cal.maxPages || 0, detailEl, true);
+            host.appendChild(calEl);
             setSummary(
                 '<span class="material-symbols-outlined">menu_book</span> <strong>' + (cal.totalBooks || 0) + '</strong> kitob' +
                 ' · <span class="material-symbols-outlined">description</span> <strong>' + (cal.totalPages || 0) + '</strong> bet' +
                 ' · <span class="material-symbols-outlined">event_available</span> <strong>' + (cal.activeDays || 0) + '</strong> kun o\'qildi'
             );
             resetDetail();
+            scrollYearToMonth(calEl, cal.year);
         }
 
         function renderDaily() {
@@ -387,7 +409,7 @@
         if (nextBtn) { nextBtn.addEventListener("click", () => { if (currentYear < maxYear) { showYear(currentYear + 1); } }); }
 
         updateYearNav();
-        setMode("year");
+        setMode("daily");
     }
 
     // ─────────────────────── Ishga tushirish ───────────────────────

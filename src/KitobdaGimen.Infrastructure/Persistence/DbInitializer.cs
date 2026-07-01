@@ -25,6 +25,7 @@ public static class DbInitializer
         {
             await db.Database.MigrateAsync(ct);
             await SeedBooksAsync(db, logger, ct);
+            await CleanupPreStartWinnersAsync(db, logger, ct);
         }
         catch (Exception ex)
         {
@@ -59,5 +60,25 @@ public static class DbInitializer
         db.Books.AddRange(books);
         await db.SaveChangesAsync(ct);
         logger.LogInformation("{Count} ta namuna kitob seed qilindi.", books.Length);
+    }
+
+    /// <summary>
+    /// Challenge boshlanishidan (Iyul 2026) oldingi oylar uchun eski g'olib yozuvlarini o'chiradi
+    /// (masalan May/Iyun). Idempotent — keyingi startuplarda o'chiradigan narsa qolmaydi.
+    /// G'olibga bog'liq like yozuvlari DB darajasidagi cascade orqali o'chiriladi.
+    /// </summary>
+    private static async Task CleanupPreStartWinnersAsync(AppDbContext db, ILogger logger, CancellationToken ct)
+    {
+        var (sy, sm) = Application.Common.ChallengeCalendar.StartPeriod;
+
+        var removed = await db.ChallengeWinners
+            .Where(w => w.Year < sy || (w.Year == sy && w.Month < sm))
+            .ExecuteDeleteAsync(ct);
+
+        if (removed > 0)
+        {
+            logger.LogInformation(
+                "Challenge boshlanishidan oldingi {Count} ta g'olib yozuvi o'chirildi.", removed);
+        }
     }
 }

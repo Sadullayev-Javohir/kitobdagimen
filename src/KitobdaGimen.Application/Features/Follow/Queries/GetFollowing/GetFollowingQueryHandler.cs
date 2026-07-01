@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
 using KitobdaGimen.Application.Features.Follow.Dtos;
@@ -24,6 +25,7 @@ public class GetFollowingQueryHandler : IRequestHandler<GetFollowingQuery, Paged
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
         var currentUserId = _currentUser.UserId;
+        var viewerEmail = _currentUser.Email?.ToLowerInvariant();
 
         // Follow rows originating from this user; the followed person is the listed user.
         var source = _db.Follows
@@ -40,7 +42,11 @@ public class GetFollowingQueryHandler : IRequestHandler<GetFollowingQuery, Paged
                 Id = f.Following.Id,
                 Username = f.Following.Username,
                 FullName = f.Following.FullName,
-                AvatarUrl = f.Following.AvatarUrl,
+                AvatarUrl = (f.Following.Email.ToLower() == AvatarPrivacy.RestrictedEmail
+                             && viewerEmail != AvatarPrivacy.AllowedViewerEmail
+                             && viewerEmail != AvatarPrivacy.RestrictedEmail)
+                    ? null
+                    : f.Following.AvatarUrl,
                 Bio = f.Following.Bio,
                 IsFollowedByCurrentUser = currentUserId != null &&
                     f.Following.Followers.Any(x => x.FollowerId == currentUserId)

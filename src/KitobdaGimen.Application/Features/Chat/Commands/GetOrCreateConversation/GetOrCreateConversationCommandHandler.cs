@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -44,7 +45,8 @@ public class GetOrCreateConversationCommandHandler
             {
                 Id = other.Id,
                 FullName = other.FullName,
-                AvatarUrl = other.AvatarUrl
+                AvatarUrl = AvatarPrivacy.Resolve(
+                    other.Email, other.AvatarUrl, _currentUser.Email?.ToLowerInvariant())
             },
             LastMessageText = null,
             LastMessageAt = null,
