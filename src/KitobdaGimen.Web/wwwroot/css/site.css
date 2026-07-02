@@ -416,6 +416,60 @@ textarea.input { resize: vertical; min-height: 90px; }
 .lp-footer-links a:hover { color: var(--primary); text-decoration: none; }
 .lp-copy { grid-column: 1 / -1; font-size: 13px; margin: 4px 0 0; }
 
+/* ===== Landing — Challenge (oylik kitobxonlik musobaqasi) ===== */
+.lp-challenge {
+    background: var(--primary-soft); border-radius: var(--radius);
+    padding: 56px 40px; margin-top: 32px;
+}
+.lp-challenge-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 16px; margin-bottom: 16px; border-radius: var(--radius-pill);
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 13px;
+}
+.lp-challenge-badge .material-symbols-outlined { font-size: 18px; }
+.lp-challenge .lp-section-head { margin-bottom: 36px; }
+.lp-podium {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 18px; align-items: end; max-width: 860px; margin: 0 auto;
+}
+.lp-podium-card {
+    text-align: center; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 20px 24px;
+    transition: box-shadow .2s, transform .2s;
+}
+.lp-podium-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+.lp-podium-card.is-first {
+    padding-top: 40px; padding-bottom: 32px;
+    border-color: var(--accent); box-shadow: var(--shadow);
+}
+.lp-medal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 58px; height: 58px; border-radius: var(--radius-pill);
+    color: #fff; font-family: var(--serif); font-weight: 700; font-size: 24px;
+    margin-bottom: 14px;
+}
+.lp-medal.gold   { background: linear-gradient(135deg, #f6c34a, #e0a021); }
+.lp-medal.silver { background: linear-gradient(135deg, #cfd4dc, #9aa3b0); }
+.lp-medal.bronze { background: linear-gradient(135deg, #d9955b, #b46a31); }
+.lp-podium-card h3 { font-size: 19px; margin: 0; }
+.lp-podium-card p { color: var(--text-secondary); font-size: 14.5px; margin: 6px 0 16px; }
+.lp-prize {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: var(--radius-pill);
+    background: var(--accent-soft, var(--primary-soft)); color: var(--accent);
+    font-weight: 700; font-size: 13.5px;
+}
+.lp-prize .material-symbols-outlined { font-size: 18px; }
+.lp-challenge-rules {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 14px 28px;
+    max-width: 820px; margin: 36px auto 0; list-style: none; padding: 0;
+}
+.lp-challenge-rules li {
+    display: inline-flex; align-items: center; gap: 9px;
+    color: var(--text-secondary); font-weight: 600; font-size: 14.5px;
+}
+.lp-challenge-rules .material-symbols-outlined { font-size: 20px; color: var(--primary); }
+
 /* ===== Landing — moslashuvchanlik (1024 / 768 / 480 / 360) ===== */
 @media (max-width: 1024px) {
     .lp-hero h1 { font-size: 44px; }
@@ -435,6 +489,9 @@ textarea.input { resize: vertical; min-height: 90px; }
     .lp-section-head { margin-bottom: 32px; }
     .lp-section-head h2 { font-size: 27px; }
     .lp-grid, .lp-grid-3, .lp-showcase { grid-template-columns: 1fr; }
+    .lp-challenge { padding: 44px 22px; }
+    .lp-podium { grid-template-columns: 1fr; gap: 14px; }
+    .lp-podium-card, .lp-podium-card.is-first { padding: 24px 20px; transform: none; }
     .lp-feature { padding: 24px 20px; }
     .lp-feature h3, .lp-show-card h3, .lp-step h3 { font-size: 18px; }
     .lp-cta { padding: 44px 24px; margin-top: 44px; }

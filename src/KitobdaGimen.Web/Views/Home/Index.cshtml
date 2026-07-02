@@ -5,7 +5,7 @@
 
     // --- SEO ---
     var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
-    ViewData["Description"] = "kitobdagimen.uz — o'zbek kitobxonlari uchun bepul ijtimoiy platforma. Kitob taqrizlari yozing, sevimli iqtiboslarni ulashing, o'qish maqsadlari qo'ying, storylar joylang va boshqa kitobsevarlar bilan real vaqtda suhbatlashing.";
+    ViewData["Description"] = "kitobdagimen.uz — o'zbek kitobxonlari uchun bepul ijtimoiy platforma. Kitob haqida post yozing, sevimli iqtiboslarni ulashing, oylik kitobxonlik musobaqasida qatnashib kitob yutib oling, o'qish maqsadlari qo'ying va boshqa kitobsevarlar bilan real vaqtda suhbatlashing.";
     // Barcha landing manzillari (/, /landing, /Home/Landing) bitta kanonik URL'ga birlashtiriladi.
     ViewData["Canonical"] = seoBase + "/";
     ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.Website(seoBase);
@@ -24,6 +24,7 @@
         </a>
         <nav class="lp-nav-links">
             <a href="#imkoniyatlar">Imkoniyatlar</a>
+            <a href="#challenge">Challenge</a>
             <a href="#qanday">Qanday ishlaydi</a>
             <a href="/qollanma">Qo'llanma</a>
             <a href="#savol">Savollar</a>
@@ -40,9 +41,9 @@
         <span class="lp-eyebrow">O'zbek kitobxonlari uchun ijtimoiy platforma</span>
         <h1>O'qigan kitoblaringiz bilan yashaydigan jamiyat</h1>
         <p class="lp-sub">
-            kitobdagimen.uz — fikrlaringizni ulashing, o'qish maqsadlaringizni belgilang,
-            sevimli iqtiboslaringizni saqlang va boshqa kitobxonlar bilan suhbatlashing.
-            Hammasi bitta joyda, o'zbek tilida.
+            kitobdagimen.uz — post yozib fikrlaringizni ulashing, sevimli iqtiboslaringizni
+            saqlang, oylik kitobxonlik musobaqasida qatnashib kitob yutib oling va boshqa
+            kitobxonlar bilan suhbatlashing. Hammasi bitta joyda, o'zbek tilida.
         </p>
         <div class="lp-hero-actions">
             @if (isAuth)
@@ -83,7 +84,7 @@
 
         <ul class="lp-trust">
             <li><span class="material-symbols-outlined">verified</span> 100% bepul</li>
-            <li><span class="material-symbols-outlined">bolt</span> Bir bosishda kirish</li>
+            <li><span class="material-symbols-outlined">emoji_events</span> Oylik musobaqa — kitob sovg'a</li>
             <li><span class="material-symbols-outlined">forum</span> Real vaqt suhbat</li>
             <li><span class="material-symbols-outlined">language</span> O'zbek tilida</li>
         </ul>
@@ -119,19 +120,27 @@
         </div>
         <div class="lp-grid">
             <div class="lp-feature">
-                <span class="lp-feature-icon"><span class="material-symbols-outlined">rate_review</span></span>
-                <h3>Kitob taqrizlari</h3>
-                <p>O'qigan kitoblaringiz haqida fikr-mulohazangizni yozing, baholang va boshqalar bilan ulashing.</p>
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">edit_note</span></span>
+                <h3>Postlar va taqrizlar</h3>
+                <p>O'qigan kitobingiz haqida post yozing, rasm biriktiring va baho bering. Postlaringizga
+                    yoqtirishlar va izohlar orqali jonli munozara boshlang.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">format_quote</span></span>
+                <h3>Iqtiboslar</h3>
+                <p>Kitobdagi eng ta'sirchan satrlarni chiroyli kartochka ko'rinishida saqlang. Iqtiboslarni
+                    yoqtiring, izoh qoldiring va do'stlaringizga ulashing.</p>
+            </div>
+            <div class="lp-feature">
+                <span class="lp-feature-icon"><span class="material-symbols-outlined">emoji_events</span></span>
+                <h3>Challenge — oylik musobaqa</h3>
+                <p>Har oy eng ko'p kitob o'qiganlar musobaqasida qatnashing. 1-, 2- va 3-o'rin
+                    egalari kitob sovg'asi bilan taqdirlanadi.</p>
             </div>
             <div class="lp-feature">
                 <span class="lp-feature-icon"><span class="material-symbols-outlined">target</span></span>
                 <h3>O'qish maqsadlari</h3>
                 <p>Yillik kitob maqsadingizni belgilang, o'qilgan betlarni kuzating va rivojlanishingizni ko'ring.</p>
-            </div>
-            <div class="lp-feature">
-                <span class="lp-feature-icon"><span class="material-symbols-outlined">format_quote</span></span>
-                <h3>Iqtiboslar</h3>
-                <p>Eng yoqqan satrlarni saqlang, shaxsiy to'plamingizni yarating va do'stlaringizga ulashing.</p>
             </div>
             <div class="lp-feature">
                 <span class="lp-feature-icon"><span class="material-symbols-outlined">forum</span></span>
@@ -142,11 +151,6 @@
                 <span class="lp-feature-icon"><span class="material-symbols-outlined">auto_stories</span></span>
                 <h3>Storylar</h3>
                 <p>Hozir nima o'qiyotganingizni qisqa story ko'rinishida — 24 soatlik lahzalarda bo'lishing.</p>
-            </div>
-            <div class="lp-feature">
-                <span class="lp-feature-icon"><span class="material-symbols-outlined">group</span></span>
-                <h3>Kitobxonlar jamiyati</h3>
-                <p>Qiziqishlaringizga mos kitobxonlarni kuzating, yangi do'stlar toping va jamiyatga qo'shiling.</p>
             </div>
         </div>
     </section>
@@ -185,6 +189,92 @@
                     <p>Ko'zingizga qulay rejimni tanlang — istalgan vaqtda kunduzgi yoki tungi ko'rinishga o'ting.</p>
                 </div>
             </article>
+        </div>
+    </section>
+
+    <section class="lp-section" id="postlar">
+        <div class="lp-section-head">
+            <h2>Postlar va iqtiboslar bilan yashang</h2>
+            <p class="muted">O'qiganlaringizni jamiyat bilan bo'lishing — har bir fikr va satr o'z o'rnini topsin</p>
+        </div>
+        <div class="lp-showcase">
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">edit_note</span></span>
+                <div>
+                    <h3>Post yozing</h3>
+                    <p>O'qigan kitobingiz haqida taassurotlaringizni yozing, muqova rasmini biriktiring va
+                        yulduzcha bilan baholang. Postingiz kuzatuvchilaringiz tasmasida paydo bo'ladi.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">chat_bubble</span></span>
+                <div>
+                    <h3>Muhokama qiling</h3>
+                    <p>Har bir postga yoqtirish bosing va izoh qoldiring. Yoqqan kitoblar atrofida
+                        jonli suhbat va tavsiyalar tug'iladi.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">format_quote</span></span>
+                <div>
+                    <h3>Iqtibos saqlang</h3>
+                    <p>Kitobdagi eng yoqqan satrni chiroyli iqtibos kartochkasiga aylantiring — muallif va
+                        kitob nomi bilan. Shaxsiy iqtiboslar to'plamingizni yig'ing.</p>
+                </div>
+            </article>
+            <article class="lp-show-card">
+                <span class="lp-show-icon"><span class="material-symbols-outlined">share</span></span>
+                <div>
+                    <h3>Ulashing</h3>
+                    <p>Yoqqan iqtibos va postlarni do'stlaringizga ulashing. Iqtiboslar qidiruv tizimlarida
+                        ham indekslanadi — o'qiganingiz boshqalarga ham yetib boradi.</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="lp-section" id="challenge">
+        <div class="lp-challenge">
+            <div class="lp-section-head">
+                <span class="lp-challenge-badge">
+                    <span class="material-symbols-outlined">emoji_events</span>
+                    Challenge
+                </span>
+                <h2>Har oy — kitobxonlik musobaqasi</h2>
+                <p class="muted">
+                    Har oyning 1-kunidan oxirgi kunigacha eng ko'p kitob o'qigan kitobxonlar bellashadi.
+                    Oy yakunida eng zo'r 3 kitobxon g'olib deb e'lon qilinadi va kitob sovg'asi bilan
+                    taqdirlanadi. Har kuni o'qiganingizni belgilab boring — yetakchilar reytingi jonli yangilanadi.
+                </p>
+            </div>
+
+            <div class="lp-podium">
+                <div class="lp-podium-card">
+                    <span class="lp-medal silver">2</span>
+                    <h3>2-o'rin</h3>
+                    <p>Oyning kumush kitobxoni</p>
+                    <span class="lp-prize"><span class="material-symbols-outlined">redeem</span> Sovg'a kitob</span>
+                </div>
+                <div class="lp-podium-card is-first">
+                    <span class="lp-medal gold">1</span>
+                    <h3>1-o'rin</h3>
+                    <p>Oyning eng faol kitobxoni</p>
+                    <span class="lp-prize"><span class="material-symbols-outlined">redeem</span> Sovg'a kitob</span>
+                </div>
+                <div class="lp-podium-card">
+                    <span class="lp-medal bronze">3</span>
+                    <h3>3-o'rin</h3>
+                    <p>Oyning bronza kitobxoni</p>
+                    <span class="lp-prize"><span class="material-symbols-outlined">redeem</span> Sovg'a kitob</span>
+                </div>
+            </div>
+
+            <ul class="lp-challenge-rules">
+                <li><span class="material-symbols-outlined">calendar_month</span> Har oy yangi davr — 1-kundan oxirgi kungacha</li>
+                <li><span class="material-symbols-outlined">trending_up</span> Jonli reyting — yetakchilarni real vaqtda kuzating</li>
+                <li><span class="material-symbols-outlined">workspace_premium</span> Oy oxirida g'oliblar tantanali e'lon qilinadi</li>
+                <li><span class="material-symbols-outlined">redeem</span> 1-, 2- va 3-o'rin uchun kitob sovg'asi</li>
+            </ul>
         </div>
     </section>
 
@@ -227,6 +317,25 @@
                 <p>Faqat Google hisobingiz orqali bir bosishda kirasiz. Alohida parol o'ylab topish yoki email tasdiqlash shart emas.</p>
             </details>
             <details class="lp-faq-item">
+                <summary>Challenge (musobaqa) qanday ishlaydi?</summary>
+                <p>Har oy alohida davr — oyning 1-kunidan oxirgi kunigacha davom etadi. Shu davrda eng ko'p
+                    kitob o'qigan 3 kitobxon g'olib bo'ladi. Yetakchilar reytingi jonli yangilanib turadi,
+                    oy oxirida esa g'oliblar rasman e'lon qilinadi. Qatnashish uchun kutubxonangizga kitob
+                    qo'shib, har kuni o'qiganingizni belgilab boring.</p>
+            </details>
+            <details class="lp-faq-item">
+                <summary>G'oliblarga qanday sovg'a beriladi?</summary>
+                <p>Har oyning 1-, 2- va 3-o'rin egalari kitob sovg'asi bilan taqdirlanadi. Sovg'a kitob
+                    g'olibning profilida ko'rsatiladi. Ya'ni ko'proq o'qisangiz — sovg'a kitob yutib olish
+                    imkoniyatingiz shuncha yuqori bo'ladi.</p>
+            </details>
+            <details class="lp-faq-item">
+                <summary>Post va iqtibos qanday joylayman?</summary>
+                <p>Tasmadan post yozib, unga kitob, rasm va baho biriktirasiz. Iqtibos uchun esa kitobdan
+                    yoqqan satrni tanlab, chiroyli kartochka ko'rinishida saqlaysiz. Ikkalasiga ham boshqalar
+                    yoqtirish bosishi va izoh qoldirishi mumkin.</p>
+            </details>
+            <details class="lp-faq-item">
                 <summary>Kitoblarimni qanday qo'shaman?</summary>
                 <p>Tasma yoki kutubxona sahifasida kitobni qidiring; agar topilmasa, nom, muallif va muqova bilan yangi kitob qo'shasiz.</p>
             </details>
@@ -258,7 +367,7 @@
 
     <section class="lp-cta">
         <h2>Bugun o'qish sayohatingizni boshlang</h2>
-        <p>kitobdagimen.uz bilan har bir o'qilgan kitob unutilmas bo'ladi.</p>
+        <p>Post yozing, iqtibos saqlang va oylik musobaqada kitob yutib oling — hammasi bepul.</p>
         <a class="btn btn-accent lp-cta-btn-lg" href="@primaryHref">
             @if (isAuth)
             {
@@ -281,6 +390,8 @@
         </div>
         <nav class="lp-footer-links">
             <a href="#imkoniyatlar">Imkoniyatlar</a>
+            <a href="#postlar">Postlar va iqtiboslar</a>
+            <a href="#challenge">Challenge</a>
             <a href="#qanday">Qanday ishlaydi</a>
             <a href="/qollanma">Qo'llanma</a>
             <a href="#savol">Savollar</a>
