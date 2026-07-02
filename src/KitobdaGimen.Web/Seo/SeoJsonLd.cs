@@ -35,7 +35,7 @@ public static class SeoJsonLd
                 ["@id"] = baseUrl + "/#website",
                 ["url"] = baseUrl + "/",
                 ["name"] = "kitobdagimen.uz",
-                ["description"] = "O'zbek kitobxonlari uchun ijtimoiy platforma — kitob taqrizlari, iqtiboslar, o'qish maqsadlari va suhbat.",
+                ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma — kitob haqida post yozish, iqtiboslar saqlash, oylik kitobxonlik musobaqasida (Challenge) qatnashib kitob yutish, o'qish maqsadlari va real vaqt suhbat.",
                 ["inLanguage"] = "uz",
                 ["publisher"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#organization" }
             },
