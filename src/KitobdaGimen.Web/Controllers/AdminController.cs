@@ -7,6 +7,7 @@ using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteUser;
 using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
 using KitobdaGimen.Application.Features.Admin.Analytics;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
+using KitobdaGimen.Application.Features.Home.Queries.GetLandingStats;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
 using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
@@ -157,6 +158,37 @@ public class AdminController : AppController
         {
             await _cache.FlushAsync();
             return Json(new { success = true, message = "Barcha keshlar tozalandi" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Xato: {ex.Message}" });
+        }
+    }
+
+    /// <summary>
+    /// SuperAdmin: landing sahifa statistikasini majburan qayta hisoblash. Odatda snapshot
+    /// har kuni o'zi yangilanadi; bu tugma avtomatika ishlamay qolgan holat uchun.
+    /// </summary>
+    [HttpPost("landing-stats/refresh")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RefreshLandingStats()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            var stats = await Mediator.Send(new GetLandingStatsQuery(ForceRefresh: true));
+            return Json(new
+            {
+                success = true,
+                stats.UserCount,
+                stats.BooksRead,
+                stats.PagesRead,
+                message = $"Yangilandi: {stats.UserCount} kitobxon, {stats.BooksRead} kitob, {stats.PagesRead} bet."
+            });
         }
         catch (Exception ex)
         {

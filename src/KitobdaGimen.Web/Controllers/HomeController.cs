@@ -1,4 +1,5 @@
 using System.IO;
+using KitobdaGimen.Application.Features.Home.Queries.GetLandingStats;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KitobdaGimen.Web.Controllers;
@@ -16,7 +17,7 @@ public class HomeController : AppController
 
     /// <summary>Landing page for anonymous users; authenticated users go straight to the feed.
     /// Mobile visitors get the lightweight login page instead of the marketing landing.</summary>
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         try
         {
@@ -33,6 +34,7 @@ public class HomeController : AppController
                 return RedirectToAction(nameof(Login));
             }
 
+            await LoadLandingStatsAsync();
             return View();
         }
         catch (Exception ex)
@@ -43,7 +45,7 @@ public class HomeController : AppController
     }
 
     /// <summary>Renders the marketing landing page on desktop; mobile is redirected to login/feed.</summary>
-    public IActionResult Landing()
+    public async Task<IActionResult> Landing()
     {
         try
         {
@@ -54,6 +56,7 @@ public class HomeController : AppController
                     : RedirectToAction(nameof(Login));
             }
 
+            await LoadLandingStatsAsync();
             return View("Index");
         }
         catch (Exception ex)
@@ -100,6 +103,22 @@ public class HomeController : AppController
         }
 
         return PhysicalFile(path, "application/vnd.android.package-archive", "kitobdagimen.apk");
+    }
+
+    /// <summary>
+    /// Landing statistikasi (kunlik snapshot) — ViewData orqali View'ga uzatiladi.
+    /// Xato bo'lsa landing baribir ochilishi kerak, shuning uchun best-effort.
+    /// </summary>
+    private async Task LoadLandingStatsAsync()
+    {
+        try
+        {
+            ViewData["LandingStats"] = await Mediator.Send(new GetLandingStatsQuery());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Landing statistikasi yuklanmadi — bo'limsiz davom etamiz.");
+        }
     }
 
     /// <summary>Crude mobile detection from the User-Agent (good enough for the landing→login split).</summary>

@@ -334,6 +334,34 @@ textarea.input { resize: vertical; min-height: 90px; }
 }
 .lp-trust .material-symbols-outlined { font-size: 19px; color: var(--primary); }
 
+/* Statistika (KPI qatori) — jonli hisoblagichlar */
+.lp-stats { padding-top: 0; }
+.lp-stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    max-width: 900px; margin: 0 auto;
+}
+.lp-stat {
+    text-align: center; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 20px;
+}
+.lp-stat-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border-radius: var(--radius-pill);
+    background: var(--primary-soft); color: var(--primary); margin-bottom: 12px;
+}
+.lp-stat-icon .material-symbols-outlined { font-size: 26px; }
+.lp-stat-num {
+    display: block; font-size: 44px; font-weight: 700; line-height: 1.1;
+    color: var(--primary); letter-spacing: -.02em;
+}
+.lp-stat-label {
+    display: block; margin-top: 6px;
+    color: var(--text-secondary); font-weight: 600; font-size: 14px;
+}
+@media (max-width: 720px) {
+    .lp-stats-grid { grid-template-columns: 1fr; }
+}
+
 /* Showcase — alternativ imkoniyat kartalari */
 .lp-showcase {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;

@@ -89,6 +89,29 @@
         </ul>
     </section>
 
+    @if (ViewData["LandingStats"] is KitobdaGimen.Application.Features.Home.Queries.GetLandingStats.LandingStatsDto stats)
+    {
+        <section class="lp-section lp-stats" id="statistika" aria-label="Platforma statistikasi">
+            <div class="lp-stats-grid">
+                <div class="lp-stat">
+                    <span class="lp-stat-icon"><span class="material-symbols-outlined">group</span></span>
+                    <span class="lp-stat-num" data-count="@stats.UserCount">0</span>
+                    <span class="lp-stat-label">Kitobxonlar</span>
+                </div>
+                <div class="lp-stat">
+                    <span class="lp-stat-icon"><span class="material-symbols-outlined">menu_book</span></span>
+                    <span class="lp-stat-num" data-count="@stats.BooksRead">0</span>
+                    <span class="lp-stat-label">O'qib tugatilgan kitoblar</span>
+                </div>
+                <div class="lp-stat">
+                    <span class="lp-stat-icon"><span class="material-symbols-outlined">auto_stories</span></span>
+                    <span class="lp-stat-num" data-count="@stats.PagesRead">0</span>
+                    <span class="lp-stat-label">O'qilgan betlar</span>
+                </div>
+            </div>
+        </section>
+    }
+
     <section class="lp-section" id="imkoniyatlar">
         <div class="lp-section-head">
             <h2>Platforma imkoniyatlari</h2>
@@ -266,3 +289,49 @@
         <p class="lp-copy muted">© 2026 kitobdagimen.uz</p>
     </footer>
 </div>
+
+<script>
+(function () {
+    "use strict";
+    // ── Statistika counter animatsiyasi ──
+    // Raqamlar bo'lim ekranga kirganda 0 dan haqiqiy qiymatgacha ease-out bilan sanaladi.
+    // prefers-reduced-motion yoqilgan yoki IntersectionObserver yo'q bo'lsa — darhol yakuniy qiymat.
+    var nums = document.querySelectorAll(".lp-stat-num[data-count]");
+    if (!nums.length) return;
+
+    var fmt = new Intl.NumberFormat("ru-RU"); // minglik ajratgich — bo'sh joy (o'zbek yozuviga mos)
+    function setFinal(el) { el.textContent = fmt.format(parseInt(el.dataset.count, 10) || 0); }
+
+    var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !("IntersectionObserver" in window)) {
+        nums.forEach(setFinal);
+        return;
+    }
+
+    function animate(el) {
+        var target = parseInt(el.dataset.count, 10) || 0;
+        if (target <= 0) { setFinal(el); return; }
+        var duration = 1600;
+        var start = null;
+        function step(ts) {
+            if (start === null) start = ts;
+            var p = Math.min(1, (ts - start) / duration);
+            var eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+            el.textContent = fmt.format(Math.round(target * eased));
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    var seen = new WeakSet();
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (!e.isIntersecting || seen.has(e.target)) return;
+            seen.add(e.target);
+            animate(e.target);
+            io.unobserve(e.target);
+        });
+    }, { threshold: 0.4 });
+    nums.forEach(function (el) { io.observe(el); });
+})();
+</script>

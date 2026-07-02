@@ -147,7 +147,10 @@
                     </span>
                 </div>
             </div>
-            <div class="messages" id="messages" data-other-user="@active.OtherUser.Id">
+            @* data-page/data-total-pages — scroll-up pagination uchun: server faqat oxirgi
+               sahifani renderlaydi, oldingilari tepaga aylantirilganda JSON'dan yuklanadi. *@
+            <div class="messages" id="messages" data-other-user="@active.OtherUser.Id"
+                 data-page="@(Model.Messages?.Page ?? 1)" data-total-pages="@(Model.Messages?.TotalPages ?? 1)">
                 @if (Model.Messages != null)
                 {
                     foreach (var m in Model.Messages.Items)
@@ -433,6 +436,60 @@
         div.innerHTML = msgInner(m);
         list.appendChild(div);
         scrollBottom();
+    }
+
+    // ── Eski xabarlarni yuklash (scroll-up pagination) ──
+    // Server faqat OXIRGI sahifani (30 ta xabar) renderlaydi. Bu yuklagichsiz undan oldingi
+    // xabarlar ko'rinmay, foydalanuvchiga "o'chib ketgan"dek tuyulardi. Tepaga aylantirilganda
+    // /chat/{id}/messages?page=N dan oldingi sahifalar olinib ro'yxat boshiga qo'shiladi.
+    let olderPage = list ? parseInt(list.dataset.page || "1", 10) : 1;
+    let olderTotalPages = list ? parseInt(list.dataset.totalPages || "1", 10) : 1;
+    let loadingOlder = false;
+
+    function prependMessages(items) {
+        const prevHeight = list.scrollHeight;
+        const frag = document.createDocumentFragment();
+        for (const m of items) {
+            const div = document.createElement("div");
+            div.className = msgClass(m);
+            div.dataset.msgId = m.id;
+            div.innerHTML = msgInner(m);
+            frag.appendChild(div);
+        }
+        list.insertBefore(frag, list.firstElementChild);
+        // Scroll pozitsiyasini saqlaymiz — foydalanuvchi o'qiyotgan xabar joyida qoladi.
+        list.scrollTop += list.scrollHeight - prevHeight;
+    }
+
+    async function loadOlderMessages() {
+        if (loadingOlder || olderPage >= olderTotalPages) return;
+        loadingOlder = true;
+        try {
+            const res = await fetch(`/chat/${conversationId}/messages?page=${olderPage + 1}`, {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                credentials: "include"
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            olderPage = data.page;
+            olderTotalPages = data.totalPages;
+            if (data.items && data.items.length) prependMessages(data.items);
+        } catch (e) { /* tarmoq xatosi — keyingi scrollda qayta uriniladi */ }
+        finally { loadingOlder = false; }
+    }
+
+    if (list && conversationId) {
+        list.addEventListener("scroll", () => {
+            if (list.scrollTop < 80) loadOlderMessages();
+        });
+        // Suhbat qisqa bo'lib scroll chiqmasa ham (mas. katta ekran) eski xabarlar yuklansin.
+        (async () => {
+            while (olderPage < olderTotalPages && list.scrollHeight <= list.clientHeight) {
+                const before = olderPage;
+                await loadOlderMessages();
+                if (olderPage === before) break; // xato/bo'sh javob — cheksiz sikl bo'lmasin
+            }
+        })();
     }
 
     function findMsgEl(id) { return list ? list.querySelector(`.msg[data-msg-id="${id}"]`) : null; }

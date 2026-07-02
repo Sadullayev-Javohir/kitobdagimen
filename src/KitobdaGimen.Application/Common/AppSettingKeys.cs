@@ -11,4 +11,11 @@ public static class AppSettingKeys
     /// Faqat super admin o'rnatadi (/admin dagi tugma orqali).
     /// </summary>
     public const string YearReviewPublishedYear = "YearReview:PublishedYear";
+
+    /// <summary>
+    /// Landing sahifa statistikasi (foydalanuvchilar / o'qilgan kitoblar / o'qilgan betlar)
+    /// JSON snapshot ko'rinishida. Kuniga bir marta (Toshkent kuni bo'yicha) avtomatik
+    /// yangilanadi; super admin /admin dan majburan yangilashi ham mumkin.
+    /// </summary>
+    public const string LandingStats = "Landing:Stats";
 }
