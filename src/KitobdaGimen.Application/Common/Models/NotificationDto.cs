@@ -16,6 +16,9 @@ public record NotificationDto
     /// <summary>Optional id of the actor (the user who triggered the notification).</summary>
     public int? ActorId { get; init; }
 
+    /// <summary>Optional bold heading shown above the message (super-admin broadcasts).</summary>
+    public string? Title { get; init; }
+
     /// <summary>Human-readable message in Uzbek.</summary>
     public string Message { get; init; } = "";
 

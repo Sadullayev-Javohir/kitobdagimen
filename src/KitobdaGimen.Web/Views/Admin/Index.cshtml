@@ -73,6 +73,37 @@
             </div>
             <div id="yrStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
         </div>
+
+        <div class="card" style="margin-bottom:18px; padding:18px">
+            <h2 style="margin:0 0 8px 0; font-size:18px; display:flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:22px">campaign</span>
+                Barcha foydalanuvchilarga xabar (broadcast)
+            </h2>
+            <p class="muted" style="font-size:13px; margin:0 0 14px 0; line-height:1.5">
+                Sarlavha va matn yozing — <strong>barcha foydalanuvchilarga</strong> darhol bildirishnoma
+                sifatida yuboriladi (onlayn foydalanuvchilar refreshsiz, real-time ko'radi). Havola qo'shsangiz,
+                bildirishnomada tugma bo'lib chiqadi va bosilganda o'sha manzilga o'tadi.
+            </p>
+
+            <form id="broadcastForm" style="display:grid; gap:10px; max-width:560px">
+                <input type="text" id="bcTitle" name="Title" maxlength="150" required
+                       placeholder="Sarlavha (masalan: Yangi kitoblar qo'shildi!)"
+                       class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px" />
+                <textarea id="bcMessage" name="Message" maxlength="300" required rows="3"
+                          placeholder="Xabar matni…"
+                          class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px; resize:vertical"></textarea>
+                <input type="url" id="bcUrl" name="Url"
+                       placeholder="Havola (ixtiyoriy) — masalan: https://kitobdagimen.uz/kitoblar"
+                       class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px" />
+                <div>
+                    <button type="submit" id="bcSubmit" class="btn btn-primary btn-sm">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">send</span>
+                        Barchaga yuborish
+                    </button>
+                </div>
+            </form>
+            <div id="bcStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
+        </div>
     }
 
     @if (serverSnapshot == null)
@@ -546,6 +577,47 @@
                         yrBadge.className = "role-badge role-user";
                     }
                 });
+        });
+    }
+
+    // Broadcast — barcha foydalanuvchilarga xabar yuborish (faqat super admin)
+    var bcForm = document.getElementById("broadcastForm");
+    if (bcForm) {
+        var bcSubmit = document.getElementById("bcSubmit");
+        var bcStatus = document.getElementById("bcStatus");
+        var bcTitle = document.getElementById("bcTitle");
+        var bcMessage = document.getElementById("bcMessage");
+        var bcUrl = document.getElementById("bcUrl");
+        bcForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var title = (bcTitle.value || "").trim();
+            var message = (bcMessage.value || "").trim();
+            if (!title || !message) {
+                bcStatus.textContent = "✗ Sarlavha va matn to'ldirilishi shart.";
+                return;
+            }
+            if (!confirm("Bu xabar BARCHA foydalanuvchilarga yuboriladi. Tasdiqlaysizmi?")) { return; }
+            var fd = new FormData();
+            fd.append("Title", title);
+            fd.append("Message", message);
+            fd.append("Url", (bcUrl.value || "").trim());
+            bcSubmit.disabled = true;
+            bcStatus.textContent = "Yuborilmoqda...";
+            fetch("/admin/broadcast", {
+                method: "POST",
+                headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" },
+                body: fd
+            }).then(function (r) {
+                if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
+                return r.json();
+            }).then(function (d) {
+                bcStatus.textContent = (d.success ? "✓ " : "✗ ") + (d.message || "");
+                if (d.success) { bcForm.reset(); }
+            }).catch(function (e) {
+                bcStatus.textContent = "✗ Xato: " + e.message;
+            }).finally(function () {
+                bcSubmit.disabled = false;
+            });
         });
     }
 })();

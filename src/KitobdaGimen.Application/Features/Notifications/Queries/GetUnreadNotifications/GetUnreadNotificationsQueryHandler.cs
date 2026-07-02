@@ -38,6 +38,7 @@ public class GetUnreadNotificationsQueryHandler
                 ActorId = n.ActorId,
                 ActorName = n.ActorName,
                 ActorAvatarUrl = n.ActorAvatarUrl,
+                Title = n.Title,
                 Message = n.Message,
                 Url = n.Url,
                 IsRead = n.IsRead,

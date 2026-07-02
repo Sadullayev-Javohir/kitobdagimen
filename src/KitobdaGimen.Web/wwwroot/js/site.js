@@ -398,12 +398,36 @@ function showToast(message, options) {
         img.src = options.avatarUrl;
         el.appendChild(img);
     }
+    const body = document.createElement("div");
+    body.className = "toast-body";
+    if (options.title) {
+        const t = document.createElement("strong");
+        t.className = "toast-title";
+        t.textContent = options.title;
+        body.appendChild(t);
+    }
     const span = document.createElement("span");
     span.textContent = message;
-    el.appendChild(span);
+    body.appendChild(span);
+    if (options.url) {
+        const link = document.createElement("a");
+        link.className = "toast-link-btn";
+        link.href = options.url;
+        link.textContent = options.linkLabel || "Ko'rish →";
+        if (/^https?:\/\//i.test(options.url) && options.url.indexOf(location.origin) !== 0) {
+            link.target = "_blank";
+            link.rel = "noopener";
+        }
+        body.appendChild(link);
+    }
+    el.appendChild(body);
     if (options.url) {
         el.classList.add("clickable");
-        el.addEventListener("click", () => { window.location.href = options.url; });
+        el.addEventListener("click", (e) => {
+            // Aniq havola tugmasi bosilsa, uni o'z holiga qo'yamiz (yangi tab / rel ishlaydi).
+            if (e.target.closest(".toast-link-btn")) return;
+            window.location.href = options.url;
+        });
     }
     host.appendChild(el);
     requestAnimationFrame(() => el.classList.add("show"));
@@ -495,10 +519,16 @@ function initNotifications() {
                 ? `<img class="notif-avatar" src="${esc(n.actorAvatarUrl)}" alt="">`
                 : `<span class="notif-avatar notif-avatar-letter">${esc((n.actorName || "?").trim().charAt(0)).toUpperCase()}</span>`;
             const tag = n.url ? "a" : "div";
-            const href = n.url ? ` href="${esc(n.url)}"` : "";
-            return `<${tag} class="notif-item"${href}>${av}` +
+            const ext = n.url && /^https?:\/\//i.test(n.url) && n.url.indexOf(location.origin) !== 0;
+            const href = n.url ? ` href="${esc(n.url)}"${ext ? ' target="_blank" rel="noopener"' : ""}` : "";
+            const cls = "notif-item" + (n.type === "announcement" ? " notif-announcement" : "");
+            const title = n.title ? `<span class="notif-title">${esc(n.title)}</span>` : "";
+            const linkBtn = n.url ? `<span class="notif-link-btn">Ko'rish →</span>` : "";
+            return `<${tag} class="${cls}"${href}>${av}` +
                 `<span class="notif-meta">` +
+                title +
                 `<span class="notif-msg">${esc(n.message)}</span>` +
+                linkBtn +
                 `<span class="notif-time">${esc(timeAgo(n.createdAt))}</span>` +
                 `</span></${tag}>`;
         }).join("");
@@ -612,7 +642,7 @@ function initNotifications() {
         const handledByPage = (n.type === "connection_request" || n.type === "connection_accepted")
             && document.getElementById("owlPanel");
         if (!handledByPage) {
-            showToast(n.message || "Yangi bildirishnoma", { avatarUrl: n.actorAvatarUrl, url: n.url });
+            showToast(n.message || "Yangi bildirishnoma", { avatarUrl: n.actorAvatarUrl, url: n.url, title: n.title });
         }
         // Qo'ng'iroq panelidagi ro'yxatga ham qo'shamiz (eng yangisi tepada).
         items.unshift(n);

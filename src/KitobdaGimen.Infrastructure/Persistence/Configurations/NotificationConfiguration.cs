@@ -12,6 +12,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         builder.Property(n => n.Type).IsRequired().HasMaxLength(40);
         builder.Property(n => n.ActorName).HasMaxLength(120);
+        builder.Property(n => n.Title).HasMaxLength(150);
         builder.Property(n => n.Message).IsRequired().HasMaxLength(300);
 
         // The recipient's notifications cascade away with the user (single FK path, no ambiguity).

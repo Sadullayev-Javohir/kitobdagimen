@@ -4,6 +4,7 @@ using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeletePost;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteQuote;
 using KitobdaGimen.Application.Features.Admin.Commands.AdminDeleteUser;
+using KitobdaGimen.Application.Features.Admin.Commands.BroadcastNotification;
 using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
 using KitobdaGimen.Application.Features.Admin.Analytics;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
@@ -306,6 +307,37 @@ public class AdminController : AppController
             message = "Yillik yakun to'xtatildi — foydalanuvchilarga ko'rinmaydi."
         });
     }
+
+    /// <summary>
+    /// SuperAdmin: barcha foydalanuvchilarga e'lon (sarlavha + matn, ixtiyoriy havola) yuboradi.
+    /// Onlayn foydalanuvchilar SignalR orqali real-time, refreshsiz ko'radi.
+    /// </summary>
+    [HttpPost("broadcast")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Broadcast([FromForm] BroadcastRequest body)
+    {
+        if (string.IsNullOrWhiteSpace(body?.Title))
+        {
+            return Json(new { success = false, message = "Sarlavha kiritilishi shart." });
+        }
+        if (string.IsNullOrWhiteSpace(body?.Message))
+        {
+            return Json(new { success = false, message = "Xabar matni kiritilishi shart." });
+        }
+
+        try
+        {
+            var count = await Mediator.Send(new BroadcastNotificationCommand(body.Title, body.Message, body.Url));
+            return Json(new { success = true, count, message = $"Xabar {count} foydalanuvchiga yuborildi." });
+        }
+        catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
+        {
+            return Json(new { success = false, message = "Bu amalni bajarishga ruxsatingiz yo'q." });
+        }
+    }
+
+    /// <summary>Forma tanasi <see cref="Broadcast"/> uchun: sarlavha, matn va ixtiyoriy havola.</summary>
+    public record BroadcastRequest(string Title, string Message, string? Url);
 
     private async Task<bool> IsSuperAdminAsync()
     {

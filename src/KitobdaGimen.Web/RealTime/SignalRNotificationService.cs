@@ -39,6 +39,7 @@ public class SignalRNotificationService : INotificationService
             ActorId = notification.ActorId,
             ActorName = notification.ActorName,
             ActorAvatarUrl = notification.ActorAvatarUrl,
+            Title = notification.Title,
             Message = notification.Message,
             Url = notification.Url,
             IsRead = false,
@@ -70,6 +71,7 @@ public class SignalRNotificationService : INotificationService
             ActorId = notification.ActorId,
             ActorName = notification.ActorName,
             ActorAvatarUrl = notification.ActorAvatarUrl,
+            Title = notification.Title,
             Message = notification.Message,
             Url = notification.Url,
             IsRead = false,
@@ -103,7 +105,8 @@ public class SignalRNotificationService : INotificationService
         {
             await _push.SendAsync(recipientUserId, new PushNotificationPayload
             {
-                Title = string.IsNullOrWhiteSpace(payload.ActorName) ? "kitobdagimen.uz" : payload.ActorName,
+                Title = !string.IsNullOrWhiteSpace(payload.Title) ? payload.Title
+                    : string.IsNullOrWhiteSpace(payload.ActorName) ? "kitobdagimen.uz" : payload.ActorName,
                 Body = payload.Message,
                 Url = payload.Url,
                 Icon = string.IsNullOrWhiteSpace(payload.ActorAvatarUrl) ? "/img/icons/icon-192.png" : payload.ActorAvatarUrl,

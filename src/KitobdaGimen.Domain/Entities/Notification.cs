@@ -27,6 +27,10 @@ public class Notification : BaseEntity
     public string ActorName { get; set; } = "";
     public string? ActorAvatarUrl { get; set; }
 
+    /// <summary>Optional bold heading shown above the message. Used by super-admin broadcasts
+    /// ("announcement") which carry a title + body; null for ordinary activity notifications.</summary>
+    public string? Title { get; set; }
+
     /// <summary>Human-readable message in Uzbek.</summary>
     public string Message { get; set; } = "";
 
