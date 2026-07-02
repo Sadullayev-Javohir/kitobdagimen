@@ -20,12 +20,20 @@ public class AuthController : AppController
         _logger = logger;
     }
 
-    /// <summary>Starts the Google OAuth challenge.</summary>
+    /// <summary>
+    /// Starts the Google OAuth challenge. Always forces the Google account chooser
+    /// (prompt=select_account), shunda tizimdan chiqib qaytadan kirganda avtomatik
+    /// kirib ketmasdan, mavjud Google akkauntlar ro'yxati ko'rsatiladi.
+    /// </summary>
     [HttpGet("google-login")]
     public IActionResult GoogleLogin(string? returnUrl = null)
     {
         var redirectUrl = Url.Action(nameof(GoogleCallback), "Auth", new { returnUrl });
-        var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+        var properties = new GoogleChallengeProperties
+        {
+            RedirectUri = redirectUrl,
+            Prompt = "select_account"
+        };
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
