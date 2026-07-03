@@ -18,6 +18,18 @@
     const string trashIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6h18\"/><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"/><path d=\"M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6\"/></svg>";
     // Modern (SVG) reaksiya (kulgichli) ikoni — xabar ustidagi "reaksiya qo'shish" tugmasi.
     const string reactIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8.5 14.5a4.5 4.5 0 0 0 7 0\"/><line x1=\"9\" y1=\"9.5\" x2=\"9\" y2=\"9.5\"/><line x1=\"15\" y1=\"9.5\" x2=\"15\" y2=\"9.5\"/></svg>";
+    // Reply (javob) ikoni — xabar ustidagi amal tugmasi.
+    const string replyIcon = "<svg class=\"act-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"9 17 4 12 9 7\"/><path d=\"M20 18v-2a4 4 0 0 0-4-4H4\"/></svg>";
+    // Ovozli xabar play tugmasi ikoni (server-render bilan bir xil, JS pauza'ga almashtiradi).
+    const string playIcon = "<svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M8 5v14l11-7z\"/></svg>";
+    // Preview matni — xabar reply qilinganda ko'rsatiladigan qisqa tavsif.
+    string MsgPreview(KitobdaGimen.Application.Features.Chat.Dtos.MessageDto m) =>
+        !string.IsNullOrEmpty(m.Text) ? m.Text!
+        : !string.IsNullOrEmpty(m.ImageUrl) ? "📷 Rasm"
+        : !string.IsNullOrEmpty(m.VoiceUrl) ? "🎤 Ovozli xabar"
+        : !string.IsNullOrEmpty(m.StickerKey) ? "Stiker"
+        : m.SharedPost != null ? "📚 Post"
+        : "";
     var stickers = KitobdaGimen.Web.ChatStickers.All;
     // Backend'dagi ruxsat etilgan reaksiyalar bilan bir xil (ToggleReactionCommandHandler).
     var reactionEmojis = new[] { "❤️", "👍", "👎", "😂", "😮", "😢", "🔥", "🎉", "📚", "🙏" };
@@ -156,8 +168,15 @@
                     foreach (var m in Model.Messages.Items)
                     {
                         var isSticker = !string.IsNullOrEmpty(m.StickerKey) && stickers.ContainsKey(m.StickerKey!);
-                        <div class="msg @(m.IsMine ? "out" : "in") @(isSticker ? "is-sticker" : "") @(!string.IsNullOrEmpty(m.ImageUrl) ? "has-image" : "")" data-msg-id="@m.Id">
+                        <div class="msg @(m.IsMine ? "out" : "in") @(isSticker ? "is-sticker" : "") @(!string.IsNullOrEmpty(m.ImageUrl) ? "has-image" : "")" data-msg-id="@m.Id" data-reply-name="@(m.IsMine ? "Siz" : active.OtherUser.FullName)" data-reply-preview="@MsgPreview(m)">
                             <div class="msg-content">
+                                @if (m.ReplyToId != null)
+                                {
+                                    <button type="button" class="msg-reply-quote" data-reply-to="@m.ReplyToId">
+                                        <span class="rq-name">@m.ReplyToSenderName</span>
+                                        <span class="rq-text">@m.ReplyToPreview</span>
+                                    </button>
+                                }
                                 @if (isSticker)
                                 {
                                     <span class="msg-sticker">@Html.Raw(stickers[m.StickerKey!])</span>
@@ -165,6 +184,17 @@
                                 @if (!string.IsNullOrEmpty(m.ImageUrl))
                                 {
                                     <img class="msg-image" src="@m.ImageUrl" data-full="@m.ImageUrl" alt="rasm" loading="lazy" />
+                                }
+                                @if (!string.IsNullOrEmpty(m.VoiceUrl))
+                                {
+                                    <div class="msg-voice" data-voice="@m.VoiceUrl" data-dur="@(m.VoiceDurationSeconds ?? 0)">
+                                        <button type="button" class="mv-play" aria-label="Ovozni eshitish">@Html.Raw(playIcon)</button>
+                                        <div class="mv-body">
+                                            <div class="mv-track"><span class="mv-fill"></span></div>
+                                            <div class="mv-dur">@($"{(m.VoiceDurationSeconds ?? 0) / 60}:{(m.VoiceDurationSeconds ?? 0) % 60:00}")</div>
+                                        </div>
+                                        <audio src="@m.VoiceUrl" preload="none"></audio>
+                                    </div>
                                 }
                                 @if (!string.IsNullOrEmpty(m.Text))
                                 {
@@ -202,6 +232,7 @@
                                 </div>
                             }
                             <div class="msg-actions">
+                                <button type="button" class="msg-act" data-reply-msg aria-label="Javob berish">@Html.Raw(replyIcon)</button>
                                 <button type="button" class="msg-act" data-react-open aria-label="Reaksiya">@Html.Raw(reactIcon)</button>
                                 @if (m.IsMine && !string.IsNullOrEmpty(m.Text))
                                 {
@@ -219,7 +250,23 @@
             <form class="msg-form" id="msgForm">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="conversationId" value="@active.Id" />
+
+                @* Javob berilayotgan xabar ko'rsatkichi (reply preview) — input ustida *@
+                <div class="reply-bar" id="replyBar">
+                    <span class="rb-ico">@Html.Raw(replyIcon)</span>
+                    <div class="rb-body">
+                        <span class="rb-name" id="replyName"></span>
+                        <span class="rb-text" id="replyText"></span>
+                    </div>
+                    <button type="button" class="rb-close" id="replyClose" aria-label="Bekor qilish">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
                 <div class="row">
+                    <button type="button" class="chat-tool-btn" id="emojiBtn" aria-label="Emoji" title="Emoji">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" y1="9.5" x2="9" y2="9.5"/><line x1="15" y1="9.5" x2="15" y2="9.5"/></svg>
+                    </button>
                     <button type="button" class="chat-tool-btn" id="stickerBtn" aria-label="Stikerlar" title="Stikerlar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M20 12a8 8 0 0 1-8 8"/><path d="M20 12h-4a4 4 0 0 0-4 4v4"/></svg>
                     </button>
@@ -227,8 +274,23 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>
                     </button>
                     <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
-                    <input class="input" id="msgText" placeholder="Xabar yozing..." autocomplete="off" maxlength="5000" />
-                    <button type="submit" class="btn btn-primary btn-icon" aria-label="Yuborish">
+                    <textarea class="input" id="msgText" placeholder="Xabar yozing..." autocomplete="off" maxlength="5000" rows="1"></textarea>
+                    <button type="button" class="chat-tool-btn" id="scaleBtn" aria-label="Matn o'lchami" title="Matn o'lchami">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="14" y2="16"/><circle cx="16" cy="8" r="2" fill="var(--surface)"/><circle cx="10" cy="16" r="2" fill="var(--surface)"/></svg>
+                    </button>
+
+                    @* Ovoz yozish holati satri (yozilayotganda row'ni egallaydi) *@
+                    <div class="rec-bar" id="recBar">
+                        <span class="rec-dot"></span>
+                        <span class="rec-time" id="recTime">0:00</span>
+                        <span class="rec-hint">Yozilmoqda… yuborish uchun ➤ tugmasini bosing</span>
+                        <button type="button" class="rec-cancel" id="recCancel">Bekor</button>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-icon" id="micBtn" aria-label="Ovozli xabar" title="Ovozli xabar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-icon" id="sendBtn" aria-label="Yuborish" hidden>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                     </button>
                 </div>
@@ -239,6 +301,25 @@
                     {
                         <button type="button" class="sticker-item" data-sticker="@s.Key" aria-label="@s.Key">@Html.Raw(s.Value)</button>
                     }
+                </div>
+
+                @* Emoji tanlagich — kategoriya tablari + qidiruv (JS to'ldiradi) *@
+                <div class="emoji-panel" id="emojiPanel" hidden>
+                    <div class="emoji-search"><input class="input" id="emojiSearch" type="search" placeholder="Emoji qidirish..." autocomplete="off" /></div>
+                    <div class="emoji-tabs" id="emojiTabs"></div>
+                    <div class="emoji-grid" id="emojiGrid"></div>
+                </div>
+
+                @* Matn o'lchami (shrift masshtabi) sozlagichi — Telegram uslubidagi slayder *@
+                <div class="scale-pop" id="scalePop" hidden>
+                    <div class="sp-title">Matn o'lchami</div>
+                    <div class="sp-preview">Salom! Bu namuna xabar 📖</div>
+                    <div class="sp-row">
+                        <span class="sp-a">A</span>
+                        <input type="range" id="scaleRange" min="0.8" max="1.6" step="0.05" value="1" />
+                        <span class="sp-b">A</span>
+                    </div>
+                    <div class="sp-val" id="scaleVal">100%</div>
                 </div>
             </form>
         }
@@ -275,7 +356,8 @@
         book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
         pencil: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
         trash: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
-        react: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" y1="9.5" x2="9" y2="9.5"/><line x1="15" y1="9.5" x2="15" y2="9.5"/></svg>'
+        react: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" y1="9.5" x2="9" y2="9.5"/><line x1="15" y1="9.5" x2="15" y2="9.5"/></svg>',
+        reply: '<svg class="act-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>'
     };
 
     // Stiker SVG'lari (server bilan bir xil manba — ChatStickers.cs).
@@ -359,7 +441,7 @@
         const item = block.querySelector(`.conv-item[href$="conversationId=${m.conversationId}"]`);
         if (!item) return; // ro'yxatda yo'q (mas. butunlay yangi suhbat) — refresh ko'rsatadi
         const last = item.querySelector(".last");
-        if (last) last.textContent = m.text ? m.text : (m.imageUrl ? "Rasm" : (m.stickerKey ? "Stiker" : "Post ulashildi"));
+        if (last) last.textContent = m.text ? m.text : (m.imageUrl ? "📷 Rasm" : (m.voiceUrl ? "🎤 Ovozli xabar" : (m.stickerKey ? "Stiker" : "📚 Post ulashildi")));
         if (incrementUnread) {
             let badge = item.querySelector(".unread-badge");
             if (!badge) {
@@ -381,6 +463,11 @@
     const list = document.getElementById("messages");
     const conversationId = form ? parseInt(document.getElementById("conversationId").value, 10) : null;
 
+    // Javob (reply) berilayotgan xabar holati; null bo'lsa oddiy xabar.
+    let replyTo = null;
+    // Ayni paytda ijro etilayotgan ovozli xabar (bir vaqtda faqat bittasi o'ynaydi).
+    let currentVoiceEl = null;
+
     function scrollBottom() { if (list) list.scrollTop = list.scrollHeight; }
 
     // Xabar sinf(class)lari — stiker/rasm holatiga qarab bubble ko'rinishini o'zgartiradi.
@@ -400,11 +487,48 @@
         return `<div class="msg-reactions">${chips}</div>`;
     }
 
+    // Voice play (SVG) ikoni — server-render bilan bir xil.
+    const VOICE_PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+
+    // Xabarning qisqa tavsifi (reply preview uchun): matn yoki tur nomi.
+    function msgPreview(m) {
+        if (m.text) return m.text;
+        if (m.imageUrl) return "📷 Rasm";
+        if (m.voiceUrl) return "🎤 Ovozli xabar";
+        if (m.stickerKey) return "Stiker";
+        if (m.sharedPost) return "📚 Post";
+        return "";
+    }
+
+    // Reply/preview data-atributlarini (boshqa xabar shu xabarga javob berganda ishlatiladi) o'rnatadi.
+    function applyMsgDataset(div, m) {
+        div.dataset.replyName = m.isMine ? "Siz" : (m.sender ? m.sender.fullName : "");
+        div.dataset.replyPreview = msgPreview(m);
+    }
+
+    function fmtDur(sec) {
+        sec = Math.max(0, Math.round(sec || 0));
+        return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+    }
+
     // Bitta xabarning ichki HTML'i (kontent + meta + reaksiyalar + amal tugmalari).
     function msgInner(m) {
         let content = "";
+        // Reply (javob) iqtibosi — bubble tepasida.
+        if (m.replyToId) {
+            content += `<button type="button" class="msg-reply-quote" data-reply-to="${m.replyToId}">` +
+                `<span class="rq-name">${esc(m.replyToSenderName || "")}</span>` +
+                `<span class="rq-text">${esc(m.replyToPreview || "")}</span></button>`;
+        }
         if (m.stickerKey && STICKERS[m.stickerKey]) content += `<span class="msg-sticker">${STICKERS[m.stickerKey]}</span>`;
         if (m.imageUrl) content += `<img class="msg-image" src="${esc(m.imageUrl)}" data-full="${esc(m.imageUrl)}" alt="rasm" loading="lazy" />`;
+        if (m.voiceUrl) {
+            content += `<div class="msg-voice" data-voice="${esc(m.voiceUrl)}" data-dur="${m.voiceDurationSeconds || 0}">` +
+                `<button type="button" class="mv-play" aria-label="Ovozni eshitish">${VOICE_PLAY_ICON}</button>` +
+                `<div class="mv-body"><div class="mv-track"><span class="mv-fill"></span></div>` +
+                `<div class="mv-dur">${fmtDur(m.voiceDurationSeconds)}</div></div>` +
+                `<audio src="${esc(m.voiceUrl)}" preload="none"></audio></div>`;
+        }
         if (m.text) content += `<span class="msg-text">${esc(m.text)}</span>`;
         if (m.sharedPost) {
             content += `<a class="shared-card" href="/posts/${m.sharedPost.postId}">` +
@@ -418,6 +542,7 @@
         if (m.isMine) meta += `<span class="ticks ${m.isRead ? "read" : ""}">${m.isRead ? ICON.double : ICON.single}</span>`;
 
         let actions = `<div class="msg-actions">` +
+            `<button type="button" class="msg-act" data-reply-msg aria-label="Javob berish">${ICON.reply}</button>` +
             `<button type="button" class="msg-act" data-react-open aria-label="Reaksiya">${ICON.react}</button>` +
             (m.isMine && m.text ? `<button type="button" class="msg-act" data-edit-msg aria-label="Tahrirlash">${ICON.pencil}</button>` : "") +
             (m.isMine ? `<button type="button" class="msg-act" data-del-msg aria-label="O'chirish">${ICON.trash}</button>` : "") +
@@ -433,6 +558,7 @@
         const div = document.createElement("div");
         div.className = msgClass(m);
         div.dataset.msgId = m.id;
+        applyMsgDataset(div, m);
         div.innerHTML = msgInner(m);
         list.appendChild(div);
         scrollBottom();
@@ -453,6 +579,7 @@
             const div = document.createElement("div");
             div.className = msgClass(m);
             div.dataset.msgId = m.id;
+            applyMsgDataset(div, m);
             div.innerHTML = msgInner(m);
             frag.appendChild(div);
         }
@@ -493,7 +620,7 @@
     }
 
     function findMsgEl(id) { return list ? list.querySelector(`.msg[data-msg-id="${id}"]`) : null; }
-    function updateMessageEl(m) { const el = findMsgEl(m.id); if (el) { el.className = msgClass(m); el.innerHTML = msgInner(m); } }
+    function updateMessageEl(m) { const el = findMsgEl(m.id); if (el) { el.className = msgClass(m); applyMsgDataset(el, m); el.innerHTML = msgInner(m); } }
     function removeMessageEl(id) { const el = findMsgEl(id); if (el) el.remove(); }
 
     // ── O'z xabarini tahrirlash (inline) ──
@@ -559,12 +686,20 @@
             const img = e.target.closest(".msg-image");
             if (img) { if (!img.classList.contains("img-failed")) openLightbox(img.dataset.full || img.src); return; }
 
+            // Ovozli xabar play/pauza.
+            const playBtn = e.target.closest(".mv-play");
+            if (playBtn) { toggleVoice(playBtn.closest(".msg-voice")); return; }
+            // Reply iqtibosiga bosilsa — asl xabarga o'tamiz.
+            const quote = e.target.closest(".msg-reply-quote");
+            if (quote) { scrollToMessage(parseInt(quote.dataset.replyTo, 10)); return; }
+
             const msgEl = e.target.closest(".msg");
             if (!msgEl) return;
             if (e.target.closest("[data-edit-save]")) { await saveEdit(msgEl); return; }
             if (e.target.closest("[data-edit-cancel]")) { exitEdit(msgEl); return; }
             if (e.target.closest("[data-edit-msg]")) { enterEdit(msgEl); return; }
             if (e.target.closest("[data-del-msg]")) { await deleteMsg(msgEl); return; }
+            if (e.target.closest("[data-reply-msg]")) { startReply(msgEl); return; }
             if (e.target.closest("[data-react-open]")) { openReactionPicker(msgEl, e.target.closest("[data-react-open]")); return; }
             const chip = e.target.closest(".reaction-chip");
             if (chip) { await toggleReaction(parseInt(msgEl.dataset.msgId, 10), chip.dataset.reaction); return; }
@@ -700,13 +835,86 @@
     // SignalR ulanishi (typing signalini yuborish uchun) — pastda tayinlanadi.
     let chatConn = null;
 
-    // Umumiy yuborish yordamchisi (matn / stiker / rasm).
+    // Umumiy yuborish yordamchisi (matn / stiker / rasm / ovoz). Reply faol bo'lsa uni qo'shadi.
     async function sendPayload(payload) {
         try {
-            const m = await api.apiPost("/chat/send", Object.assign({ conversationId }, payload));
-            if (m) renderMessage(m);
+            const body = Object.assign({ conversationId }, payload);
+            if (replyTo) body.replyToMessageId = replyTo.id;
+            const m = await api.apiPost("/chat/send", body);
+            if (m) { renderMessage(m); clearReply(); }
             return m;
         } catch (err) { alert(err.message); return null; }
+    }
+
+    // ───────── Reply (javob berish) ─────────
+    function startReply(msgEl) {
+        if (!msgEl) return;
+        replyTo = {
+            id: parseInt(msgEl.dataset.msgId, 10),
+            name: msgEl.dataset.replyName || "",
+            preview: msgEl.dataset.replyPreview || ""
+        };
+        const bar = document.getElementById("replyBar");
+        if (bar) {
+            document.getElementById("replyName").textContent = replyTo.name;
+            document.getElementById("replyText").textContent = replyTo.preview;
+            bar.classList.add("show");
+        }
+        const t = document.getElementById("msgText");
+        if (t) t.focus();
+    }
+    function clearReply() {
+        replyTo = null;
+        const bar = document.getElementById("replyBar");
+        if (bar) bar.classList.remove("show");
+    }
+
+    // Iqtibosga bosilganda asl xabarga o'tish + qisqa yorug'lik.
+    function scrollToMessage(id) {
+        const el = findMsgEl(id);
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash");
+        void el.offsetWidth; // reflow — animatsiyani qayta ishga tushirish uchun
+        el.classList.add("flash");
+        setTimeout(() => el.classList.remove("flash"), 1200);
+    }
+
+    // ───────── Ovozli xabar ijrosi ─────────
+    function toggleVoice(voiceEl) {
+        if (!voiceEl) return;
+        const audio = voiceEl.querySelector("audio");
+        const fill = voiceEl.querySelector(".mv-fill");
+        const durEl = voiceEl.querySelector(".mv-dur");
+        const playBtn = voiceEl.querySelector(".mv-play");
+        if (!audio) return;
+        const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        const PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+
+        // Boshqa ovoz o'ynayotgan bo'lsa to'xtatamiz.
+        if (currentVoiceEl && currentVoiceEl !== voiceEl) {
+            const other = currentVoiceEl.querySelector("audio");
+            if (other) { other.pause(); }
+        }
+
+        if (audio.paused) {
+            currentVoiceEl = voiceEl;
+            audio.play().catch(() => {});
+            if (playBtn) playBtn.innerHTML = PAUSE;
+            audio.ontimeupdate = () => {
+                if (audio.duration && fill) fill.style.width = (audio.currentTime / audio.duration * 100) + "%";
+                if (durEl && audio.duration) durEl.textContent = fmtDur(audio.duration - audio.currentTime);
+            };
+            audio.onended = () => {
+                if (playBtn) playBtn.innerHTML = PLAY;
+                if (fill) fill.style.width = "0";
+                if (durEl) durEl.textContent = fmtDur(parseInt(voiceEl.dataset.dur, 10) || audio.duration);
+                currentVoiceEl = null;
+            };
+        } else {
+            audio.pause();
+            if (playBtn) playBtn.innerHTML = PLAY;
+        }
     }
 
     if (form) {
@@ -730,22 +938,58 @@
             chatConn.invoke("Typing", conversationId).catch(() => {});
         }
 
+        const micBtn = document.getElementById("micBtn");
+        const sendBtn = document.getElementById("sendBtn");
+
+        // Textareani kontentga qarab o'stiradi (o'ngga ketmasdan pastga o'raladi).
+        function autoGrow() {
+            text.style.height = "auto";
+            text.style.height = Math.min(text.scrollHeight, 148) + "px";
+        }
+        // Matn bor bo'lsa "yuborish", bo'sh bo'lsa "mikrofon" tugmasini ko'rsatamiz (Telegram uslubi).
+        function updateSendMic() {
+            const has = text.value.trim().length > 0;
+            if (sendBtn) sendBtn.hidden = !has;
+            if (micBtn) micBtn.hidden = has;
+        }
+        updateSendMic();
+
         // Mobil: klaviatura ochilib layout kichrayganda oxirgi xabarlar ko'rinib tursin.
         text.addEventListener("focus", () => setTimeout(scrollBottom, 250));
 
         text.addEventListener("input", () => {
             counter.textContent = text.value.length;
             counter.parentElement.classList.toggle("over", text.value.length > 5000);
+            autoGrow();
+            updateSendMic();
             if (text.value.trim()) signalTyping();
         });
 
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
+        // Enter — yuborish; Shift+Enter — yangi qator.
+        text.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event("submit", { cancelable: true }));
+            }
+        });
+
+        async function submitText() {
             const value = text.value.trim();
             if (!value) return;
             const m = await sendPayload({ text: value });
-            if (m) { text.value = ""; counter.textContent = "0"; }
+            if (m) { text.value = ""; counter.textContent = "0"; autoGrow(); updateSendMic(); }
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            // Ovoz yozilayotgan bo'lsa, "yuborish" tugmasi yozishni to'xtatib yuboradi (matn emas).
+            if (form.classList.contains("recording")) { stopRecording(); return; }
+            await submitText();
         });
+
+        // Reply preview qatorini yopish.
+        const replyClose = document.getElementById("replyClose");
+        if (replyClose) replyClose.addEventListener("click", clearReply);
 
         // ── Stiker paneli ──
         const stickerBtn = document.getElementById("stickerBtn");
@@ -795,6 +1039,184 @@
                 finally { imageBtn.classList.remove("uploading"); }
             });
         }
+
+        // ───────── Emoji tanlagich ─────────
+        // Kategoriyalar: [tab ikoni, [ [emoji, "qidiruv kalitlari"], ... ] ]
+        const EMOJI_CATS = [
+            ["😀", [["😀","jilmayish smile happy"],["😃","kulgi smile"],["😄","kulgi happy"],["😁","tirjaygan grin"],["😆","kulgi laugh"],["😅","yengil kulgi sweat"],["🤣","kulgidan yiqilish rofl laugh"],["😂","kulgi yosh joy laugh"],["🙂","jilmayish"],["🙃","teskari"],["😉","ko'z qisish wink"],["😊","xursand blush"],["😇","farishta angel"],["🥰","sevgi love"],["😍","ko'z sevgi heart eyes"],["🤩","yulduz star struck"],["😘","o'pich kiss"],["😗","o'pich"],["😚","o'pich"],["😙","o'pich"],["😋","mazza yummy"],["😛","til tongue"],["😜","hazil wink tongue"],["🤪"," jinni zany"],["😝","til squint"],["🤑","pul money"],["🤗","quchoq hug"],["🤭","xihi giggle"],["🤫","jim shush"],["🤔","o'ylash think"],["🤐","og'iz yopiq zip"],["😐","betaraf neutral"],["😑","ifodasiz"],["😶","og'izsiz"],["😏","kesatiq smirk"],["😒","norozi unamused"],["🙄","ko'z aylantirish eye roll"],["😬","noqulay grimace"],["😌","tinch relieved"],["😔","xafa sad pensive"],["😴","uxlash sleep"],["😷","niqob mask"],["🤒","kasal sick"],["🤕","jarohat hurt"],["🥵","issiq hot"],["🥶","sovuq cold"],["😵","hang dizzy"],["🤯","portlash mind blown"],["🤠","kovboy cowboy"],["🥳","bayram party"],["😎","salqin cool sunglasses"],["🤓","nerd"],["😕","chalkash confused"],["😟","tashvish worried"],["🙁","xafa frown"],["😮","hayron wow open mouth"],["😯","hayron"],["😲","hayron astonished"],["😳","qizarish flushed"],["🥺","yalinish pleading"],["😦","qo'rquv"],["😧","qo'rquv anguished"],["😨","qo'rqqan fearful"],["😰","ter anxious"],["😥","xafa"],["😢","yig'lash cry sad"],["😭","yig'lash cry"],["😱","qo'rquv scream"],["😖","iztirob"],["😣","zo'riqish"],["😞","umidsiz"],["😓","ter"],["😩","charchoq weary"],["😫","charchoq tired"],["🥱","esnash yawn"],["😤","jahl triumph"],["😡","jahl angry"],["😠","jahl angry"],["🤬","so'kish cursing"],["😈","shayton devil"],["👿","g'azab imp"],["💀","o'lim skull"],["💩","tezak poop"],["🤡","masxaraboz clown"],["👻","arvoh ghost"],["👽","kelgindi alien"],["🤖","robot"]]],
+            ["👍", [["👍","yaxshi like thumbs up"],["👎","yomon dislike thumbs down"],["👌","ok zo'r"],["✌️","g'alaba victory peace"],["🤞","omad fingers crossed"],["🤟","sevaman love you"],["🤘","rок horns"],["🤙","qo'ng'iroq call me"],["👈","chap left"],["👉","o'ng right"],["👆","yuqori up"],["👇","past down"],["☝️","yuqori"],["✋","to'xta stop hand"],["🤚","qo'l back hand"],["🖐️","besh barmoq"],["🖖","vulkan"],["👋","salom wave hi bye"],["🤝","qo'l berish handshake deal"],["👏","qarsak clap"],["🙌","hurra raise hands"],["👐","ochiq qo'l"],["🤲","kaft palms"],["🙏","iltimos rahmat pray thanks"],["✊","musht fist"],["👊","musht punch"],["🤛","chap musht"],["🤜","o'ng musht"],["💪","kuch muscle strong"],["✍️","yozish write"],["👀","ko'z eyes"],["👁️","ko'z eye"]]],
+            ["🧑", [["👶","chaqaloq baby"],["🧒","bola child"],["👦","o'g'il boy"],["👧","qiz girl"],["🧑","kishi person"],["👨","erkak man"],["👩","ayol woman"],["🧔","soqol beard"],["👴","chol old man"],["👵","kampir old woman"],["👮","politsiya police"],["🕵️","josus detective"],["💂","soqchi guard"],["👷","quruvchi worker"],["🤴","shahzoda prince"],["👸","malika princess"],["👳","salla turban"],["🧕","ro'mol hijab"],["🤵","kuyov groom"],["👰","kelin bride"],["🤰","homilador pregnant"],["🍼","shisha baby bottle"],["👼","farishta angel baby"],["🎅","qorbobo santa"],["🤶","santa woman"],["🦸","qahramon hero"],["🦹","yovuz villain"],["🧙","sehrgar wizard"],["🧚","pari fairy"],["🧛","vampir vampire"],["🧜","suvpari mermaid"],["🧑‍🎓","talaba student"],["🧑‍🏫","o'qituvchi teacher"],["🧑‍⚕️","shifokor doctor"],["🧑‍🍳","oshpaz chef"],["🧑‍🌾","dehqon farmer"],["🧑‍💻","dasturchi coder"],["🚶","yurish walk"],["🏃","yugurish run"],["💃","raqs dance"],["🕺","raqs dance man"],["👯","raqs bunny"]]],
+            ["🐶", [["🐶","it dog"],["🐱","mushuk cat"],["🐭","sichqon mouse"],["🐹","hamster"],["🐰","quyon rabbit"],["🦊","tulki fox"],["🐻","ayiq bear"],["🐼","panda"],["🐨","koala"],["🐯","yo'lbars tiger"],["🦁","sher lion"],["🐮","sigir cow"],["🐷","cho'chqa pig"],["🐸","baqa frog"],["🐵","maymun monkey"],["🐔","tovuq chicken"],["🐧","pingvin penguin"],["🐦","qush bird"],["🐤","jo'ja chick"],["🦅","burgut eagle"],["🦉","boyo'g'li owl"],["🦇","ko'rshapalak bat"],["🐺","bo'ri wolf"],["🐗","to'ng'iz boar"],["🐴","ot horse"],["🦄","yakshox unicorn"],["🐝","asalari bee"],["🐛","qurt worm"],["🦋","kapalak butterfly"],["🐌","shilliqqurt snail"],["🐞","xonqizi ladybug"],["🐜","chumoli ant"],["🕷️","o'rgimchak spider"],["🐢","toshbaqa turtle"],["🐍","ilon snake"],["🦖","dinozavr rex"],["🐙","sakkizoyoq octopus"],["🦑","kalmar squid"],["🦐","krevetka shrimp"],["🐠","baliq fish"],["🐟","baliq fish"],["🐬","delfin dolphin"],["🐳","kit whale"],["🦈","akula shark"],["🐊","timsoh crocodile"],["🐘","fil elephant"],["🦒","jirafa giraffe"],["🐫","tuya camel"],["🐑","qo'y sheep"],["🐐","echki goat"],["🌵","kaktus cactus"],["🌳","daraxt tree"],["🌲","archa pine"],["🌴","palma palm"],["🌱","nihol seedling"],["🍀","yonca clover luck"],["🍁","barg maple"],["🌸","gul blossom"],["🌹","atirgul rose"],["🌻","kungaboqar sunflower"],["🌼","gul flower"],["🌷","lola tulip"],["🌺","gul hibiscus"]]],
+            ["🍎", [["🍎","olma apple"],["🍏","yashil olma"],["🍐","nok pear"],["🍊","apelsin orange"],["🍋","limon lemon"],["🍌","banan banana"],["🍉","tarvuz watermelon"],["🍇","uzum grapes"],["🍓","qulupnay strawberry"],["🫐","koʻkat blueberry"],["🍒","gilos cherry"],["🍑","shaftoli peach"],["🥭","mango"],["🍍","ananas pineapple"],["🥥","kokos coconut"],["🥝","kivi kiwi"],["🍅","pomidor tomato"],["🥑","avokado avocado"],["🍆","baqlajon eggplant"],["🥔","kartoshka potato"],["🥕","sabzi carrot"],["🌽","makkajo'xori corn"],["🌶️","qalampir pepper"],["🥒","bodring cucumber"],["🥬","salat lettuce"],["🥦","brokoli broccoli"],["🧄","sarimsoq garlic"],["🧅","piyoz onion"],["🍞","non bread"],["🥖","baton bread"],["🧀","pishloq cheese"],["🥚","tuxum egg"],["🍳","tuxum qovurma fried egg"],["🥞","quymoq pancake"],["🧇","vafli waffle"],["🥓","bekon bacon"],["🍔","burger"],["🍟","kartoshka fri fries"],["🍕","pitsa pizza"],["🌭","xot-dog"],["🥪","sendvich sandwich"],["🌮","tako taco"],["🌯","burrito"],["🥗","salat salad"],["🍜","lag'mon noodles"],["🍲","sho'rva stew"],["🍛","guruch curry"],["🍣","sushi"],["🍱","bento"],["🥟","chuchvara dumpling"],["🍚","guruch rice palov"],["🍙","onigiri"],["🍦","muzqaymoq ice cream"],["🍰","tort cake"],["🎂","tug'ilgan kun torti birthday cake"],["🧁","keks cupcake"],["🍫","shokolad chocolate"],["🍬","konfet candy"],["🍭","chupa lollipop"],["🍩","donut"],["🍪","pechenye cookie"],["☕","qahva coffee choy tea"],["🍵","choy tea"],["🧃","sharbat juice"],["🥤","ichimlik soda"],["🍺","pivo beer"],["🍷","vino wine"],["🥂","qadah cheers"]]],
+            ["⚽", [["⚽","futbol soccer"],["🏀","basketbol basketball"],["🏈","amerika futboli"],["⚾","beysbol baseball"],["🎾","tennis"],["🏐","voleybol volleyball"],["🏉","regbi rugby"],["🎱","bilyard"],["🏓","stol tennisi ping pong"],["🏸","badminton"],["🥅","darvoza goal"],["🏒","xokkey hockey"],["🏑","xokkey"],["🥊","boks boxing"],["🥋","karate"],["⛳","golf"],["🎯","nishon dart target"],["🎳","bouling bowling"],["🎮","o'yin game"],["🕹️","joystick"],["🎲","zar dice"],["♟️","shaxmat chess"],["🧩","jumboq puzzle"],["🎸","gitara guitar"],["🎹","pianino piano"],["🥁","baraban drum"],["🎺","truba trumpet"],["🎻","skripka violin"],["🎤","mikrofon mic karaoke"],["🎧","quloqchin headphones"],["🎼","nota music"],["🎵","nota music note"],["🎶","musiqa music"],["🏆","kubok trophy"],["🥇","oltin medal gold"],["🥈","kumush silver"],["🥉","bronza bronze"],["🏅","medal"],["🎖️","orden medal"],["🎗️","lenta ribbon"],["🎫","chipta ticket"],["🎪","sirk circus"],["🎨","rassomlik art paint"],["🎬","kino film"],["🎤","qo'shiq"],["🎢","attraksion"],["🎡","charx"],["🎠","karusel"]]],
+            ["✈️", [["🚗","mashina car"],["🚕","taksi taxi"],["🚙","jip suv"],["🚌","avtobus bus"],["🚎","trolleybus"],["🏎️","poyga mashina race car"],["🚓","politsiya mashina"],["🚑","tez yordam ambulance"],["🚒","o't o'chirish fire truck"],["🚐","mikroavtobus van"],["🚚","yuk mashina truck"],["🚛","fura"],["🚜","traktor tractor"],["🏍️","mototsikl motorcycle"],["🚲","velosiped bicycle"],["🛴","samokat scooter"],["🚂","poyezd train"],["🚆","poyezd"],["🚇","metro"],["🚀","raketa rocket"],["🛸","uchar likopcha ufo"],["🚁","vertolyot helicopter"],["✈️","samolyot plane"],["🛫","uchish takeoff"],["🛬","qo'nish landing"],["⛵","yelkanli sailboat"],["🚤","kater speedboat"],["🛥️","yaxta"],["🚢","kema ship"],["⚓","langar anchor"],["🚧","to'siq construction"],["⛽","yoqilg'i fuel gas"],["🚦","svetofor traffic light"],["🗺️","xarita map"],["🗿","haykal moai"],["🗽","ozodlik haykali"],["🗼","minora tower"],["🏰","qasr castle"],["🏯","qal'a"],["🏟️","stadion stadium"],["🎡","charx ferris"],["🏖️","plyaj beach"],["🏝️","orol island"],["⛰️","tog' mountain"],["🌋","vulqon volcano"],["🏕️","chodir camping"],["🏠","uy house home"],["🏢","bino building"],["🏥","kasalxona hospital"],["🏫","maktab school"],["🕌","masjid mosque"],["🕋","ka'ba"],["⛪","cherkov church"]]],
+            ["💡", [["⌚","soat watch"],["📱","telefon phone"],["💻","noutbuk laptop"],["🖥️","kompyuter computer"],["⌨️","klaviatura keyboard"],["🖱️","sichqoncha mouse"],["🖨️","printer"],["📷","fotoapparat camera"],["📸","kamera"],["📹","videokamera"],["🎥","kino kamera"],["📺","televizor tv"],["📻","radio"],["🔋","batareya battery"],["🔌","vilka plug"],["💡","lampa lamp idea light"],["🔦","fonar flashlight"],["🕯️","sham candle"],["📕","kitob book qizil"],["📗","kitob book yashil"],["📘","kitob book kok"],["📙","kitob book sariq"],["📚","kitoblar books"],["📖","ochiq kitob open book o'qish"],["📓","daftar notebook"],["📔","daftar"],["📒","daftar"],["📝","yozuv memo note"],["✏️","qalam pencil"],["✒️","ruchka pen"],["🖊️","ruchka pen"],["🖋️","pero"],["📏","chizg'ich ruler"],["📐","uchburchak"],["📌","knopka pin"],["📍","joylashuv location"],["📎","qisqich clip"],["✂️","qaychi scissors"],["📁","papka folder"],["📂","papka"],["📅","kalendar calendar"],["📆","kalendar"],["📊","diagramma chart"],["📈","o'sish chart up"],["📉","tushish chart down"],["💰","pul money qop"],["💵","dollar money"],["💳","karta card"],["💎","olmos diamond"],["⚖️","tarozi scale"],["🔧","kalit wrench"],["🔨","bolg'a hammer"],["🛠️","asboblar tools"],["⚙️","shesterna gear"],["🔑","kalit key"],["🔒","qulf lock"],["🔓","ochiq qulf unlock"],["🔔","qo'ng'iroq bell"],["🔕","ovozsiz mute bell"],["📢","karnay announce"],["📣","megafon"],["⏰","budilnik alarm"],["⏳","qum soat hourglass"],["⌛","vaqt time"],["🔍","lupa search zoom"],["🔎","qidiruv search"],["🧭","kompas"],["🧲","magnit magnet"],["💊","tabletka pill"],["💉","ukol syringe"],["🩹","plastr bandage"],["🧬","dna"],["🔬","mikroskop"],["🔭","teleskop"],["📡","antenna satellite"]]],
+            ["❤️", [["❤️","yurak sevgi heart love"],["🧡","to'q sariq yurak orange heart"],["💛","sariq yurak yellow heart"],["💚","yashil yurak green heart"],["💙","ko'k yurak blue heart"],["💜","siyohrang yurak purple heart"],["🖤","qora yurak black heart"],["🤍","oq yurak white heart"],["🤎","jigarrang yurak brown heart"],["💔","singan yurak broken heart"],["❣️","yurak"],["💕","ikki yurak two hearts"],["💞","aylanuvchi yurak"],["💓","urayotgan yurak beating"],["💗","o'suvchi yurak"],["💖","yaltiroq yurak sparkling"],["💘","o'q yurak cupid"],["💝","sovg'a yurak gift heart"],["💟","yurak bezak"],["❤️‍🔥","yonayotgan yurak"],["💯","yuz 100 zo'r"],["💥","portlash boom"],["💫","yulduz dizzy"],["⭐","yulduz star"],["🌟","yorqin yulduz glow star"],["✨","uchqun sparkles"],["🔥","olov fire hot"],["💧","tomchi drop"],["💦","suv sweat"],["🌈","kamalak rainbow"],["☀️","quyosh sun"],["🌙","oy moon"],["⚡","chaqmoq lightning"],["❄️","qor snowflake"],["☃️","qorbobo snowman"],["🎉","bayram party tada"],["🎊","konfetti"],["🎈","shar balloon"],["🎁","sovg'a gift"],["🎀","tasma bow"],["🏳️","oq bayroq flag"],["🏴","qora bayroq"],["🚩","bayroq flag"],["✅","belgi check tick"],["❌","xoch xato cross wrong"],["⭕","aylana circle"],["❗","undov exclamation"],["❓","savol question"],["💬","gap chat bubble"],["💭","o'y thought"],["🗯️","jahl"],["♻️","qayta ishlash recycle"],["🔞","18"],["⚠️","ogohlantirish warning"],["🚫","taqiq no"],["✔️","belgi check"],["➕","plus qo'shish"],["➖","minus"],["➗","bo'lish divide"],["✖️","ko'paytirish"],["💲","dollar"],["🔴","qizil doira red"],["🟠","sariq doira"],["🟡","sariq"],["🟢","yashil doira green"],["🔵","ko'k doira blue"],["🟣","binafsha"],["⚫","qora"],["⚪","oq"]]]
+        ];
+
+        const emojiBtn = document.getElementById("emojiBtn");
+        const emojiPanel = document.getElementById("emojiPanel");
+        const emojiTabs = document.getElementById("emojiTabs");
+        const emojiGrid = document.getElementById("emojiGrid");
+        const emojiSearch = document.getElementById("emojiSearch");
+        let activeCat = 0;
+
+        function renderEmojiGrid(pairs) {
+            if (!pairs.length) { emojiGrid.innerHTML = `<div class="eg-empty">Emoji topilmadi</div>`; return; }
+            emojiGrid.innerHTML = pairs.map(p => `<button type="button" class="eg-item" data-emoji="${p[0]}">${p[0]}</button>`).join("");
+        }
+        function showCat(i) {
+            activeCat = i;
+            [...emojiTabs.children].forEach((t, idx) => t.classList.toggle("active", idx === i));
+            renderEmojiGrid(EMOJI_CATS[i][1]);
+        }
+        function buildEmojiPicker() {
+            if (emojiTabs.children.length) return; // bir marta
+            emojiTabs.innerHTML = EMOJI_CATS.map((c, i) =>
+                `<button type="button" class="et-tab" data-cat="${i}">${c[0]}</button>`).join("");
+            showCat(0);
+        }
+        function insertEmoji(ch) {
+            const start = text.selectionStart ?? text.value.length;
+            const end = text.selectionEnd ?? text.value.length;
+            text.value = text.value.slice(0, start) + ch + text.value.slice(end);
+            const pos = start + ch.length;
+            text.setSelectionRange(pos, pos);
+            text.focus();
+            text.dispatchEvent(new Event("input"));
+        }
+        if (emojiBtn && emojiPanel) {
+            emojiBtn.addEventListener("click", () => {
+                const willShow = emojiPanel.hidden;
+                emojiPanel.hidden = !willShow;
+                if (stickerPanel) stickerPanel.hidden = true;
+                if (willShow) buildEmojiPicker();
+            });
+            emojiTabs.addEventListener("click", (e) => {
+                const t = e.target.closest("[data-cat]");
+                if (t) { emojiSearch.value = ""; showCat(parseInt(t.dataset.cat, 10)); }
+            });
+            emojiGrid.addEventListener("click", (e) => {
+                const b = e.target.closest("[data-emoji]");
+                if (b) insertEmoji(b.dataset.emoji);
+            });
+            emojiSearch.addEventListener("input", () => {
+                const q = emojiSearch.value.trim().toLowerCase();
+                if (!q) { showCat(activeCat); return; }
+                const all = [];
+                EMOJI_CATS.forEach(c => c[1].forEach(p => { if (p[1].includes(q) || p[0] === q) all.push(p); }));
+                renderEmojiGrid(all);
+            });
+            document.addEventListener("click", (e) => {
+                if (emojiPanel.hidden) return;
+                if (e.target.closest("#emojiPanel") || e.target.closest("#emojiBtn")) return;
+                emojiPanel.hidden = true;
+            });
+        }
+
+        // ───────── Matn o'lchami (shrift masshtabi) — localStorage'da saqlanadi ─────────
+        const chatRootEl = document.querySelector(".chat");
+        const scaleBtn = document.getElementById("scaleBtn");
+        const scalePop = document.getElementById("scalePop");
+        const scaleRange = document.getElementById("scaleRange");
+        const scaleVal = document.getElementById("scaleVal");
+        const SCALE_KEY = "kitobChatScale";
+        function applyScale(v) {
+            v = Math.min(1.6, Math.max(0.8, parseFloat(v) || 1));
+            if (chatRootEl) chatRootEl.style.setProperty("--chat-scale", v);
+            if (scaleRange) scaleRange.value = v;
+            if (scaleVal) scaleVal.textContent = Math.round(v * 100) + "%";
+            return v;
+        }
+        applyScale(localStorage.getItem(SCALE_KEY) || 1);
+        if (scaleBtn && scalePop) {
+            scaleBtn.addEventListener("click", () => { scalePop.hidden = !scalePop.hidden; });
+            scaleRange.addEventListener("input", () => {
+                const v = applyScale(scaleRange.value);
+                localStorage.setItem(SCALE_KEY, String(v));
+            });
+            document.addEventListener("click", (e) => {
+                if (scalePop.hidden) return;
+                if (e.target.closest("#scalePop") || e.target.closest("#scaleBtn")) return;
+                scalePop.hidden = true;
+            });
+        }
+
+        // ───────── Ovozli xabar yozish (MediaRecorder) ─────────
+        const recBar = document.getElementById("recBar");
+        const recTime = document.getElementById("recTime");
+        const recCancelBtn = document.getElementById("recCancel");
+        let mediaRecorder = null, recChunks = [], recTimer = null, recSeconds = 0, recStream = null, recCancelled = false;
+
+        function cleanupRecUI() {
+            if (recTimer) { clearInterval(recTimer); recTimer = null; }
+            form.classList.remove("recording");
+            if (recBar) recBar.classList.remove("show");
+            if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
+            updateSendMic();
+        }
+        async function startRecording() {
+            if (!navigator.mediaDevices || !window.MediaRecorder) {
+                alert("Brauzeringiz ovoz yozishni qo'llab-quvvatlamaydi."); return;
+            }
+            try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+            catch (e) { alert("Mikrofonga ruxsat berilmadi."); return; }
+            recCancelled = false;
+            recChunks = [];
+            let mime = "";
+            ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/ogg", "audio/mp4"]
+                .forEach(m => { if (!mime && window.MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) mime = m; });
+            mediaRecorder = mime ? new MediaRecorder(recStream, { mimeType: mime }) : new MediaRecorder(recStream);
+            mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+            mediaRecorder.onstop = onRecStop;
+            mediaRecorder.start();
+            recSeconds = 0;
+            form.classList.add("recording");
+            if (recBar) recBar.classList.add("show");
+            if (micBtn) micBtn.hidden = true;
+            if (sendBtn) sendBtn.hidden = false; // "to'xtatib yuborish" bo'lib xizmat qiladi
+            if (recTime) recTime.textContent = "0:00";
+            recTimer = setInterval(() => {
+                recSeconds++;
+                if (recTime) recTime.textContent = fmtDur(recSeconds);
+                if (recSeconds >= 300) stopRecording(); // maks 5 daqiqa
+            }, 1000);
+        }
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        }
+        async function onRecStop() {
+            const dur = recSeconds;
+            const rec = mediaRecorder;
+            cleanupRecUI();
+            if (recCancelled || !recChunks.length) { recChunks = []; return; }
+            const type = (rec && rec.mimeType ? rec.mimeType : "audio/webm").split(";")[0];
+            const blob = new Blob(recChunks, { type });
+            recChunks = [];
+            if (dur < 1) return; // juda qisqa — yubormaymiz
+            const ext = type.indexOf("ogg") >= 0 ? "ogg" : type.indexOf("mp4") >= 0 ? "mp4" : "webm";
+            if (micBtn) micBtn.classList.add("uploading");
+            try {
+                const fd = new FormData();
+                fd.append("file", blob, "voice." + ext);
+                const res = await fetch("/chat/upload-voice", {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": api.antiforgeryToken() },
+                    credentials: "include",
+                    body: fd
+                });
+                if (!res.ok) {
+                    let msg = "Ovoz yuklanmadi.";
+                    try { const d = await res.json(); msg = d.message || msg; } catch { /* ignore */ }
+                    throw new Error(msg);
+                }
+                const data = await res.json();
+                if (data && data.url) await sendPayload({ voiceUrl: data.url, voiceDurationSeconds: dur });
+            } catch (err) { alert(err.message); }
+            finally { if (micBtn) micBtn.classList.remove("uploading"); }
+        }
+        if (micBtn) micBtn.addEventListener("click", startRecording);
+        if (recCancelBtn) recCancelBtn.addEventListener("click", () => { recCancelled = true; stopRecording(); });
     }
 
     // ───────── People search ─────────

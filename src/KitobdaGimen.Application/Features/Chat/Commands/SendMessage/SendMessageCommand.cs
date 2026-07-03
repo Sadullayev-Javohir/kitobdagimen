@@ -20,4 +20,13 @@ public record SendMessageCommand : IRequest<MessageDto>
 
     /// <summary>Key of a built-in app sticker (e.g. "book", "quill").</summary>
     public string? StickerKey { get; init; }
+
+    /// <summary>Public URL of an uploaded voice message (from <c>/chat/upload-voice</c>).</summary>
+    public string? VoiceUrl { get; init; }
+
+    /// <summary>Duration of the voice message in seconds.</summary>
+    public int? VoiceDurationSeconds { get; init; }
+
+    /// <summary>Id of the message this one replies to (Telegram-style quote); null if not a reply.</summary>
+    public int? ReplyToMessageId { get; init; }
 }

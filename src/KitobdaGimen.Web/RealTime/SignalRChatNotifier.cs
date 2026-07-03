@@ -108,6 +108,34 @@ public class SignalRChatNotifier : IChatNotifier
         }
     }
 
+    public async Task ReactionNotificationAsync(
+        int recipientUserId, string actorName, string? actorAvatarUrl, string emoji, int conversationId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Reuse the global notification channel (connected on every page) so the message owner
+            // is notified even when /chat is closed. Shaped like a NotificationDto with type "reaction".
+            await _notificationHub.Clients
+                .Group(NotificationHub.UserGroup(recipientUserId))
+                .SendAsync("ReceiveNotification", new
+                {
+                    id = 0,
+                    type = "reaction",
+                    relatedId = conversationId,
+                    actorName,
+                    actorAvatarUrl,
+                    message = $"{actorName} xabaringizga {emoji} reaksiya qoldirdi",
+                    url = "/chat",
+                    isRead = false
+                }, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Reaksiya bildirishnomasini yuborib bo'lmadi (recipient {RecipientId}).", recipientUserId);
+        }
+    }
+
     public async Task MessagesReadAsync(int senderUserId, int conversationId, CancellationToken cancellationToken = default)
     {
         try

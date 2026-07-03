@@ -51,6 +51,9 @@ public class ToggleReactionCommandHandler : IRequestHandler<ToggleReactionComman
         var existing = await _db.MessageReactions
             .FirstOrDefaultAsync(r => r.MessageId == message.Id && r.UserId == userId, cancellationToken);
 
+        // True when the reaction is being ADDED or CHANGED (not toggled off) — drives the
+        // "someone reacted to your message" notification to the message owner.
+        var reactionApplied = false;
         if (existing is null)
         {
             _db.MessageReactions.Add(new MessageReaction
@@ -60,6 +63,7 @@ public class ToggleReactionCommandHandler : IRequestHandler<ToggleReactionComman
                 Emoji = emoji,
                 CreatedAt = DateTime.UtcNow
             });
+            reactionApplied = true;
         }
         else if (existing.Emoji == emoji)
         {
@@ -71,6 +75,7 @@ public class ToggleReactionCommandHandler : IRequestHandler<ToggleReactionComman
             // Different emoji → replace the previous one.
             existing.Emoji = emoji;
             existing.CreatedAt = DateTime.UtcNow;
+            reactionApplied = true;
         }
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -93,6 +98,21 @@ public class ToggleReactionCommandHandler : IRequestHandler<ToggleReactionComman
         await _db.AttachReactionsAsync(new[] { otherDto }, otherUserId, cancellationToken);
 
         await _chatNotifier.MessageReactionChangedAsync(otherUserId, otherDto, cancellationToken);
+
+        // Notify the message OWNER that someone reacted to their message (Telegram-style). Only when
+        // the reaction was applied (not toggled off) and the reactor isn't reacting to their own message.
+        if (reactionApplied && message.SenderId != userId)
+        {
+            var actor = await _db.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new { u.FullName, u.AvatarUrl })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (actor is not null)
+            {
+                await _chatNotifier.ReactionNotificationAsync(
+                    message.SenderId, actor.FullName, actor.AvatarUrl, emoji, conversation.Id, cancellationToken);
+            }
+        }
 
         return dto;
     }

@@ -37,6 +37,18 @@ public class ChatController : AppController
     private const long MaxImageBytes = 8 * 1024 * 1024; // 8 MB
     private const int MaxImageDimension = 1600;
 
+    // Allowed voice-message container types (produced by the browser's MediaRecorder) → extension.
+    private static readonly Dictionary<string, string> AllowedVoiceTypes = new()
+    {
+        ["audio/webm"] = ".webm",
+        ["audio/ogg"] = ".ogg",
+        ["audio/mp4"] = ".mp4",
+        ["audio/mpeg"] = ".mp3",
+        ["audio/wav"] = ".wav"
+    };
+
+    private const long MaxVoiceBytes = 12 * 1024 * 1024; // 12 MB (~a few minutes of Opus)
+
     /// <summary>Redis presence service, resolved per request (same pattern as the base mediator).</summary>
     private IPresenceService Presence =>
         HttpContext.RequestServices.GetRequiredService<IPresenceService>();
@@ -170,6 +182,40 @@ public class ChatController : AppController
             var url = $"/uploads/chat/{fileName}";
             return Json(new { url });
         }
+    }
+
+    /// <summary>Uploads a chat voice message (recorded in the browser) and returns its public URL (JSON).</summary>
+    [HttpPost("upload-voice")]
+    public async Task<IActionResult> UploadVoice(IFormFile? file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Ovoz yozib olinmadi." });
+        }
+
+        if (file.Length > MaxVoiceBytes)
+        {
+            return BadRequest(new { message = "Ovozli xabar hajmi 12 MB dan oshmasligi kerak." });
+        }
+
+        // Content type from MediaRecorder can carry a codecs suffix (e.g. "audio/webm;codecs=opus").
+        var contentType = (file.ContentType ?? "").Split(';')[0].Trim().ToLowerInvariant();
+        if (!AllowedVoiceTypes.TryGetValue(contentType, out var ext))
+        {
+            return BadRequest(new { message = $"Bunday audio formati qo'llab-quvvatlanmaydi. ({contentType})" });
+        }
+
+        var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("chat");
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var fullPath = Path.Combine(uploadDir, fileName);
+
+        await using (var output = System.IO.File.Create(fullPath))
+        {
+            await file.CopyToAsync(output);
+        }
+
+        var url = $"/uploads/chat/{fileName}";
+        return Json(new { url });
     }
 
     /// <summary>Toggles the current user's emoji reaction on a message (Telegram-style).</summary>

@@ -76,6 +76,19 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
             }
         }
 
+        // Reply target: must be an existing message in the SAME conversation (prevents quoting
+        // across conversations or referencing arbitrary ids).
+        int? replyToId = null;
+        if (request.ReplyToMessageId is int replyId)
+        {
+            var replyValid = await _db.Messages.AnyAsync(
+                m => m.Id == replyId && m.ConversationId == conversation.Id, cancellationToken);
+            if (replyValid)
+            {
+                replyToId = replyId;
+            }
+        }
+
         var message = new Message
         {
             ConversationId = conversation.Id,
@@ -83,7 +96,10 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
             Text = string.IsNullOrWhiteSpace(request.Text) ? null : request.Text,
             ImageUrl = string.IsNullOrWhiteSpace(request.ImageUrl) ? null : request.ImageUrl,
             StickerKey = string.IsNullOrWhiteSpace(request.StickerKey) ? null : request.StickerKey.Trim(),
+            VoiceUrl = string.IsNullOrWhiteSpace(request.VoiceUrl) ? null : request.VoiceUrl,
+            VoiceDurationSeconds = request.VoiceDurationSeconds,
             SharedPostId = request.SharedPostId,
+            ReplyToMessageId = replyToId,
             SentAt = DateTime.UtcNow,
             IsRead = false
         };

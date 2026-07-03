@@ -13,6 +13,7 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(m => m.Text).HasMaxLength(4000);
         builder.Property(m => m.ImageUrl).HasMaxLength(512);
         builder.Property(m => m.StickerKey).HasMaxLength(64);
+        builder.Property(m => m.VoiceUrl).HasMaxLength(512);
 
         builder.HasOne(m => m.Conversation)
             .WithMany(c => c.Messages)
@@ -27,6 +28,13 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.HasOne(m => m.SharedPost)
             .WithMany()
             .HasForeignKey(m => m.SharedPostId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Self-referencing "reply to" (Telegram-style quote). If the quoted message is deleted,
+        // the reply survives with its foreign key nulled out.
+        builder.HasOne(m => m.ReplyToMessage)
+            .WithMany()
+            .HasForeignKey(m => m.ReplyToMessageId)
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(m => new { m.ConversationId, m.SentAt });

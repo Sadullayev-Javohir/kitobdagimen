@@ -40,6 +40,7 @@ public class SpyChatNotifier : IChatNotifier
     public List<(int RecipientUserId, int ConversationId, string SenderName)> MessageBadges { get; } = new();
     public List<(int RecipientUserId, MessageDto Message)> Edited { get; } = new();
     public List<(int RecipientUserId, MessageDto Message)> Reactions { get; } = new();
+    public List<(int RecipientUserId, string ActorName, string Emoji, int ConversationId)> ReactionNotifications { get; } = new();
     public List<(int RecipientUserId, int ConversationId, int MessageId)> Deleted { get; } = new();
     public List<(int SenderUserId, int ConversationId)> ReadSignals { get; } = new();
     public List<(IReadOnlyList<int> Recipients, int UserId, bool IsOnline, DateTime? LastSeenAt)> PresenceChanges { get; } = new();
@@ -73,6 +74,14 @@ public class SpyChatNotifier : IChatNotifier
     public Task MessageReactionChangedAsync(int recipientUserId, MessageDto message, CancellationToken cancellationToken = default)
     {
         Reactions.Add((recipientUserId, message));
+        return Task.CompletedTask;
+    }
+
+    public Task ReactionNotificationAsync(
+        int recipientUserId, string actorName, string? actorAvatarUrl, string emoji, int conversationId,
+        CancellationToken cancellationToken = default)
+    {
+        ReactionNotifications.Add((recipientUserId, actorName, emoji, conversationId));
         return Task.CompletedTask;
     }
 

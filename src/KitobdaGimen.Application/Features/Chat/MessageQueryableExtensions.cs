@@ -31,6 +31,18 @@ internal static class MessageQueryableExtensions
             Text = m.Text,
             ImageUrl = m.ImageUrl,
             StickerKey = m.StickerKey,
+            VoiceUrl = m.VoiceUrl,
+            VoiceDurationSeconds = m.VoiceDurationSeconds,
+            ReplyToId = m.ReplyToMessageId,
+            ReplyToSenderName = m.ReplyToMessage == null ? null : m.ReplyToMessage.Sender.FullName,
+            ReplyToPreview = m.ReplyToMessage == null
+                ? null
+                : (m.ReplyToMessage.Text != null ? m.ReplyToMessage.Text
+                    : m.ReplyToMessage.ImageUrl != null ? "📷 Rasm"
+                    : m.ReplyToMessage.VoiceUrl != null ? "🎤 Ovozli xabar"
+                    : m.ReplyToMessage.StickerKey != null ? "Stiker"
+                    : m.ReplyToMessage.SharedPostId != null ? "📚 Post"
+                    : ""),
             SharedPost = m.SharedPost == null
                 ? null
                 : new SharedPostPreviewDto

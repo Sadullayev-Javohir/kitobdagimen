@@ -28,6 +28,14 @@ public interface IChatNotifier
     Task MessageReactionChangedAsync(int recipientUserId, MessageDto message, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Notifies the message owner (on ANY page) that someone reacted to their message with an
+    /// emoji — surfaced as a toast/bell notification, like Telegram's reaction notifications.
+    /// </summary>
+    Task ReactionNotificationAsync(
+        int recipientUserId, string actorName, string? actorAvatarUrl, string emoji, int conversationId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Tells the original sender that their messages in a conversation were read, so their
     /// outgoing messages can switch to the blue double-tick in real time.
     /// </summary>

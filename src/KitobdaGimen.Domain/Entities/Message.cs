@@ -21,8 +21,18 @@ public class Message : BaseEntity
     /// <summary>Key of a built-in app sticker (e.g. "book", "quill"); null if not a sticker message.</summary>
     public string? StickerKey { get; set; }
 
+    /// <summary>Public URL of an attached voice message (uploaded to <c>/uploads/chat</c>); null if none.</summary>
+    public string? VoiceUrl { get; set; }
+
+    /// <summary>Duration of the voice message in seconds (measured on the client at record time).</summary>
+    public int? VoiceDurationSeconds { get; set; }
+
     public int? SharedPostId { get; set; }
     public Post? SharedPost { get; set; }
+
+    /// <summary>The message this one replies to (Telegram-style quote); null if not a reply.</summary>
+    public int? ReplyToMessageId { get; set; }
+    public Message? ReplyToMessage { get; set; }
 
     public DateTime SentAt { get; set; }
     public bool IsRead { get; set; }
