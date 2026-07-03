@@ -19,6 +19,14 @@ public class DeleteAccountHandlerTests : TestBase
         await db.SaveChangesAsync();
     }
 
+    // Only a super admin may delete an account, so promote the acting user before deletion.
+    private static async Task MakeSuperAdminAsync(TestDbContext db, int userId)
+    {
+        var user = await db.Users.FirstAsync(u => u.Id == userId);
+        user.Role = UserRole.SuperAdmin;
+        await db.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task Deletes_user_and_removes_connections_in_both_directions()
     {
@@ -27,6 +35,7 @@ public class DeleteAccountHandlerTests : TestBase
         db.Connections.Add(new Connection { RequesterId = 1, AddresseeId = 2, Status = ConnectionStatus.Accepted, CreatedAt = DateTime.UtcNow });
         db.Connections.Add(new Connection { RequesterId = 3, AddresseeId = 1, Status = ConnectionStatus.Pending, CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
+        await MakeSuperAdminAsync(db, 1);
 
         var handler = new DeleteAccountCommandHandler(db, new FakeCurrentUserService(userId: 1, email: "u1@e.com"));
 
@@ -42,10 +51,25 @@ public class DeleteAccountHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 1);
+        await MakeSuperAdminAsync(db, 1);
         var handler = new DeleteAccountCommandHandler(db, new FakeCurrentUserService(userId: 1, email: "u1@e.com"));
 
         await Assert.ThrowsAsync<ValidationException>(
             () => handler.Handle(new DeleteAccountCommand("wrong@e.com"), CancellationToken.None));
+
+        Assert.NotNull(await db.Users.FirstOrDefaultAsync(u => u.Id == 1));
+    }
+
+    [Fact]
+    public async Task Non_super_admin_cannot_delete_account()
+    {
+        using var db = CreateContext();
+        await SeedUsersAsync(db, 1); // default role is User
+
+        var handler = new DeleteAccountCommandHandler(db, new FakeCurrentUserService(userId: 1, email: "u1@e.com"));
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(
+            () => handler.Handle(new DeleteAccountCommand("u1@e.com"), CancellationToken.None));
 
         Assert.NotNull(await db.Users.FirstOrDefaultAsync(u => u.Id == 1));
     }
@@ -75,6 +99,7 @@ public class DeleteAccountHandlerTests : TestBase
         db.Messages.Add(new Message { Id = 1, ConversationId = 1, SenderId = 2, Text = "hi", SentAt = DateTime.UtcNow });
         db.MessageReactions.Add(new MessageReaction { Id = 1, MessageId = 1, UserId = 1, Emoji = "❤️", CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
+        await MakeSuperAdminAsync(db, 1);
 
         var handler = new DeleteAccountCommandHandler(db, new FakeCurrentUserService(userId: 1, email: "u1@e.com"));
 
