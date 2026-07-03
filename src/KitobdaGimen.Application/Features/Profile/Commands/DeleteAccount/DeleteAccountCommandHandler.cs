@@ -26,6 +26,12 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
             ?? throw new NotFoundException("Foydalanuvchi", userId);
 
+        // Akkauntni faqat super admin o'chira oladi — oddiy foydalanuvchi o'z profilini o'chira olmaydi.
+        if (user.Role != Domain.Enums.UserRole.SuperAdmin)
+        {
+            throw new ForbiddenAccessException("Akkauntni faqat super admin o'chira oladi.");
+        }
+
         var typed = (request.Email ?? string.Empty).Trim();
         if (!string.Equals(typed, user.Email, StringComparison.OrdinalIgnoreCase))
         {

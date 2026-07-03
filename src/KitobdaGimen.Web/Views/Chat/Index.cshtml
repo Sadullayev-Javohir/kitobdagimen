@@ -279,18 +279,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="14" y2="16"/><circle cx="16" cy="8" r="2" fill="var(--surface)"/><circle cx="10" cy="16" r="2" fill="var(--surface)"/></svg>
                     </button>
 
-                    @* Ovoz yozish holati satri (yozilayotganda row'ni egallaydi) *@
-                    <div class="rec-bar" id="recBar">
-                        <span class="rec-dot"></span>
-                        <span class="rec-time" id="recTime">0:00</span>
-                        <span class="rec-hint">Yozilmoqda… yuborish uchun ➤ tugmasini bosing</span>
-                        <button type="button" class="rec-cancel" id="recCancel">Bekor</button>
-                    </div>
-
-                    <button type="button" class="btn btn-primary btn-icon" id="micBtn" aria-label="Ovozli xabar" title="Ovozli xabar">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                    </button>
-                    <button type="submit" class="btn btn-primary btn-icon" id="sendBtn" aria-label="Yuborish" hidden>
+                    <button type="submit" class="btn btn-primary btn-icon" id="sendBtn" aria-label="Yuborish">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                     </button>
                 </div>
@@ -938,7 +927,6 @@
             chatConn.invoke("Typing", conversationId).catch(() => {});
         }
 
-        const micBtn = document.getElementById("micBtn");
         const sendBtn = document.getElementById("sendBtn");
 
         // Textareani kontentga qarab o'stiradi (o'ngga ketmasdan pastga o'raladi).
@@ -946,11 +934,9 @@
             text.style.height = "auto";
             text.style.height = Math.min(text.scrollHeight, 148) + "px";
         }
-        // Matn bor bo'lsa "yuborish", bo'sh bo'lsa "mikrofon" tugmasini ko'rsatamiz (Telegram uslubi).
+        // "Yuborish" tugmasi doim ko'rinadi (ovozli xabar tugmasi olib tashlangan).
         function updateSendMic() {
-            const has = text.value.trim().length > 0;
-            if (sendBtn) sendBtn.hidden = !has;
-            if (micBtn) micBtn.hidden = has;
+            if (sendBtn) sendBtn.hidden = false;
         }
         updateSendMic();
 
@@ -982,8 +968,6 @@
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            // Ovoz yozilayotgan bo'lsa, "yuborish" tugmasi yozishni to'xtatib yuboradi (matn emas).
-            if (form.classList.contains("recording")) { stopRecording(); return; }
             await submitText();
         });
 
@@ -1142,81 +1126,6 @@
             });
         }
 
-        // ───────── Ovozli xabar yozish (MediaRecorder) ─────────
-        const recBar = document.getElementById("recBar");
-        const recTime = document.getElementById("recTime");
-        const recCancelBtn = document.getElementById("recCancel");
-        let mediaRecorder = null, recChunks = [], recTimer = null, recSeconds = 0, recStream = null, recCancelled = false;
-
-        function cleanupRecUI() {
-            if (recTimer) { clearInterval(recTimer); recTimer = null; }
-            form.classList.remove("recording");
-            if (recBar) recBar.classList.remove("show");
-            if (recStream) { recStream.getTracks().forEach(t => t.stop()); recStream = null; }
-            updateSendMic();
-        }
-        async function startRecording() {
-            if (!navigator.mediaDevices || !window.MediaRecorder) {
-                alert("Brauzeringiz ovoz yozishni qo'llab-quvvatlamaydi."); return;
-            }
-            try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-            catch (e) { alert("Mikrofonga ruxsat berilmadi."); return; }
-            recCancelled = false;
-            recChunks = [];
-            let mime = "";
-            ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/ogg", "audio/mp4"]
-                .forEach(m => { if (!mime && window.MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) mime = m; });
-            mediaRecorder = mime ? new MediaRecorder(recStream, { mimeType: mime }) : new MediaRecorder(recStream);
-            mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
-            mediaRecorder.onstop = onRecStop;
-            mediaRecorder.start();
-            recSeconds = 0;
-            form.classList.add("recording");
-            if (recBar) recBar.classList.add("show");
-            if (micBtn) micBtn.hidden = true;
-            if (sendBtn) sendBtn.hidden = false; // "to'xtatib yuborish" bo'lib xizmat qiladi
-            if (recTime) recTime.textContent = "0:00";
-            recTimer = setInterval(() => {
-                recSeconds++;
-                if (recTime) recTime.textContent = fmtDur(recSeconds);
-                if (recSeconds >= 300) stopRecording(); // maks 5 daqiqa
-            }, 1000);
-        }
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
-        }
-        async function onRecStop() {
-            const dur = recSeconds;
-            const rec = mediaRecorder;
-            cleanupRecUI();
-            if (recCancelled || !recChunks.length) { recChunks = []; return; }
-            const type = (rec && rec.mimeType ? rec.mimeType : "audio/webm").split(";")[0];
-            const blob = new Blob(recChunks, { type });
-            recChunks = [];
-            if (dur < 1) return; // juda qisqa — yubormaymiz
-            const ext = type.indexOf("ogg") >= 0 ? "ogg" : type.indexOf("mp4") >= 0 ? "mp4" : "webm";
-            if (micBtn) micBtn.classList.add("uploading");
-            try {
-                const fd = new FormData();
-                fd.append("file", blob, "voice." + ext);
-                const res = await fetch("/chat/upload-voice", {
-                    method: "POST",
-                    headers: { "X-Requested-With": "XMLHttpRequest", "RequestVerificationToken": api.antiforgeryToken() },
-                    credentials: "include",
-                    body: fd
-                });
-                if (!res.ok) {
-                    let msg = "Ovoz yuklanmadi.";
-                    try { const d = await res.json(); msg = d.message || msg; } catch { /* ignore */ }
-                    throw new Error(msg);
-                }
-                const data = await res.json();
-                if (data && data.url) await sendPayload({ voiceUrl: data.url, voiceDurationSeconds: dur });
-            } catch (err) { alert(err.message); }
-            finally { if (micBtn) micBtn.classList.remove("uploading"); }
-        }
-        if (micBtn) micBtn.addEventListener("click", startRecording);
-        if (recCancelBtn) recCancelBtn.addEventListener("click", () => { recCancelled = true; stopRecording(); });
     }
 
     // ───────── People search ─────────

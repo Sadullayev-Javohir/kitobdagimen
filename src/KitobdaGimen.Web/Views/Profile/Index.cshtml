@@ -9,7 +9,10 @@
     ViewData["Title"] = p.FullName;
     ViewData["FinishedBooksOwner"] = p.IsCurrentUser;
     var isAuth = CurrentUser.IsAuthenticated;
-    var myEmail = p.IsCurrentUser ? (await Mediator.Send(new GetCurrentUserQuery()))?.Email : null;
+    var me = p.IsCurrentUser ? await Mediator.Send(new GetCurrentUserQuery()) : null;
+    var myEmail = me?.Email;
+    // Akkauntni faqat super admin o'chira oladi.
+    var canDeleteAccount = me?.Role == KitobdaGimen.Domain.Enums.UserRole.SuperAdmin;
     // Shareable, registration-free link to this profile. Prefer the unique username; fall back to id.
     var shareSegment = string.IsNullOrWhiteSpace(p.Username) ? p.Id.ToString() : p.Username;
     var shareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/u/{shareSegment}";
@@ -114,7 +117,10 @@
                         <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">share</span>
                         Ulashish
                     </button>
-                    <button type="button" class="btn btn-ghost btn-sm danger-text" data-open-delete-account>Akkauntni o'chirish</button>
+                    @if (canDeleteAccount)
+                    {
+                        <button type="button" class="btn btn-ghost btn-sm danger-text" data-open-delete-account>Akkauntni o'chirish</button>
+                    }
                 </div>
             }
             else if (isAuth)
