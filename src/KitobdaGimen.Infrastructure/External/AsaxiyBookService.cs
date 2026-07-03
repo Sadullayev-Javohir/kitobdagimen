@@ -69,6 +69,15 @@ public class AsaxiyBookService : IAsaxiyBookService
         _transports = BuildTransports(options);
     }
 
+    // Oddiy transportlar uchun tez-uziladigan urinish timeout'i (soniya). Osilib qolgan
+    // uy proksisi/worker butun failover zanjirini bloklab qo'ymasligi uchun qisqa.
+    private const int FastTimeoutSeconds = 8;
+    // Ochiq o'qigichlar (Jina/AllOrigins) — sekinroq, shuning uchun uzunroq timeout.
+    private const int ReaderTimeoutSeconds = 25;
+    // Butun failover zanjiri uchun umumiy vaqt byudjeti — bir nechta transport osilib
+    // qolsa ham so'rov bundan oshmaydi.
+    private const int OverallDeadlineSeconds = 35;
+
     /// <summary>Berilgan sozlamalar asosida transportlar ro'yxatini (ustunlik tartibida) tuzadi.</summary>
     private static IReadOnlyList<Transport> BuildTransports(AsaxiyOptions options)
     {
@@ -89,15 +98,18 @@ public class AsaxiyBookService : IAsaxiyBookService
                         req.Headers.TryAddWithoutValidation("X-Proxy-Secret", secret);
                     }
                 },
-                SupportsBinary: true));
+                SupportsBinary: true,
+                TimeoutSeconds: FastTimeoutSeconds));
         }
 
         if (options.HasProxy)
         {
-            list.Add(new Transport("proxy", AsaxiyClients.Proxy, url => url, null, SupportsBinary: true));
+            list.Add(new Transport("proxy", AsaxiyClients.Proxy, url => url, null,
+                SupportsBinary: true, TimeoutSeconds: FastTimeoutSeconds));
         }
 
-        list.Add(new Transport("direct", AsaxiyClients.Direct, url => url, null, SupportsBinary: true));
+        list.Add(new Transport("direct", AsaxiyClients.Direct, url => url, null,
+            SupportsBinary: true, TimeoutSeconds: FastTimeoutSeconds));
 
         // Jina Reader — Cloudflare bloki ostida ham ishlaydigan, sozlamasiz zaxira yo'l.
         // r.jina.ai maqsad URL'ni o'z infratuzilmasidan (bloklanmagan IP) o'qib, HTML
@@ -107,7 +119,22 @@ public class AsaxiyBookService : IAsaxiyBookService
             ClientName: AsaxiyClients.Jina,
             BuildUrl: url => "https://r.jina.ai/" + url,
             Configure: req => req.Headers.TryAddWithoutValidation("X-Return-Format", "html"),
-            SupportsBinary: false));
+            SupportsBinary: false,
+            TimeoutSeconds: ReaderTimeoutSeconds));
+
+        // AllOrigins — ikkinchi mustaqil ochiq proksi (zaxiraning zaxirasi). Jina o'chib qolsa
+        // yoki rate-limit qilsa ham qidiruv shu orqali ishlab turadi. `/raw` maqsad javobini
+        // o'zgartirmasdan qaytaradi, shuning uchun ichidagi JSON-LD saqlanadi. Bloklanmagan IP'dan
+        // so'raydi. Binary (muqova) ishonchsiz bo'lgani uchun faqat HTML uchun ishlatamiz.
+        list.Add(new Transport(
+            Name: "allorigins",
+            ClientName: AsaxiyClients.Jina,
+            BuildUrl: url => "https://api.allorigins.win/raw?url=" + Uri.EscapeDataString(url),
+            Configure: null,
+            SupportsBinary: false,
+            // AllOrigins ba'zan 522 bilan sekin uziladi — qisqaroq timeout beramiz, u zanjirning
+            // qolgan byudjetini yeb qo'ymasin. Asosiy zaxira baribir Jina.
+            TimeoutSeconds: 12));
 
         return list;
     }
@@ -292,24 +319,39 @@ public class AsaxiyBookService : IAsaxiyBookService
         var count = _transports.Count;
         var start = Math.Min(_state.PreferredIndex, count - 1);
 
+        // Butun zanjir uchun umumiy vaqt byudjeti — bir nechta transport osilib qolsa ham
+        // so'rov cheksiz kutib qolmaydi (foydalanuvchi/gateway timeout'iga tushmaydi).
+        using var overall = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        overall.CancelAfter(TimeSpan.FromSeconds(OverallDeadlineSeconds));
+
         for (var i = 0; i < count; i++)
         {
+            if (overall.IsCancellationRequested)
+            {
+                break;
+            }
+
             var idx = (start + i) % count;
             var transport = _transports[idx];
+
+            // Har bir urinish uchun alohida, tez-uziladigan timeout. Shu tufayli osilib qolgan
+            // transport (mas. o'chgan uy proksisi) keyingisiga o'tishni bloklab qo'ymaydi.
+            using var attempt = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
+            attempt.CancelAfter(TimeSpan.FromSeconds(transport.TimeoutSeconds));
             try
             {
                 var client = _httpFactory.CreateClient(transport.ClientName);
                 using var req = new HttpRequestMessage(HttpMethod.Get, transport.BuildUrl(asaxiyUrl));
                 transport.Configure?.Invoke(req);
 
-                using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
+                using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseContentRead, attempt.Token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     _logger.LogDebug("asaxiy transport {Transport}: {Status}", transport.Name, (int)resp.StatusCode);
                     continue;
                 }
 
-                var html = await resp.Content.ReadAsStringAsync(ct);
+                var html = await resp.Content.ReadAsStringAsync(attempt.Token);
                 if (!isValid(html))
                 {
                     _logger.LogDebug("asaxiy transport {Transport}: yaroqsiz javob (blok?)", transport.Name);
@@ -321,6 +363,8 @@ public class AsaxiyBookService : IAsaxiyBookService
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // Faqat CHAQIRUVCHI bekor qilgan bo'lsa uzatamiz. Bizning per-urinish yoki
+                // umumiy timeout bo'lsa — keyingi transportga o'tamiz.
                 throw;
             }
             catch (Exception ex)
@@ -338,8 +382,16 @@ public class AsaxiyBookService : IAsaxiyBookService
         var count = _transports.Count;
         var start = Math.Min(_state.PreferredIndex, count - 1);
 
+        using var overall = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        overall.CancelAfter(TimeSpan.FromSeconds(OverallDeadlineSeconds));
+
         for (var i = 0; i < count; i++)
         {
+            if (overall.IsCancellationRequested)
+            {
+                break;
+            }
+
             var idx = (start + i) % count;
             var transport = _transports[idx];
             if (!transport.SupportsBinary)
@@ -347,19 +399,21 @@ public class AsaxiyBookService : IAsaxiyBookService
                 continue;
             }
 
+            using var attempt = CancellationTokenSource.CreateLinkedTokenSource(overall.Token);
+            attempt.CancelAfter(TimeSpan.FromSeconds(transport.TimeoutSeconds));
             try
             {
                 var client = _httpFactory.CreateClient(transport.ClientName);
                 using var req = new HttpRequestMessage(HttpMethod.Get, transport.BuildUrl(asaxiyUrl));
                 transport.Configure?.Invoke(req);
 
-                using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
+                using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseContentRead, attempt.Token);
                 if (!resp.IsSuccessStatusCode)
                 {
                     continue;
                 }
 
-                var bytes = await resp.Content.ReadAsByteArrayAsync(ct);
+                var bytes = await resp.Content.ReadAsByteArrayAsync(attempt.Token);
                 if (LooksLikeImage(bytes))
                 {
                     return bytes;
@@ -451,12 +505,18 @@ public class AsaxiyBookService : IAsaxiyBookService
     }
 
     /// <summary>Bitta transport yo'li: HTTP klient nomi + URL o'zgartirgich + so'rov sozlagichi.</summary>
+    /// <param name="TimeoutSeconds">
+    /// Shu transport uchun urinish timeout'i. Failover TEZ bo'lishi uchun oddiy transportlar
+    /// qisqa (osilib qolgan uy proksisi butun zanjirni bloklamasin), o'qigichlar (Jina/AllOrigins)
+    /// sekinroq bo'lgani uchun uzunroq.
+    /// </param>
     private sealed record Transport(
         string Name,
         string ClientName,
         Func<string, string> BuildUrl,
         Action<HttpRequestMessage>? Configure,
-        bool SupportsBinary);
+        bool SupportsBinary,
+        int TimeoutSeconds);
 }
 
 /// <summary>Named HTTP client nomlari (DI'da ro'yxatga olinadi).</summary>

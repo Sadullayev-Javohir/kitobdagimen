@@ -14,7 +14,10 @@
     <configurations />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="33f6d112-5c1c-41fd-b366-0b0c85fa4ece" name="Changes" comment="" />
+    <list default="true" id="33f6d112-5c1c-41fd-b366-0b0c85fa4ece" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.KitobdaGimen/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.KitobdaGimen/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/KitobdaGimen.Infrastructure/External/AsaxiyBookService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/src/KitobdaGimen.Infrastructure/External/AsaxiyBookService.cs" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -105,6 +108,9 @@
       <workItem from="1782893225474" duration="26543000" />
       <workItem from="1782925126186" duration="25667000" />
       <workItem from="1782988748931" duration="937000" />
+      <workItem from="1782993427330" duration="2660000" />
+      <workItem from="1782996519905" duration="735000" />
+      <workItem from="1783078948541" duration="1625000" />
     </task>
     <servers />
   </component>
