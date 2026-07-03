@@ -24,7 +24,10 @@
 * { box-sizing: border-box; }
 
 html, body { margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+/* Mobil brauzerlarning avtomatik "matn kattalashtirish" (text inflation/boosting) algoritmini
+   o'chiramiz. Aks holda chatdagi uzun xabarlar brauzer tomonidan mustaqil kattalashtirilib,
+   foydalanuvchi tanlagan shrift masshtabi (--chat-scale) barcha matnga bir xil ta'sir qilmaydi. */
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Navbar havolalari bosilganda bo'limlar tepada biroz nafas oladigan joy bilan to'xtaydi */
 #imkoniyatlar, #qanday, #savol { scroll-margin-top: 24px; }
 
@@ -1888,6 +1891,13 @@ body.chat-lightbox-open { overflow: hidden; }
     .msg-form { flex-shrink: 0; }
     .messages { flex: 1 1 auto; min-height: 0; }
     .msg.is-sticker .msg-sticker svg { width: 76px; height: 76px; }
+    /* Mobil kompozitor: barcha tugmalar (emoji, stiker, rasm, shrift o'lchami, yuborish)
+       TEPADA bir qatorda; matn kiritish maydoni esa ULARDAN PASTDA to'liq kenglikda joylashadi.
+       Shu tarzda tor ekranda textarea siqilib qolmaydi va yozish qulay bo'ladi. */
+    .msg-form .row { flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+    .msg-form .row textarea.input { order: 2; flex: 1 0 100%; width: 100%; max-height: 120px; }
+    /* Yuborish tugmasi ham tepadagi doira tugmalarga (42px) mos bo'lsin */
+    .msg-form .row #sendBtn { width: 42px; height: 42px; padding: 0; border-radius: 50%; flex-shrink: 0; }
 }
 @media (max-width: 480px) {
     .container { padding: 0 16px; }
