@@ -10,9 +10,6 @@ namespace KitobdaGimen.Application.Features.YearReview.Queries.GetYearReview;
 
 public class GetYearReviewQueryHandler : IRequestHandler<GetYearReviewQuery, YearReviewDto>
 {
-    /// <summary>Kartochkada ko'rsatiladigan kitoblarning maksimal soni.</summary>
-    private const int MaxBooks = 8;
-
     private const int PostSnippetLength = 140;
     private const int QuoteSnippetLength = 160;
 
@@ -49,14 +46,14 @@ public class GetYearReviewQueryHandler : IRequestHandler<GetYearReviewQuery, Yea
 
         var booksRead = pagesByBook.Count;
 
-        var topBookIds = pagesByBook.Take(MaxBooks).Select(x => x.BookId).ToList();
+        // Yillik hisobotda o'qilgan BARCHA kitoblar ko'rsatiladi — bittasi ham qolib ketmaydi.
+        var allBookIds = pagesByBook.Select(x => x.BookId).ToList();
         var bookInfos = await _db.Books
-            .Where(b => topBookIds.Contains(b.Id))
+            .Where(b => allBookIds.Contains(b.Id))
             .Select(b => new { b.Id, b.Title, b.Author, b.CoverUrl })
             .ToListAsync(ct);
 
         var books = pagesByBook
-            .Take(MaxBooks)
             .Select(x =>
             {
                 var info = bookInfos.FirstOrDefault(b => b.Id == x.BookId);

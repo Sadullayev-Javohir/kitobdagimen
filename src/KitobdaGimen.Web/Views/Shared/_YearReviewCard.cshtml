@@ -5,10 +5,7 @@
     var initial = string.IsNullOrWhiteSpace(Model.FullName) ? "?" : Model.FullName.Trim()[..1].ToUpper();
 
     var avgPerDay = Model.ActiveDays > 0 ? (int)System.Math.Round((double)Model.TotalPages / Model.ActiveDays) : 0;
-    var topBook = Model.Books.Count > 0 ? Model.Books[0] : null;
     var maxBookPages = Model.Books.Count > 0 ? System.Math.Max(1, Model.Books.Max(b => b.Pages)) : 1;
-    var shownBooks = Model.Books.Take(5).ToList();
-    var moreBooks = Model.Books.Count - shownBooks.Count;
 
     // ── kitobdagimen.uz logotipi (bayqush) — inline SVG ──────────────────────────────
     string LogoSvg(int size) =>
@@ -96,6 +93,40 @@
         "<circle cx=\"245\" cy=\"70\" r=\"1.6\"/>" +
         "</g>" +
         "</svg>";
+
+    // ── HD qishki fon manzarasi (poster'ning butun orqa foni — rasmga TUSHADI) ────────
+    //    To'liq inline SVG (gradientlar + qatlamli tog'lar + archazor + qor). Vektor
+    //    bo'lgani uchun har qanday o'lchamda tiniq (HD) va html2canvas eksportida
+    //    piksel-aniq chiqadi. Card'lar ustidan shishasimon (glass) bo'lib turadi.
+    const string WinterScene =
+        "<svg class=\"yr-winter-svg\" viewBox=\"0 0 1080 620\" width=\"1080\" height=\"620\" preserveAspectRatio=\"xMidYMax slice\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\">" +
+        // uzoq tog'lar
+        "<path d=\"M0 300 L180 200 L360 290 L540 190 L720 300 L900 210 L1080 290 L1080 620 L0 620 Z\" fill=\"#33506b\" opacity=\".5\"/>" +
+        // o'rta tog'lar
+        "<path d=\"M0 400 L200 270 L380 380 L560 260 L760 390 L960 280 L1080 360 L1080 620 L0 620 Z\" fill=\"#21384c\"/>" +
+        // qor cho'qqilari (o'rta)
+        "<path d=\"M174 300 L200 270 L226 300 L214 294 L200 284 L186 294 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M534 290 L560 260 L586 290 L574 284 L560 274 L546 284 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M934 308 L960 280 L986 308 L974 302 L960 292 L946 302 Z\" fill=\"#eaf3ff\"/>" +
+        // orqa qor maydoni
+        "<path d=\"M0 500 Q270 470 540 495 Q810 520 1080 480 L1080 620 L0 620 Z\" fill=\"#dce9fb\"/>" +
+        // archazor (qorli qarag'aylar)
+        "<g>" +
+        "<path d=\"M60 435 L40 495 L80 495 Z\" fill=\"#143440\"/><path d=\"M60 435 L53 448 L67 448 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M140 422 L113 500 L167 500 Z\" fill=\"#143440\"/><path d=\"M140 422 L131 439 L149 439 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M225 428 L203 492 L247 492 Z\" fill=\"#143440\"/><path d=\"M225 428 L217 442 L233 442 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M320 418 L291 502 L349 502 Z\" fill=\"#143440\"/><path d=\"M320 418 L310 436 L330 436 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M430 425 L406 495 L454 495 Z\" fill=\"#143440\"/><path d=\"M430 425 L421 440 L439 440 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M545 410 L514 500 L576 500 Z\" fill=\"#143440\"/><path d=\"M545 410 L534 430 L556 430 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M660 428 L638 494 L682 494 Z\" fill=\"#143440\"/><path d=\"M660 428 L652 442 L668 442 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M770 421 L743 501 L797 501 Z\" fill=\"#143440\"/><path d=\"M770 421 L761 438 L779 438 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M880 423 L856 495 L904 495 Z\" fill=\"#143440\"/><path d=\"M880 423 L871 439 L889 439 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M985 414 L956 500 L1014 500 Z\" fill=\"#143440\"/><path d=\"M985 414 L975 433 L995 433 Z\" fill=\"#eaf3ff\"/>" +
+        "<path d=\"M1050 432 L1028 496 L1072 496 Z\" fill=\"#143440\"/><path d=\"M1050 432 L1042 446 L1058 446 Z\" fill=\"#eaf3ff\"/>" +
+        "</g>" +
+        // old qor maydoni
+        "<path d=\"M0 545 Q300 515 600 540 Q860 562 1080 525 L1080 620 L0 620 Z\" fill=\"#ffffff\"/>" +
+        "</svg>";
 }
 <div class="yr-card yr-theme-@Model.ThemeVariant"
      data-yr-year="@Model.Year"
@@ -110,15 +141,13 @@
         @* ── html2canvas tortib oladigan poster (barcha bezaklar shu ichida, faqat SVG/CSS) ── *@
         <div class="yr-poster" data-yr-capture>
 
-            @* Fon qatlamlari: gradient + yumshoq nur dog'lari + nozik confetti/yulduzlar *@
+            @* Fon: qishki HD manzara (SVG) + oy + yulduzlar + yog'ayotgan qor — barchasi rasmga tushadi *@
             <div class="yr-backdrop" aria-hidden="true">
-                <span class="yr-glow yr-glow-a"></span>
-                <span class="yr-glow yr-glow-b"></span>
-                <span class="yr-glow yr-glow-c"></span>
+                <span class="yr-moon"></span>
                 <div class="yr-confetti">
                     @for (var i = 0; i < 26; i++)
                     {
-                        <span class="yr-dot yr-dot-@(i % 5)"></span>
+                        <span class="yr-dot yr-dot-@(i % 4)"></span>
                     }
                 </div>
                 <span class="yr-star yr-star-1">@Html.Raw(Icon("stars"))</span>
@@ -127,6 +156,7 @@
                 <span class="yr-flurry yr-flurry-1">@Html.Raw(Icon("snow"))</span>
                 <span class="yr-flurry yr-flurry-2">@Html.Raw(Icon("snow"))</span>
                 <span class="yr-flurry yr-flurry-3">@Html.Raw(Icon("snow"))</span>
+                <div class="yr-winter">@Html.Raw(WinterScene)</div>
             </div>
 
             <div class="yr-poster-inner">
@@ -187,14 +217,20 @@
                         </div>
                     </section>
 
-                    @* ── O'qilgan kitoblar ── *@
+                    @* ── O'qilgan kitoblar (BARCHASI — bittasi ham qolib ketmaydi) ── *@
                     <section class="yr-section">
-                        <div class="yr-section-head">@Html.Raw(Icon("journals", "yr-head-ic")) O'qigan kitoblaring</div>
-                        @if (shownBooks.Count > 0)
+                        <div class="yr-section-head">
+                            @Html.Raw(Icon("journals", "yr-head-ic")) O'qigan kitoblaring
+                            @if (Model.Books.Count > 0)
+                            {
+                                <span class="yr-section-count">@Model.Books.Count ta</span>
+                            }
+                        </div>
+                        @if (Model.Books.Count > 0)
                         {
                             <div class="yr-booklist">
                                 @{ var rank = 0; }
-                                @foreach (var b in shownBooks)
+                                @foreach (var b in Model.Books)
                                 {
                                     rank++;
                                     var pct = (int)System.Math.Round(100.0 * b.Pages / maxBookPages);
@@ -210,10 +246,6 @@
                                     </div>
                                 }
                             </div>
-                            @if (moreBooks > 0)
-                            {
-                                <div class="yr-more">va yana +@moreBooks ta kitob</div>
-                            }
                         }
                         else
                         {
@@ -222,18 +254,11 @@
                     </section>
 
                     @* ── Yilning eng zo'rlari ── *@
-                    @if (Model.TopPost is not null || Model.TopQuote is not null || topBook is not null)
+                    @if (Model.TopPost is not null || Model.TopQuote is not null)
                     {
                         <section class="yr-section">
                             <div class="yr-section-head">@Html.Raw(Icon("stars", "yr-head-ic")) Yilning eng zo'rlari</div>
 
-                            @if (topBook is not null)
-                            {
-                                <div class="yr-topbook">
-                                    <span class="yr-topbook-ic">@Html.Raw(Icon("trophy"))</span>
-                                    <span class="yr-topbook-txt">Eng ko'p o'qigan kitobing — <strong>@topBook.Title</strong></span>
-                                </div>
-                            }
                             @if (Model.TopPost is not null)
                             {
                                 <div class="yr-highlight">
