@@ -63,6 +63,20 @@
     // Qat'iy dizayn kengligi — poster shu kenglikda tuziladi va shu kenglikda eksport qilinadi.
     var DESIGN_W = 1080;
 
+    // HD eksport masshtabi. Iloji boricha yuqori sifat (>= 2160px keng), ammo brauzer
+    // kanvas chegarasida xavfsiz. iOS/Safari umumiy kanvas yuzasini ~16.7M px (4096²) bilan
+    // cheklaydi — undan oshsa bo'sh (qora/shaffof) rasm chiqadi. Shuning uchun poster
+    // yuzasiga qarab eng yuqori xavfsiz masshtabni hisoblaymiz.
+    var SAFE_CANVAS_AREA = 16000000;   // ~iOS chegarasidan bir oz past (xavfsizlik uchun)
+    function computeExportScale(w, h) {
+        var maxByArea = Math.sqrt(SAFE_CANVAS_AREA / (w * h));
+        // Eng kami 2× (2160px keng — Full HD dan yuqori), eng ko'pi 3× (o'ta tiniq).
+        var scale = Math.min(3, Math.max(2, maxByArea));
+        // Yuza chegarasidan oshib ketmasligini kafolatlaymiz.
+        if (w * h * scale * scale > SAFE_CANVAS_AREA) { scale = maxByArea; }
+        return scale;
+    }
+
     // Poster'ni konteyner (.yr-stage) kengligiga moslab masshtablaydi.
     // Bu WYSIWYG asosi: ekranda ko'ringan narsa aynan yuklab olinadi.
     function layoutStage(card) {
@@ -99,11 +113,12 @@
     function ensureFonts() {
         if (!document.fonts || !document.fonts.load) { return Promise.resolve(); }
         return Promise.all([
-            document.fonts.load('700 108px "Lora"'),
-            document.fonts.load('600 40px "Lora"'),
-            document.fonts.load('400 16px "Source Sans 3"'),
-            document.fonts.load('600 16px "Source Sans 3"'),
-            document.fonts.load('700 16px "Source Sans 3"')
+            document.fonts.load('700 158px "Lora"'),
+            document.fonts.load('700 104px "Lora"'),
+            document.fonts.load('700 54px "Lora"'),
+            document.fonts.load('400 19px "Source Sans 3"'),
+            document.fonts.load('600 19px "Source Sans 3"'),
+            document.fonts.load('700 19px "Source Sans 3"')
         ]).catch(function () { /* zaxira shrift bilan davom etamiz */ });
     }
 
@@ -119,6 +134,8 @@
         var naturalH = poster.offsetHeight || Math.round(DESIGN_W * 1.4);
         poster.style.transform = prevTransform;     // ekrandagi ko'rinishni tiklaymiz
 
+        var exportScale = computeExportScale(naturalW, naturalH);
+
         return ensureFonts()
             .then(function () { return loadScript(H2C_SRC); })
             .then(function () {
@@ -127,7 +144,7 @@
                 // Poster media-so'rovlarga bog'liq EMAS (qat'iy 1080px), shuning uchun
                 // eksport joylashuvi ekrandagi bilan aynan bir xil — matn buzilmaydi.
                 return window.html2canvas(poster, {
-                    scale: 2,                       // 2× → 2160px keng: sifatli, ijtimoiy tarmoqqa tayyor
+                    scale: exportScale,             // HD: iloji boricha yuqori, iOS chegarasida xavfsiz
                     useCORS: true,
                     backgroundColor: null,
                     logging: false,
@@ -224,26 +241,85 @@
     }
 
     // ── Ulashish ─────────────────────────────────────────────────────────────────
-    function shareCard(card) {
+    function canvasToBlob(canvas, type, quality) {
+        return new Promise(function (resolve) {
+            if (canvas.toBlob) {
+                canvas.toBlob(function (b) { resolve(b); }, type, quality);
+            } else {
+                // Juda eski brauzer — dataURL orqali blob yasaymiz.
+                try {
+                    var dataUrl = canvas.toDataURL(type, quality);
+                    var parts = dataUrl.split(",");
+                    var bin = atob(parts[1]);
+                    var arr = new Uint8Array(bin.length);
+                    for (var i = 0; i < bin.length; i++) { arr[i] = bin.charCodeAt(i); }
+                    resolve(new Blob([arr], { type: type }));
+                } catch (e) { resolve(null); }
+            }
+        });
+    }
+
+    function shareMeta(card) {
         var url = card.getAttribute("data-yr-share-url") || window.location.href;
         var name = card.getAttribute("data-yr-name") || "Kitobxon";
         var year = card.getAttribute("data-yr-year") || "";
-        var title = name + " — " + year + "-yil kitob yakuni";
-        var text = "Mening " + year + "-yilgi kitob yakunim — kitobdagimen.uz";
+        return {
+            url: url,
+            title: name + " — " + year + "-yil kitob yakuni",
+            text: "Mening " + year + "-yilgi kitob yakunim — kitobdagimen.uz"
+        };
+    }
 
+    function shareLinkFallback(meta) {
         if (navigator.share) {
-            navigator.share({ title: title, text: text, url: url }).catch(function () { /* bekor qilindi */ });
+            navigator.share({ title: meta.title, text: meta.text, url: meta.url }).catch(function () { /* bekor */ });
             return;
         }
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(url).then(function () {
+            navigator.clipboard.writeText(meta.url).then(function () {
                 toast("Havola nusxalandi!");
             }, function () {
-                prompt("Ulashish havolasi:", url);
+                prompt("Ulashish havolasi:", meta.url);
             });
             return;
         }
-        prompt("Ulashish havolasi:", url);
+        prompt("Ulashish havolasi:", meta.url);
+    }
+
+    // HD rasmni fayl sifatida ulashamiz (Web Share Level 2). Qo'llab-quvvatlanmasa —
+    // havola bilan (yoki havolani nusxalash bilan) chekinamiz.
+    function shareCard(card, btn) {
+        var meta = shareMeta(card);
+
+        // Fayl bilan ulashish imkoni bormi (mobil brauzerlar odatda qo'llab-quvvatlaydi)?
+        var supportsFileShare = !!(navigator.canShare && navigator.share);
+
+        if (!supportsFileShare) {
+            shareLinkFallback(meta);
+            return Promise.resolve();
+        }
+
+        return withBusy(btn, function () {
+            return renderCanvas(card)
+                .then(function (canvas) { return canvasToBlob(canvas, "image/png"); })
+                .then(function (blob) {
+                    if (!blob) { shareLinkFallback(meta); return; }
+                    var file = new File([blob], fileName(card, "png"), { type: "image/png" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        return navigator.share({
+                            files: [file],
+                            title: meta.title,
+                            text: meta.text + " " + meta.url
+                        }).catch(function (e) {
+                            // Foydalanuvchi bekor qilgan bo'lishi mumkin — jimgina o'tamiz.
+                            if (e && e.name !== "AbortError") { shareLinkFallback(meta); }
+                        });
+                    }
+                    // Fayl ulashish yo'q — havola bilan.
+                    shareLinkFallback(meta);
+                })
+                .catch(function () { shareLinkFallback(meta); });
+        });
     }
 
     // ── Kartochkani jonlantirish ──────────────────────────────────────────────────
@@ -277,7 +353,7 @@
 
         var shareBtn = card.querySelector("[data-yr-share]");
         if (shareBtn) {
-            shareBtn.addEventListener("click", function () { shareCard(card); });
+            shareBtn.addEventListener("click", function () { shareCard(card, shareBtn); });
         }
     }
 
