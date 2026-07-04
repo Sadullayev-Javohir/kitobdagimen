@@ -136,6 +136,8 @@ img { max-width: 100%; display: block; }
 }
 .nav-msg-badge[hidden] { display: none; }
 .nav-links a.active { color: var(--primary); background: var(--primary-soft); }
+.nav-home-link { display: inline-flex; align-items: center; justify-content: center; }
+.nav-home-link .material-symbols-outlined { font-size: 22px; line-height: 1; }
 .nav-actions { display: flex; align-items: center; gap: 12px; }
 .nav-icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
