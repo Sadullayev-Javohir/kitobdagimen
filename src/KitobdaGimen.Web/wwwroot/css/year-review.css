@@ -135,9 +135,6 @@
     position: relative;
     z-index: 3;
     padding: 60px 60px 46px;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
 }
 
 /* ── Fon: qishki HD manzara + oy + qor (barchasi rasmga tushadi) ────────────── */
@@ -247,9 +244,6 @@
 
 /* ── Qahramon (markazlashtirilgan, ustunli — ustma-ust tushmaydi) ───────────── */
 .yr-hero {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     text-align: center;
     margin-top: 30px;
 }
@@ -276,9 +270,9 @@
 /* ── Foydalanuvchi chipi (nomi o'raladi) ────────────────────────────────────── */
 .yr-userchip {
     display: flex;
-    align-self: center;
     align-items: center;
     gap: 14px;
+    width: fit-content;
     max-width: 100%;
     margin: 22px auto 0;
     border-radius: 22px;
@@ -322,12 +316,12 @@
 
 /* ── Statistika chiplari (3 ta, teng) ───────────────────────────────────────── */
 .yr-stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
     gap: 16px;
     margin-top: 18px;
 }
 .yr-stat {
+    flex: 1 1 0;
     min-width: 0;
     border-radius: 22px;
     padding: 22px 12px 18px;
@@ -484,7 +478,6 @@
 .yr-foot {
     display: flex; align-items: center; justify-content: center; gap: 11px;
     flex-wrap: wrap;
-    align-self: center;
     width: fit-content;
     max-width: 100%;
     margin: 28px auto 0;

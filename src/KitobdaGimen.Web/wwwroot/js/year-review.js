@@ -125,43 +125,72 @@
     function renderCanvas(card) {
         var poster = card.querySelector("[data-yr-capture]") || card;
 
-        // Tabiiy 1080px o'lchamni (masshtabsiz) o'lchab olamiz. html2canvas'ga aniq
-        // width/height beramiz — ekrandagi scale eksportga ta'sir qilmaydi.
-        var prevTransform = poster.style.transform;
-        poster.style.width = DESIGN_W + "px";
-        poster.style.transform = "none";
-        var naturalW = DESIGN_W;
-        var naturalH = poster.offsetHeight || Math.round(DESIGN_W * 1.4);
-        poster.style.transform = prevTransform;     // ekrandagi ko'rinishni tiklaymiz
+        // Eksport uchun poster'ni HAQIQIY tabiiy o'lchamiga qo'yamiz: 1080px, transformasiz,
+        // ekrandan tashqarida (position:fixed, ko'rinmas). Sabab: ekranda poster
+        // transform:scale(...) bilan kichraytirilgan; agar html2canvas o'sha masshtablangan
+        // elementni o'lchasa — matn/konteynerlarni siljitib, ma'lumotlarni tashqariga
+        // chiqarib yuboradi. Tabiiy 1080px'da esa joylashuv aniq va barqaror bo'ladi.
+        var saved = {
+            position: poster.style.position,
+            top: poster.style.top,
+            left: poster.style.left,
+            zIndex: poster.style.zIndex,
+            transform: poster.style.transform,
+            width: poster.style.width,
+            maxWidth: poster.style.maxWidth
+        };
 
-        var exportScale = computeExportScale(naturalW, naturalH);
+        function restore() {
+            card.classList.remove("yr-capturing");
+            poster.style.position = saved.position;
+            poster.style.top = saved.top;
+            poster.style.left = saved.left;
+            poster.style.zIndex = saved.zIndex;
+            poster.style.transform = saved.transform;
+            poster.style.width = saved.width;
+            poster.style.maxWidth = saved.maxWidth;
+            layoutStage(card);   // ekrandagi masshtabni tiklaymiz
+        }
 
         return ensureFonts()
+            .then(function () {
+                // Shriftlar TO'LIQ yuklanguncha kutamiz. Aks holda html2canvas zaxira
+                // shriftda (boshqa kenglikda) chizib, so'zlarni konteynerdan chiqaradi.
+                return (document.fonts && document.fonts.ready) ? document.fonts.ready : null;
+            })
             .then(function () { return loadScript(H2C_SRC); })
             .then(function () {
-                // Ekran-effektlarini (qor + Three.js Qorbobo) eksport paytida yashiramiz.
-                card.classList.add("yr-capturing");
-                // Poster media-so'rovlarga bog'liq EMAS (qat'iy 1080px), shuning uchun
-                // eksport joylashuvi ekrandagi bilan aynan bir xil — matn buzilmaydi.
+                card.classList.add("yr-capturing");   // ekran-effektlarini (qor/Qorbobo) yashiradi
+                // Poster'ni ekrandan tashqarida, tabiiy 1080px'da joylashtiramiz (miltillamaydi).
+                poster.style.position = "fixed";
+                poster.style.top = "0";
+                poster.style.left = "0";
+                poster.style.zIndex = "-2147483648";
+                poster.style.transform = "none";
+                poster.style.width = DESIGN_W + "px";
+                poster.style.maxWidth = "none";
+                void poster.offsetWidth;               // reflow — aniq o'lchamlar
+
+                var naturalH = poster.offsetHeight || Math.round(DESIGN_W * 1.5);
+                var exportScale = computeExportScale(DESIGN_W, naturalH);
+
                 return window.html2canvas(poster, {
-                    scale: exportScale,             // HD: iloji boricha yuqori, iOS chegarasida xavfsiz
+                    scale: exportScale,                // HD: iloji boricha yuqori, iOS chegarasida xavfsiz
                     useCORS: true,
                     backgroundColor: null,
                     logging: false,
-                    width: naturalW,
+                    width: DESIGN_W,
                     height: naturalH,
-                    windowWidth: naturalW,
+                    windowWidth: DESIGN_W,
                     windowHeight: naturalH,
                     scrollX: 0,
                     scrollY: 0,
                     onclone: function (doc) {
                         var clonedCard = doc.querySelector(".yr-card");
                         if (clonedCard) { clonedCard.classList.add("yr-capturing"); }
-                        // Klon ichida ham ekran-effektlarini kafolatli o'chiramiz.
                         doc.querySelectorAll("[data-yr-fx]").forEach(function (fx) {
                             fx.style.display = "none";
                         });
-                        // Klonda sahnani kesishdan chiqaramiz, poster'ni tabiiy 1080px'ga qo'yamiz.
                         var st = doc.querySelector("[data-yr-stage]");
                         if (st) {
                             st.style.height = "auto";
@@ -170,6 +199,7 @@
                         }
                         var node = doc.querySelector("[data-yr-capture]");
                         if (node) {
+                            node.style.position = "static";
                             node.style.width = DESIGN_W + "px";
                             node.style.maxWidth = "none";
                             node.style.margin = "0";
@@ -178,14 +208,8 @@
                     }
                 });
             })
-            .then(function (canvas) {
-                card.classList.remove("yr-capturing");
-                return canvas;
-            })
-            .catch(function (e) {
-                card.classList.remove("yr-capturing");
-                throw e;
-            });
+            .then(function (canvas) { restore(); return canvas; })
+            .catch(function (e) { restore(); throw e; });
     }
 
     function downloadDataUrl(dataUrl, name) {
