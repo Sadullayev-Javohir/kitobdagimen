@@ -6,8 +6,12 @@
     --accent: #f0824e;
     --accent-dark: #e0703c;
     --bg: #0b0b0a;
-    --surface: rgba(18, 18, 18, 0.46);
-    --surface-hover: rgba(30, 30, 30, 0.60);
+    /* Foydalanuvchi sozlaydigan ko'rinish parametrlari (Feed sahifasidagi sozlamalar oynasi) */
+    --gx-overlay-alpha: 0.6;   /* video fon ustidagi qora parda: 0 = qora fon, 1 = asl video (sayt yorug'ligi) */
+    --gx-card-alpha: 0.46;     /* kartalar foni xiraligi: 0 = shaffof, 0.92 = qora (fon yorug'ligi) */
+    --gx-blur-px: 22px;        /* karta xiralashuvi (blur radiusi): 0px - 22px */
+    --surface: rgba(18, 18, 18, var(--gx-card-alpha));
+    --surface-hover: rgba(30, 30, 30, calc(var(--gx-card-alpha) * 1.304));
     --text: #ece7db;
     --text-secondary: #b7b7b7;
     --border: rgba(255, 255, 255, 0.12);
@@ -23,8 +27,8 @@
     --serif: "Lora", Georgia, "Times New Roman", serif;
     --sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
     /* Glass karta formulasi (EXAMPLE.html bilan bir xil) */
-    --gx-blur: blur(22px) saturate(135%);
-    --gx-blur-2: blur(14px) saturate(130%);
+    --gx-blur: blur(var(--gx-blur-px)) saturate(135%);
+    --gx-blur-2: blur(calc(var(--gx-blur-px) * 0.636)) saturate(130%);
 }
 
 * { box-sizing: border-box; }
@@ -126,24 +130,23 @@ img { max-width: 100%; display: block; }
 .brand-logo { width: 36px; height: 36px; flex-shrink: 0; }
 .nav-links { display: flex; align-items: center; gap: 4px; }
 .nav-links a {
-    padding: 8px 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px;
     border-radius: var(--radius-pill);
     color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 15px;
 }
+.nav-links a .material-symbols-outlined { font-size: 22px; line-height: 1; }
 .nav-links a:hover { background: var(--primary-soft); color: var(--primary); text-decoration: none; }
 .nav-msg-link { position: relative; }
 .nav-msg-badge {
+    position: absolute; top: 2px; right: 2px;
     display: inline-flex; align-items: center; justify-content: center;
-    min-width: 18px; height: 18px; margin-left: 6px; padding: 0 5px;
+    min-width: 16px; height: 16px; padding: 0 4px;
     border-radius: 999px; background: var(--accent); color: #fff;
-    font-size: 11px; font-weight: 700; line-height: 1; vertical-align: middle;
+    font-size: 10px; font-weight: 700; line-height: 1;
 }
 .nav-msg-badge[hidden] { display: none; }
 .nav-links a.active { color: var(--primary); background: var(--primary-soft); }
-.nav-home-link { display: inline-flex; align-items: center; justify-content: center; }
-.nav-home-link .material-symbols-outlined { font-size: 22px; line-height: 1; }
 .nav-actions { display: flex; align-items: center; gap: 12px; }
 .nav-icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
@@ -2720,6 +2723,16 @@ body.no-scroll { overflow: hidden; }
     padding: 14px 24px; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius);
 }
+
+/* ===== Ko'rinish sozlamalari (Feed sahifasidagi settings modal) ===== */
+.settings-row { margin-bottom: 20px; }
+.settings-row:last-of-type { margin-bottom: 0; }
+.settings-row label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; gap: 8px;
+}
+.settings-row label output { color: var(--text); font-weight: 600; }
+.settings-row input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
 
 .story-duration { display: flex; gap: 8px; margin-top: 8px; }
 .story-duration-opt {

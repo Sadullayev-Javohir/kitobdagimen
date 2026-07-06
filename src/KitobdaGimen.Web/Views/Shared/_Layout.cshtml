@@ -57,6 +57,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover@(isChatPage ? ", interactive-widget=resizes-content" : "")" />
     @* Sayt doim video-glass qorong'u dizaynda — kun/tun almashtirish yo'q *@
     <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+
+    @* Ko'rinish sozlamalari (Feed sahifasidagi settings oynasida boshqariladi, localStorage'da
+       saqlanadi va CSS custom property sifatida barcha sahifalarda global qo'llaniladi — shu bilan
+       foydalanuvchi Feed'da tanlagan sayt yorug'ligi/karta xiraligi butun saytda saqlanib qoladi). *@
+    <script>
+        (function () {
+            var STORAGE_KEY = 'kg-display-settings';
+            var DEFAULTS = { brightness: 40, cardBlur: 1, cardBg: 50 };
+            function loadSettings() {
+                try {
+                    var raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return Object.assign({}, DEFAULTS);
+                    var p = JSON.parse(raw);
+                    return {
+                        brightness: typeof p.brightness === 'number' ? p.brightness : DEFAULTS.brightness,
+                        cardBlur: typeof p.cardBlur === 'number' ? p.cardBlur : DEFAULTS.cardBlur,
+                        cardBg: typeof p.cardBg === 'number' ? p.cardBg : DEFAULTS.cardBg
+                    };
+                } catch (e) { return Object.assign({}, DEFAULTS); }
+            }
+            function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+            function applySettings(s) {
+                var root = document.documentElement.style;
+                var brightness = clamp(s.brightness, 0, 100);
+                var cardBlur = clamp(s.cardBlur, 0, 1);
+                var cardBg = clamp(s.cardBg, 0, 100);
+                root.setProperty('--gx-overlay-alpha', (1 - brightness / 100).toFixed(3));
+                root.setProperty('--gx-blur-px', (cardBlur * 22).toFixed(1) + 'px');
+                root.setProperty('--gx-card-alpha', ((1 - cardBg / 100) * 0.92).toFixed(3));
+            }
+            window.kgDisplaySettings = {
+                defaults: DEFAULTS,
+                get: loadSettings,
+                save: function (s) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+                    applySettings(s);
+                }
+            };
+            applySettings(loadSettings());
+        })();
+    </script>
     @* Rasm xatolarini global hal qilish: (1) Google avatar (lh3.googleusercontent.com) Referer
        yuborilganda bloklanadi — xato bo'lsa referrerpolicy=no-referrer bilan QAYTA urinamiz;
        (2) baribir yuklanmasa — avatarni bosh harfga, kitob muqovasini placeholder ikonga almashtiramiz.
@@ -176,13 +217,21 @@
                 </a>
 
                 <nav class="nav-links" data-nav-links>
-                    <a href="/Feed">Tasma</a>
-                    <a href="/reading-books">Kutubxona</a>
-                    <a href="/challenge">Challenge</a>
-                    <a href="/quotes">Iqtiboslar</a>
-                    <a href="/chat" class="nav-msg-link">Xabarlar<span class="nav-msg-badge" data-msg-badge hidden></span></a>
-                    <a href="/Home/Landing" class="nav-home-link" title="Bosh sahifa" aria-label="Bosh sahifa">
-                        <span class="material-symbols-outlined">home</span>
+                    <a href="/Feed" title="Tasma" aria-label="Tasma">
+                        <span class="material-symbols-outlined">dynamic_feed</span>
+                    </a>
+                    <a href="/reading-books" title="Kutubxona" aria-label="Kutubxona">
+                        <span class="material-symbols-outlined">menu_book</span>
+                    </a>
+                    <a href="/challenge" title="Challenge" aria-label="Challenge">
+                        <span class="material-symbols-outlined">military_tech</span>
+                    </a>
+                    <a href="/quotes" title="Iqtiboslar" aria-label="Iqtiboslar">
+                        <span class="material-symbols-outlined">format_quote</span>
+                    </a>
+                    <a href="/chat" class="nav-msg-link" title="Xabarlar" aria-label="Xabarlar">
+                        <span class="material-symbols-outlined">forum</span>
+                        <span class="nav-msg-badge" data-msg-badge hidden></span>
                     </a>
                 </nav>
 

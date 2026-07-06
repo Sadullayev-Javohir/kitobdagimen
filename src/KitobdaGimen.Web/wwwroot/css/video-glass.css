@@ -8,9 +8,9 @@
 :root {
     --gx-fg: #EDEDED;
     --gx-fg-muted: #b7b7b7;
-    --gx-glass: rgba(18, 18, 18, 0.46);
-    --gx-glass-2: rgba(28, 28, 28, 0.38);
-    --gx-glass-hover: rgba(30, 30, 30, 0.60);
+    --gx-glass: var(--surface);
+    --gx-glass-2: rgba(28, 28, 28, calc(var(--gx-card-alpha) * 0.826));
+    --gx-glass-hover: var(--surface-hover);
     --gx-line: rgba(255, 255, 255, 0.12);
     --gx-line-strong: rgba(255, 255, 255, 0.26);
 }
@@ -32,9 +32,12 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
+    /* Sayt yorug'ligi sozlamasi shu qora pardaning zichligini boshqaradi:
+       --gx-overlay-alpha = 0 → parda yo'q (asl video, 100% yorug'lik),
+       --gx-overlay-alpha = 1 → deyarli to'liq qora fon (0% yorug'lik). */
     background:
-        radial-gradient(ellipse at 50% 0%, rgba(8, 8, 8, .42) 0%, rgba(8, 8, 8, .62) 60%),
-        linear-gradient(180deg, rgba(9, 9, 9, .42) 0%, rgba(8, 8, 8, .72) 100%);
+        radial-gradient(ellipse at 50% 0%, rgba(8, 8, 8, calc(var(--gx-overlay-alpha) * 0.7)) 0%, rgba(8, 8, 8, var(--gx-overlay-alpha)) 60%),
+        linear-gradient(180deg, rgba(9, 9, 9, calc(var(--gx-overlay-alpha) * 0.7)) 0%, rgba(8, 8, 8, calc(var(--gx-overlay-alpha) * 1.2)) 100%);
 }
 
 /* Google tugmasi — brendga mos har doim oq fon (G logotipi kontrasti uchun) */
