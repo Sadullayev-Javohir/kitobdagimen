@@ -128,7 +128,7 @@ img { max-width: 100%; display: block; }
 /* Tor ekranda navbar hech qachon toshib ketmasligi uchun nom matni qisqaradi (ellipsis) */
 .brand-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .brand-logo { width: 36px; height: 36px; flex-shrink: 0; }
-.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-links { display: flex; align-items: center; gap: 20px; }
 .nav-links a {
     display: inline-flex; align-items: center; justify-content: center;
     width: 40px; height: 40px;
@@ -765,7 +765,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 /* Marker (highlighter) — composer va chiqarilgan post matnida bir xil ko'rinish */
 .rich-content mark, .post-text mark, .pd-review mark, .story-detail-text mark {
-    background: linear-gradient(transparent 18%, rgba(232,112,58,.34) 18%, rgba(232,112,58,.34) 92%, transparent 92%);
+    background: linear-gradient(transparent 18%, rgba(22,163,74,.34) 18%, rgba(22,163,74,.34) 92%, transparent 92%);
     color: inherit; border-radius: 2px; padding: 0 .5px; box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
 }

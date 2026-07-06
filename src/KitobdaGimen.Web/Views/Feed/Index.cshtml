@@ -20,9 +20,6 @@
             <button class="action-btn" id="feedSearchToggle" title="Qidirish" aria-label="Qidirish">
                 <span class="material-symbols-outlined">search</span>
             </button>
-            <button class="action-btn" id="feedSettingsToggle" title="Ko'rinish sozlamalari" aria-label="Ko'rinish sozlamalari">
-                <span class="material-symbols-outlined">settings</span>
-            </button>
             <form method="get" action="/Feed" id="feedSearchForm" class="feed-search-form" style="@(string.IsNullOrEmpty(search) ? "display:none;" : "")">
                 <div class="search-box">
                     <span class="search-ico material-symbols-outlined">search</span>
@@ -193,33 +190,6 @@
     </div>
 </div>
 
-<!-- Ko'rinish sozlamalari oynasi -->
-<div class="modal-overlay" id="feedSettingsModal" hidden>
-    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Ko'rinish sozlamalari">
-        <h3 class="modal-title">Ko'rinish sozlamalari</h3>
-
-        <div class="settings-row">
-            <label for="settingBrightness">Sayt yorug'ligi <output id="settingBrightnessOut">40%</output></label>
-            <input type="range" id="settingBrightness" min="0" max="100" step="1" value="40" />
-        </div>
-
-        <div class="settings-row">
-            <label for="settingCardBlur">Karta xiralashuvi <output id="settingCardBlurOut">1.00</output></label>
-            <input type="range" id="settingCardBlur" min="0" max="1" step="0.05" value="1" />
-        </div>
-
-        <div class="settings-row">
-            <label for="settingCardBg">Fon yorug'ligi <output id="settingCardBgOut">50%</output></label>
-            <input type="range" id="settingCardBg" min="0" max="100" step="1" value="50" />
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" class="btn btn-ghost" id="feedSettingsReset">Standart holat</button>
-            <button type="button" class="btn btn-primary" data-settings-close>Yopish</button>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
 <script>
 // --- Post yaratish modali: yopiq tugma bosilganda ochiladi, close/Escape/backdrop yopadi ---
@@ -239,61 +209,6 @@
     }
     trigger.addEventListener("click", openModal);
     modal.querySelectorAll("[data-composer-close]").forEach((el) => el.addEventListener("click", closeModal));
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
-})();
-
-// --- Ko'rinish sozlamalari: sayt yorug'ligi, karta xiralashuvi, fon yorug'ligi ---
-(function () {
-    const toggle = document.getElementById("feedSettingsToggle");
-    const modal = document.getElementById("feedSettingsModal");
-    if (!toggle || !modal || !window.kgDisplaySettings) return;
-
-    const brightness = document.getElementById("settingBrightness");
-    const brightnessOut = document.getElementById("settingBrightnessOut");
-    const cardBlur = document.getElementById("settingCardBlur");
-    const cardBlurOut = document.getElementById("settingCardBlurOut");
-    const cardBg = document.getElementById("settingCardBg");
-    const cardBgOut = document.getElementById("settingCardBgOut");
-
-    function syncInputs() {
-        const s = kgDisplaySettings.get();
-        brightness.value = s.brightness;
-        brightnessOut.textContent = s.brightness + "%";
-        cardBlur.value = s.cardBlur;
-        cardBlurOut.textContent = Number(s.cardBlur).toFixed(2);
-        cardBg.value = s.cardBg;
-        cardBgOut.textContent = s.cardBg + "%";
-    }
-
-    function onChange() {
-        brightnessOut.textContent = brightness.value + "%";
-        cardBlurOut.textContent = parseFloat(cardBlur.value).toFixed(2);
-        cardBgOut.textContent = cardBg.value + "%";
-        kgDisplaySettings.save({
-            brightness: parseInt(brightness.value, 10),
-            cardBlur: parseFloat(cardBlur.value),
-            cardBg: parseInt(cardBg.value, 10)
-        });
-    }
-    [brightness, cardBlur, cardBg].forEach((el) => el.addEventListener("input", onChange));
-
-    document.getElementById("feedSettingsReset").addEventListener("click", () => {
-        kgDisplaySettings.save(Object.assign({}, kgDisplaySettings.defaults));
-        syncInputs();
-    });
-
-    function openModal() {
-        syncInputs();
-        modal.hidden = false;
-        document.body.classList.add("modal-open");
-    }
-    function closeModal() {
-        modal.hidden = true;
-        document.body.classList.remove("modal-open");
-    }
-    toggle.addEventListener("click", openModal);
-    modal.querySelectorAll("[data-settings-close]").forEach((el) => el.addEventListener("click", closeModal));
-    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
 })();
 
