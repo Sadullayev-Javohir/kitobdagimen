@@ -1550,7 +1550,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .conv-item .last { font-size: calc(13px * var(--chat-scale, 1)); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .unread-badge { background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-size: calc(12px * var(--chat-scale, 1)); font-weight: 700; min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
 
-.chat-main { display: flex; flex-direction: column; background: var(--bg); min-width: 0; min-height: 0; }
+.chat-main { display: flex; flex-direction: column; background: transparent; min-width: 0; min-height: 0; }
 .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); display: flex; align-items: center; gap: 12px; }
 .chat-header .info { display: flex; flex-direction: column; line-height: 1.2; }
 .chat-header .name { font-weight: 600; }
@@ -1636,41 +1636,12 @@ textarea.input { resize: vertical; min-height: 90px; }
 .req-item .acts { display: flex; gap: 6px; }
 .req-empty { font-size: calc(13px * var(--chat-scale, 1)); color: var(--text-secondary); }
 
-/* ===== Chat 2.0 qo'shimchalari: stiker, rasm, reaksiya, typing, suzuvchi kitoblar ===== */
+/* ===== Chat 2.0 qo'shimchalari: stiker, rasm, reaksiya, typing ===== */
 
-/* Suzuvchi kitoblar orqa foni (chat-main ortida, xabarlar orasidan ko'rinadi) */
 .chat-main { position: relative; }
 .chat-header, .msg-form { position: relative; z-index: 2; }
 .messages { position: relative; z-index: 1; background: transparent; }
 .chat-empty { position: relative; z-index: 1; }
-.chat-books-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.chat-books-bg .fb { position: absolute; color: var(--primary); opacity: .09; display: block; }
-.chat-books-bg .fb svg { width: 100%; height: 100%; }
-
-/* Haqiqiy asaxiy.uz kitob muqovalari — chatning ortida ko'plab "uchib yuruvchi" muqovalar. */
-.chat-books-bg.chat-books-real .fb.cover { opacity: .32; animation: floatCover 18s ease-in-out infinite; will-change: transform; }
-.chat-books-bg.chat-books-real .fb.cover img { width: 100%; height: auto; display: block;
-    border-radius: 6px; box-shadow: 0 8px 22px rgba(27,77,62,.28); }
-@keyframes floatCover {
-    0%   { transform: translateY(0) rotate(var(--rot, 0deg)); }
-    50%  { transform: translateY(-26px) rotate(calc(var(--rot, 0deg) * -1)); }
-    100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
-}
-@media (prefers-reduced-motion: reduce) { .chat-books-bg.chat-books-real .fb.cover { animation: none; } }
-.chat-books-bg .fb1 { width: 68px; height: 68px; left: 6%;  top: 12%; animation: floatBook 13s ease-in-out infinite; }
-.chat-books-bg .fb2 { width: 92px; height: 92px; left: 74%; top: 8%;  animation: floatBook 17s ease-in-out infinite 1s; }
-.chat-books-bg .fb3 { width: 54px; height: 54px; left: 46%; top: 22%; animation: floatBook 15s ease-in-out infinite .6s; }
-.chat-books-bg .fb4 { width: 80px; height: 80px; left: 16%; top: 62%; animation: floatBook 19s ease-in-out infinite .3s; }
-.chat-books-bg .fb5 { width: 60px; height: 60px; left: 82%; top: 52%; animation: floatBook 14s ease-in-out infinite 1.4s; }
-.chat-books-bg .fb6 { width: 100px;height: 100px;left: 60%; top: 74%; animation: floatBook 21s ease-in-out infinite .9s; }
-.chat-books-bg .fb7 { width: 58px; height: 58px; left: 30%; top: 84%; animation: floatBook 16s ease-in-out infinite 1.1s; }
-.chat-books-bg .fb8 { width: 72px; height: 72px; left: 90%; top: 30%; animation: floatBook 18s ease-in-out infinite .2s; }
-@keyframes floatBook {
-    0%   { transform: translateY(0) rotate(-7deg); }
-    50%  { transform: translateY(-22px) rotate(7deg); }
-    100% { transform: translateY(0) rotate(-7deg); }
-}
-@media (prefers-reduced-motion: reduce) { .chat-books-bg .fb { animation: none; } }
 
 /* Reaksiya (react) tugmasi barcha xabarlarda hoverda/teginishda ko'rinadi */
 .msg:hover .msg-actions, .msg.show-actions .msg-actions { opacity: 1; pointer-events: auto; }

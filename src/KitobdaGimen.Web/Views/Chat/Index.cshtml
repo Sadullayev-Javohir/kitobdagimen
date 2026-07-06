@@ -90,37 +90,6 @@
     </aside>
 
     <section class="chat-main">
-        @if (Model.FloatingBookCovers.Count > 0)
-        {
-            var rnd = new Random(20260701);
-            <div class="chat-books-bg chat-books-real" aria-hidden="true">
-                @for (var i = 0; i < Model.FloatingBookCovers.Count; i++)
-                {
-                    var url = Model.FloatingBookCovers[i];
-                    var left = rnd.Next(-2, 95);
-                    var top = rnd.Next(-2, 94);
-                    var w = rnd.Next(48, 96);
-                    var dur = rnd.Next(13, 26);
-                    var delay = Math.Round(rnd.NextDouble() * 6, 1);
-                    var rot = rnd.Next(-14, 14);
-                    var style = $"left:{left}%;top:{top}%;width:{w}px;animation-duration:{dur}s;animation-delay:{delay}s;--rot:{rot}deg";
-                    <span class="fb cover" style="@style"><img src="@url" alt="" loading="lazy" referrerpolicy="no-referrer" /></span>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="chat-books-bg" aria-hidden="true">
-                <span class="fb fb1">@Html.Raw(bookIcon)</span>
-                <span class="fb fb2">@Html.Raw(stickers["open"])</span>
-                <span class="fb fb3">@Html.Raw(stickers["bookmark"])</span>
-                <span class="fb fb4">@Html.Raw(bookIcon)</span>
-                <span class="fb fb5">@Html.Raw(stickers["quill"])</span>
-                <span class="fb fb6">@Html.Raw(stickers["open"])</span>
-                <span class="fb fb7">@Html.Raw(stickers["glasses"])</span>
-                <span class="fb fb8">@Html.Raw(bookIcon)</span>
-            </div>
-        }
         @if (active == null)
         {
             <div class="chat-empty">Suhbatni tanlang yoki yangi kitobxonni qidirib taklif qiling.</div>

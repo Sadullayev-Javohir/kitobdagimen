@@ -53,6 +53,8 @@
 .lp .brand, .lp .brand-text { color: #fff; }
 .lp .lp-nav-links a { color: var(--gx-fg-muted); }
 .lp .lp-nav-links a:hover { color: #fff; }
+.lp .lp-nav-links a.btn-accent { background: #fff; color: #111; }
+.lp .lp-nav-links a.btn-accent:hover { background: rgba(255, 255, 255, 0.85); color: #111; }
 .lp .lp-trust .material-symbols-outlined { color: #fff; }
 .lp .btn-outline {
     background: rgba(255, 255, 255, 0.06);
