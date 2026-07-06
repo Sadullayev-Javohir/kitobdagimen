@@ -26,22 +26,20 @@
         }
     })();
 
-    // ===== Kun/tun rejimi (dark mode) =====
-    // Boshlang'ich qiymat <head> dagi inline skript orqali allaqachon o'rnatilgan.
-    function applyTheme(theme) {
-        var root = document.documentElement;
-        root.classList.add("theme-transition");
-        root.setAttribute("data-theme", theme);
-        try { localStorage.setItem("kitob-theme", theme); } catch (e) { }
-        window.setTimeout(function () { root.classList.remove("theme-transition"); }, 300);
-    }
-    document.addEventListener("click", function (e) {
-        var toggle = e.target.closest("[data-theme-toggle]");
-        if (!toggle) return;
-        e.preventDefault();
-        var current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-        applyTheme(current === "dark" ? "light" : "dark");
-    });
+    // ===== Orqa fon video autoplay =====
+    // Ba'zi brauzerlar autoplay'ni bloklaydi — video yuklangach va birinchi
+    // foydalanuvchi klikida qayta urinib ko'ramiz. Barcha sahifalarda ishlaydi.
+    (function () {
+        var v = document.querySelector(".lp-bg-video");
+        if (!v) return;
+        var tryPlay = function () {
+            var p = v.play();
+            if (p && p.catch) p.catch(function () { });
+        };
+        tryPlay();
+        v.addEventListener("loadeddata", tryPlay);
+        document.addEventListener("click", tryPlay, { once: true });
+    })();
 
     // Mobil burger menyu
     const burger = document.querySelector("[data-burger]");

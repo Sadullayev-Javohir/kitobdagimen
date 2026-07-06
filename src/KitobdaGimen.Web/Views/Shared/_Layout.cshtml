@@ -55,18 +55,8 @@
        xabar yozish paneli klaviatura ustida qoladi, suhbatdosh header'i tepada qotib turadi.
        Boshqa sahifalarda default (resizes-visual) qoladi — pastki nav klaviatura ustiga chiqmaydi. *@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover@(isChatPage ? ", interactive-widget=resizes-content" : "")" />
-    @* Kun/tun rejimini bo'yashdan OLDIN o'rnatamiz — "miltillash" (FOUC) bo'lmasligi uchun *@
-    <script>
-        (function () {
-            try {
-                var t = localStorage.getItem('kitob-theme');
-                if (t !== 'dark' && t !== 'light') {
-                    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                }
-                document.documentElement.setAttribute('data-theme', t);
-            } catch (e) { }
-        })();
-    </script>
+    @* Sayt doim video-glass qorong'u dizaynda — kun/tun almashtirish yo'q *@
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     @* Rasm xatolarini global hal qilish: (1) Google avatar (lh3.googleusercontent.com) Referer
        yuborilganda bloklanadi — xato bo'lsa referrerpolicy=no-referrer bilan QAYTA urinamiz;
        (2) baribir yuklanmasa — avatarni bosh harfga, kitob muqovasini placeholder ikonga almashtiramiz.
@@ -152,13 +142,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="kitobdagimen" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/video-glass.css" asp-append-version="true" />
     @if (isAuth)
     {
         <link rel="stylesheet" href="~/css/year-review.css" asp-append-version="true" />
     }
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
+
+    @* Orqa fon video (kitob mavzusida) — barcha sahifalarda fixed fon *@
+    <video class="lp-bg-video" muted loop playsinline preload="auto" autoplay aria-hidden="true" tabindex="-1">
+        <source src="~/videos/book.mp4" type="video/mp4" />
+    </video>
+    <div class="lp-bg-video-overlay" aria-hidden="true"></div>
 
     @* Sahifa yuklanish loaderi — barcha resurslar yuklangach JS uni yashiradi *@
     <div class="page-loader" id="pageLoader" role="status" aria-label="Yuklanmoqda">
@@ -195,11 +193,6 @@
                             <span class="material-symbols-outlined">search</span>
                         </a>
                     }
-                    <button type="button" class="nav-icon-btn theme-toggle" data-theme-toggle
-                            title="Kun/tun rejimi" aria-label="Kun/tun rejimini almashtirish">
-                        <span class="material-symbols-outlined theme-icon-dark">dark_mode</span>
-                        <span class="material-symbols-outlined theme-icon-light">light_mode</span>
-                    </button>
                     <div class="notif-wrap" data-notif-wrap>
                         <button type="button" class="nav-icon-btn notif-bell" data-notif-toggle
                                 title="Bildirishnomalar" aria-label="Bildirishnomalar" aria-expanded="false">
@@ -283,16 +276,6 @@
                 </a>
             }
         </nav>
-    }
-
-    @* Navbar ko'rinmaydigan sahifalarda (landing/onboarding/anonim) suzuvchi kun/tun tugmasi *@
-    @if (!(isAuth && !hideChrome))
-    {
-        <button type="button" class="theme-fab" data-theme-toggle
-                title="Kun/tun rejimi" aria-label="Kun/tun rejimini almashtirish">
-            <span class="material-symbols-outlined theme-icon-dark">dark_mode</span>
-            <span class="material-symbols-outlined theme-icon-light">light_mode</span>
-        </button>
     }
 
     <main>

@@ -1,0 +1,123 @@
+/* =====================================================================
+   Video-glass — video orqa fon + Geist uslubidagi GLASS kartalar.
+   Barcha sahifalarda global ishlaydi (video fon + landing bo'limining
+   o'ziga xos glass ko'rinishi). Manba: EXAMPLE.html
+   (.modern-card / .mini-card glass formulasi)
+   ===================================================================== */
+
+:root {
+    --gx-fg: #EDEDED;
+    --gx-fg-muted: #b7b7b7;
+    --gx-glass: rgba(18, 18, 18, 0.46);
+    --gx-glass-2: rgba(28, 28, 28, 0.38);
+    --gx-glass-hover: rgba(30, 30, 30, 0.60);
+    --gx-line: rgba(255, 255, 255, 0.12);
+    --gx-line-strong: rgba(255, 255, 255, 0.26);
+}
+
+/* ── Video orqa fon (fixed, 3 qatlam, barcha sahifalarda) ── */
+.lp-bg-video {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    pointer-events: none;
+    border: 0;
+    background: #0d0d0d;
+}
+.lp-bg-video-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(8, 8, 8, .42) 0%, rgba(8, 8, 8, .62) 60%),
+        linear-gradient(180deg, rgba(9, 9, 9, .42) 0%, rgba(8, 8, 8, .72) 100%);
+}
+
+/* Google tugmasi — brendga mos har doim oq fon (G logotipi kontrasti uchun) */
+.google-btn {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: transparent;
+    color: #3c4043;
+}
+.google-btn:hover { background: #fff; }
+
+/* ── Landing sahifasining o'ziga xos oq matn/brend ko'rinishi (faqat .lp ichida) ── */
+.lp,
+.lp h1, .lp h2, .lp h3, .lp h4 { color: #fff; }
+.lp .brand, .lp .brand-text { color: #fff; }
+.lp .lp-nav-links a { color: var(--gx-fg-muted); }
+.lp .lp-nav-links a:hover { color: #fff; }
+.lp .lp-trust .material-symbols-outlined { color: #fff; }
+.lp .btn-outline {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--gx-line-strong);
+    color: #fff;
+}
+.lp .btn-outline:hover { background: rgba(255, 255, 255, 0.14); }
+
+/* ── ⭐ GLASS KARTA FORMULASI (EXAMPLE.html bilan bir xil, landing komponentlari) ── */
+.lp-feature,
+.lp-show-card,
+.lp-stat,
+.lp-podium-card,
+.lp-faq-item,
+.lp-guide-promo-inner,
+.lp-cta,
+.lp-challenge,
+.lp-steps {
+    background: var(--gx-glass);
+    -webkit-backdrop-filter: var(--gx-blur);
+    backdrop-filter: var(--gx-blur);
+    border: 1px solid var(--gx-line);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+.lp-feature:hover,
+.lp-show-card:hover,
+.lp-podium-card:hover {
+    background: var(--gx-glass-hover);
+    border-color: var(--gx-line-strong);
+}
+.lp-podium-card.is-first { border-color: var(--gx-line-strong); }
+
+.lp-feature-icon,
+.lp-show-icon,
+.lp-stat-icon {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid var(--gx-line);
+    color: #fff;
+}
+.lp-feature h3,
+.lp-show-card h3,
+.lp-stat-num,
+.lp-podium-card h3 { color: #fff; }
+
+.lp-eyebrow {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff;
+    border: 1px solid var(--gx-line);
+}
+
+.lp-cta { color: #fff; }
+.lp-cta p { color: var(--gx-fg-muted); }
+
+.lp-faq-item summary { color: #fff; }
+.lp-faq-item summary::after { color: var(--gx-fg-muted); }
+
+.lp-prize {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff;
+}
+
+.lp-footer { border-top-color: var(--gx-line); }
+.lp-footer-links a { color: var(--gx-fg-muted); }
+.lp-footer-links a:hover { color: #fff; }
+
+@media (prefers-reduced-motion: reduce) {
+    .lp-bg-video { animation: none; }
+}

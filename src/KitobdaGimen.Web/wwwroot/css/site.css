@@ -1,24 +1,30 @@
-/* ===== kitobdagimen.uz — dizayn tizimi ===== */
+/* ===== kitobdagimen.uz — dizayn tizimi (video-glass, doim qorong'u) ===== */
 :root {
-    --primary: #1B4D3E;
-    --primary-soft: rgba(27, 77, 62, 0.08);
-    --accent: #E8703A;
-    --accent-dark: #d2602d;
-    --bg: #FAF6EE;
-    --surface: #FFFDF8;
-    --text: #1F2A24;
-    --text-secondary: #6B7568;
-    --border: #E5DFD0;
-    --danger: #ba1a1a;
+    color-scheme: dark;
+    --primary: #5cc2a0;
+    --primary-soft: rgba(92, 194, 160, 0.13);
+    --accent: #f0824e;
+    --accent-dark: #e0703c;
+    --bg: #0b0b0a;
+    --surface: rgba(18, 18, 18, 0.46);
+    --surface-hover: rgba(30, 30, 30, 0.60);
+    --text: #ece7db;
+    --text-secondary: #b7b7b7;
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.26);
+    --danger: #ff6b5e;
     --radius: 20px;
     --radius-sm: 12px;
     --radius-pill: 9999px;
-    --shadow: 0 4px 20px rgba(27, 77, 62, 0.07);
-    --shadow-lg: 0 8px 30px rgba(27, 77, 62, 0.12);
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
     --navbar-h: 72px;
     --maxw: 1100px;
     --serif: "Lora", Georgia, "Times New Roman", serif;
     --sans: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Glass karta formulasi (EXAMPLE.html bilan bir xil) */
+    --gx-blur: blur(22px) saturate(135%);
+    --gx-blur-2: blur(14px) saturate(130%);
 }
 
 * { box-sizing: border-box; }
@@ -94,7 +100,7 @@ img { max-width: 100%; display: block; }
 /* ===== Navbar ===== */
 .navbar {
     height: var(--navbar-h);
-    background: var(--surface);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
@@ -168,7 +174,7 @@ img { max-width: 100%; display: block; }
 .btn-primary:hover { background: #163f33; color: #fff; }
 .btn-accent { background: var(--accent); color: #fff; }
 .btn-accent:hover { background: var(--accent-dark); color: #fff; }
-.btn-outline { background: var(--surface); border-color: var(--border); color: var(--primary); }
+.btn-outline { background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-color: var(--border); color: var(--primary); }
 .btn-outline:hover { background: var(--primary-soft); }
 .btn-ghost { background: transparent; color: var(--text-secondary); }
 .btn-ghost:hover { background: var(--primary-soft); color: var(--primary); }
@@ -183,7 +189,7 @@ img { max-width: 100%; display: block; }
 
 /* ===== Cards & forms ===== */
 .card {
-    background: var(--surface);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -194,7 +200,7 @@ img { max-width: 100%; display: block; }
 label { font-weight: 600; font-size: 14px; color: var(--text); display: block; margin-bottom: 6px; }
 .input, textarea.input, select.input {
     width: 100%; padding: 11px 14px; font-family: var(--sans); font-size: 15px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius-sm);
     color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
 }
 .input:focus, textarea.input:focus, select.input:focus {
@@ -244,7 +250,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .landing-card .lead { color: var(--text-secondary); font-size: 18px; margin-bottom: 32px; }
 .google-btn {
     width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius-sm);
     padding: 12px 20px; font-weight: 600; color: var(--primary); cursor: pointer;
 }
 .google-btn:hover { background: var(--primary-soft); text-decoration: none; }
@@ -290,7 +296,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .lp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .lp-grid-3 { grid-template-columns: repeat(3, 1fr); }
 .lp-feature {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 28px 24px; transition: box-shadow .2s, transform .2s;
 }
 .lp-feature:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
@@ -346,7 +352,7 @@ textarea.input { resize: vertical; min-height: 90px; }
     max-width: 900px; margin: 0 auto;
 }
 .lp-stat {
-    text-align: center; background: var(--surface); border: 1px solid var(--border);
+    text-align: center; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 28px 20px;
 }
 .lp-stat-icon {
@@ -373,7 +379,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 }
 .lp-show-card {
     display: flex; align-items: flex-start; gap: 16px;
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 24px;
     transition: box-shadow .2s, transform .2s;
 }
@@ -390,7 +396,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* FAQ — yig'iladigan savollar */
 .lp-faq { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .lp-faq-item {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius-sm); padding: 4px 20px;
 }
 .lp-faq-item summary {
@@ -438,7 +444,7 @@ textarea.input { resize: vertical; min-height: 90px; }
     gap: 18px; align-items: end; max-width: 860px; margin: 0 auto;
 }
 .lp-podium-card {
-    text-align: center; background: var(--surface); border: 1px solid var(--border);
+    text-align: center; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 28px 20px 24px;
     transition: box-shadow .2s, transform .2s;
 }
@@ -545,7 +551,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 }
 .lp-guide-promo-icon {
     flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%;
-    background: var(--surface); display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); display: inline-flex; align-items: center; justify-content: center;
     color: var(--primary);
 }
 .lp-guide-promo-icon .material-symbols-outlined { font-size: 32px; }
@@ -563,7 +569,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .guide-hero { padding: 48px 0 32px; }
 .guide-toc {
     max-width: 760px; margin: 0 auto; padding: 24px 28px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius);
 }
 .guide-toc h2 { font-size: 20px; margin-bottom: 14px; }
 .guide-toc ol { margin: 0; padding-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
@@ -633,7 +639,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .genre-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 10px; height: 140px; padding: 16px; cursor: pointer; text-align: center;
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius);
     transition: all .2s ease; user-select: none;
 }
 .genre-card .material-symbols-outlined { font-size: 36px; color: rgba(27,77,62,.55); transition: color .2s; }
@@ -738,7 +744,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .rich-sep { width: 1px; align-self: stretch; margin: 4px 6px; background: var(--border); }
 .rich-content {
     min-height: 84px; padding: 12px 14px; font-family: var(--sans); font-size: 15px;
-    line-height: 1.6; color: var(--text); background: var(--surface);
+    line-height: 1.6; color: var(--text); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border: 1px solid var(--border); border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     outline: none; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
     transition: border-color .15s, box-shadow .15s;
@@ -991,14 +997,14 @@ textarea.input { resize: vertical; min-height: 90px; }
 .pd-action-btn.liked:hover { background: var(--accent-dark); }
 .pd-action-btn.liked .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 
-.pd-comments-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; }
+.pd-comments-card { background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column; }
 .pd-comments-title { display: flex; align-items: center; gap: 8px; font-size: 19px; margin-bottom: 18px; flex-shrink: 0; }
 .pd-comment-list { display: flex; flex-direction: column; gap: 18px; flex: 1 1 auto; min-height: 0; max-height: 60vh; overflow-y: auto; padding-right: 4px; margin-bottom: 18px; }
 /* "Barcha izohlarni ko'rish" — sarlavha o'ng chetidagi to'liq ekran ikoni */
 .pd-comments-expand {
     margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--surface); color: var(--text-secondary); cursor: pointer;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); color: var(--text-secondary); cursor: pointer;
     transition: border-color .15s, color .15s, background .15s;
 }
 .pd-comments-expand:hover { border-color: var(--primary); color: var(--primary); }
@@ -1210,7 +1216,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .post-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .post-tile {
     position: relative; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden;
-    background: var(--surface); border: 1px solid var(--border); display: block;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); display: block;
 }
 .post-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
 .post-tile:hover img { transform: scale(1.05); }
@@ -1234,7 +1240,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .post-tile-overlay .material-symbols-outlined { font-variation-settings: 'FILL' 1; margin-bottom: 2px; }
 
 .reading-now {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: 20px;
     padding: 24px; box-shadow: var(--shadow); position: sticky; top: calc(var(--navbar-h) + 20px);
 }
 .reading-now h3 { font-size: 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
@@ -1261,7 +1267,7 @@ textarea.input { resize: vertical; min-height: 90px; }
     background: conic-gradient(var(--accent) var(--p, 0%), var(--border) 0deg);
 }
 .reading-now-ring .inner {
-    position: absolute; inset: 6px; background: var(--surface); border-radius: 50%;
+    position: absolute; inset: 6px; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     font-family: var(--serif); font-weight: 700; font-size: 20px; color: var(--primary);
 }
@@ -1274,7 +1280,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .story-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .story-tile {
     display: flex; flex-direction: column; text-align: left; padding: 0; cursor: pointer;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
     transition: box-shadow .2s ease, transform .2s ease;
 }
 .story-tile:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
@@ -1345,7 +1351,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* Yangi dizayn: faol kitob kartasi (muqova · progress · amallar) */
 .book-row {
     position: relative;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: 22px;
     padding: 18px 22px; box-shadow: 0 6px 24px rgba(27, 77, 62, .06);
     display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
     transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
@@ -1509,10 +1515,10 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 /* ===== Chat 2.0 ===== */
 .chat { display: grid; grid-template-columns: 340px 1fr; gap: 0; height: calc(100vh - var(--navbar-h)); overflow: hidden; --chat-scale: 1; font-size: calc(16px * var(--chat-scale, 1)); }
-.chat-sidebar { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); display: flex; flex-direction: column; }
+.chat-sidebar { border-right: 1px solid var(--border); overflow-y: auto; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); display: flex; flex-direction: column; }
 
 /* People search */
-.chat-search { padding: 16px 16px 8px; position: sticky; top: 0; background: var(--surface); z-index: 2; border-bottom: 1px solid var(--border); }
+.chat-search { padding: 16px 16px 8px; position: sticky; top: 0; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); z-index: 2; border-bottom: 1px solid var(--border); }
 .search-box { position: relative; }
 .search-box .input { width: 100%; padding-left: 38px; font-size: calc(15px * var(--chat-scale, 1)); }
 .search-box .search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none; display: inline-flex; }
@@ -1545,7 +1551,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .unread-badge { background: var(--accent); color: #fff; border-radius: var(--radius-pill); font-size: calc(12px * var(--chat-scale, 1)); font-weight: 700; min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
 
 .chat-main { display: flex; flex-direction: column; background: var(--bg); min-width: 0; min-height: 0; }
-.chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 12px; }
+.chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); display: flex; align-items: center; gap: 12px; }
 .chat-header .info { display: flex; flex-direction: column; line-height: 1.2; }
 .chat-header .name { font-weight: 600; }
 .chat-header .presence { font-size: calc(12px * var(--chat-scale, 1)); color: var(--text-secondary); }
@@ -1559,7 +1565,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* Xabar pufakchasi — shrift o'lchami foydalanuvchi sozlagan masshtabga (--chat-scale) bog'liq (Telegram uslubi). */
 .msg { position: relative; width: fit-content; max-width: 72%; padding: 6px 10px 6px 12px; border-radius: 14px; font-size: calc(16px * var(--chat-scale, 1)); line-height: 1.32; word-break: break-word; box-shadow: 0 1px 1px rgba(0,0,0,.05); }
 .msg .msg-text { white-space: pre-wrap; }
-.msg.in { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 6px; }
+.msg.in { align-self: flex-start; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-bottom-left-radius: 6px; }
 .msg.out { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 6px; }
 /* Ulashilgan post — ixcham, responsive mini-karta */
 .msg .shared-card { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 9px; border-radius: 10px;
@@ -1590,7 +1596,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* Amal tugmalari (reply/edit/delete) — masshtabga bog'liq, hover'da kattalashadi (talab bo'yicha) */
 .msg-act { display: inline-flex; align-items: center; justify-content: center;
     width: calc(30px * var(--chat-scale, 1)); height: calc(30px * var(--chat-scale, 1));
-    border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+    border: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); color: var(--text-secondary);
     border-radius: 50%; cursor: pointer; padding: 0; box-shadow: var(--shadow);
     transition: color .12s, background .12s, transform .12s; }
 .msg-act:hover { color: var(--primary); background: var(--primary-soft); transform: scale(1.28); }
@@ -1611,7 +1617,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .msg-edit .msg-edit-acts [data-edit-cancel]:hover { background: rgba(255,255,255,.15); color: #fff; }
 .msg-edit .msg-edit-acts [data-edit-save] { background: #fff; color: var(--primary); }
 .msg-edit .msg-edit-acts [data-edit-save]:hover { background: rgba(255,255,255,.9); color: var(--primary); }
-.msg-form { display: flex; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid var(--border); background: var(--surface); flex-direction: column; }
+.msg-form { display: flex; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); flex-direction: column; }
 .msg-form .row { display: flex; gap: 10px; }
 .msg-form .input { flex: 1; }
 .char-count { font-size: calc(11px * var(--chat-scale, 1)); color: var(--text-secondary); text-align: right; }
@@ -1638,15 +1644,13 @@ textarea.input { resize: vertical; min-height: 90px; }
 .messages { position: relative; z-index: 1; background: transparent; }
 .chat-empty { position: relative; z-index: 1; }
 .chat-books-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
-.chat-books-bg .fb { position: absolute; color: var(--primary); opacity: .06; display: block; }
+.chat-books-bg .fb { position: absolute; color: var(--primary); opacity: .09; display: block; }
 .chat-books-bg .fb svg { width: 100%; height: 100%; }
-[data-theme="dark"] .chat-books-bg .fb { opacity: .09; }
 
 /* Haqiqiy asaxiy.uz kitob muqovalari — chatning ortida ko'plab "uchib yuruvchi" muqovalar. */
-.chat-books-bg.chat-books-real .fb.cover { opacity: .24; animation: floatCover 18s ease-in-out infinite; will-change: transform; }
+.chat-books-bg.chat-books-real .fb.cover { opacity: .32; animation: floatCover 18s ease-in-out infinite; will-change: transform; }
 .chat-books-bg.chat-books-real .fb.cover img { width: 100%; height: auto; display: block;
     border-radius: 6px; box-shadow: 0 8px 22px rgba(27,77,62,.28); }
-[data-theme="dark"] .chat-books-bg.chat-books-real .fb.cover { opacity: .32; }
 @keyframes floatCover {
     0%   { transform: translateY(0) rotate(var(--rot, 0deg)); }
     50%  { transform: translateY(-26px) rotate(calc(var(--rot, 0deg) * -1)); }
@@ -1700,7 +1704,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .msg-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .msg.out .msg-reactions { justify-content: flex-end; }
 .reaction-chip { display: inline-flex; align-items: center; gap: 3px; font-size: calc(13px * var(--chat-scale, 1)); line-height: 1.5;
-    padding: 1px 8px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+    padding: 1px 8px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     color: var(--text); cursor: pointer; transition: transform .1s; }
 .reaction-chip:hover { transform: scale(1.06); }
 .reaction-chip.mine { background: var(--primary-soft); border-color: var(--primary); }
@@ -1708,7 +1712,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 /* Reaksiya tanlagich (suzib chiquvchi) */
 .reaction-picker { position: fixed; z-index: 1200; display: flex; gap: 2px; padding: 5px 8px;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: 24px;
     box-shadow: 0 10px 34px rgba(0,0,0,.18); }
 .reaction-picker[hidden] { display: none; }
 .rp-emoji { font-size: 22px; line-height: 1; background: none; border: none; cursor: pointer;
@@ -1717,7 +1721,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 /* Xabar formasi asboblari (stiker / rasm) */
 .chat-tool-btn { flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text-secondary); display: inline-flex; align-items: center;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); color: var(--text-secondary); display: inline-flex; align-items: center;
     justify-content: center; cursor: pointer; transition: color .12s, background .12s; }
 .chat-tool-btn:hover { color: var(--primary); background: var(--primary-soft); }
 .chat-tool-btn svg { width: 20px; height: 20px; }
@@ -1725,7 +1729,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* Stiker paneli */
 .sticker-panel { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px;
     max-height: 230px; overflow-y: auto; padding: 10px; border: 1px solid var(--border);
-    border-radius: 14px; background: var(--surface); }
+    border-radius: 14px; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); }
 .sticker-panel[hidden] { display: none; }
 .sticker-item { display: inline-flex; align-items: center; justify-content: center; aspect-ratio: 1;
     border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--primary);
@@ -1782,7 +1786,7 @@ textarea.input { resize: vertical; min-height: 90px; }
     line-height: 1.4; padding-top: 9px; padding-bottom: 9px; font-family: inherit; font-size: calc(15px * var(--chat-scale, 1)); }
 
 /* ── Emoji tanlagich paneli ── */
-.emoji-panel { margin-top: 8px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface);
+.emoji-panel { margin-top: 8px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     display: flex; flex-direction: column; overflow: hidden; }
 .emoji-panel[hidden] { display: none; }
 .emoji-search { margin: 8px 10px 6px; }
@@ -1801,7 +1805,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 /* ── Shrift masshtabi sozlagichi (Telegram "Message text size" uslubidagi slayder) ── */
 .scale-pop { position: absolute; right: 12px; bottom: 100%; margin-bottom: 10px; z-index: 30;
     width: 260px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 16px;
-    background: var(--surface); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
 .scale-pop[hidden] { display: none; }
 .scale-pop .sp-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
 .scale-pop .sp-preview { font-size: calc(16px * var(--chat-scale, 1)); background: var(--primary); color: #fff;
@@ -1868,7 +1872,7 @@ body.chat-lightbox-open { overflow: hidden; }
     .nav-links.open {
         display: flex; flex-direction: column; align-items: stretch; gap: 4px;
         position: absolute; top: var(--navbar-h); left: 0; right: 0;
-        background: var(--surface); border-bottom: 1px solid var(--border);
+        background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-bottom: 1px solid var(--border);
         padding: 12px 24px; box-shadow: var(--shadow);
     }
     .genre-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2656,7 +2660,7 @@ body.no-scroll { overflow: hidden; }
 .story-viewer[hidden] { display: none; }
 .story-stage {
     position: relative; width: min(420px, 100%); height: min(78vh, 720px);
-    background: var(--surface); border-radius: var(--radius);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-radius: var(--radius);
     display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-lg);
 }
 .story-progress { display: flex; gap: 4px; padding: 10px 12px 0; }
@@ -2730,7 +2734,7 @@ body.no-scroll { overflow: hidden; }
 }
 .modal-overlay[hidden] { display: none; }
 .modal-box {
-    width: min(460px, 100%); background: var(--surface);
+    width: min(460px, 100%); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 24px;
     max-height: calc(100dvh - 32px); overflow-y: auto;
 }
@@ -2740,14 +2744,14 @@ body.no-scroll { overflow: hidden; }
     display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;
     position: sticky; bottom: -24px;
     margin-left: -24px; margin-right: -24px; margin-bottom: -24px;
-    padding: 14px 24px; background: var(--surface);
+    padding: 14px 24px; background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
     border-bottom-left-radius: var(--radius); border-bottom-right-radius: var(--radius);
 }
 
 .story-duration { display: flex; gap: 8px; margin-top: 8px; }
 .story-duration-opt {
     flex: 1; padding: 9px 6px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--surface); color: var(--text-secondary); font: inherit; font-size: 14px;
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); color: var(--text-secondary); font: inherit; font-size: 14px;
     cursor: pointer; transition: border-color .15s, background .15s, color .15s;
 }
 .story-duration-opt:hover { border-color: var(--primary); }
@@ -2779,7 +2783,7 @@ body.no-scroll { overflow: hidden; }
 }
 .story-detail-back:hover { color: var(--accent); }
 .story-detail-card {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 22px; overflow: hidden;
 }
 .story-detail-author {
@@ -2811,89 +2815,28 @@ button.story-detail-stat { cursor: pointer; }
 .story-detail-cta { margin-top: 22px; padding: 22px; }
 .story-detail-cta p { margin: 0 0 14px; color: var(--text-secondary); }
 
-/* ===== Kun/tun rejimi (dark mode) ===== */
-html[data-theme="dark"] {
-    color-scheme: dark;
-    --primary: #5cc2a0;          /* o'qiladigan yashil — sarlavha/havola/matn uchun */
-    --primary-soft: rgba(92, 194, 160, 0.13);
-    --accent: #f0824e;
-    --accent-dark: #e0703c;
-    --bg: #13120e;               /* iliq, deyarli qora fon */
-    --surface: #1d1b15;          /* iliq to'q sirt */
-    --text: #ece7db;             /* iliq oq matn */
-    --text-secondary: #9d978a;
-    --border: #322e25;
-    --danger: #ff6b5e;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.6);
-}
+/* Qattiq kodlangan ochiq fonlarni doimiy qorong'u dizaynga moslash */
+.btn-primary { background: #2f7d65; color: #fff; }
+.btn-primary:hover { background: #266654; color: #fff; }
+.lp-cta { background: #245848; }
 
-/* To'q rejimda yashil "to'liq fon" elementlarida oq matn o'qilishi uchun
-   --primary yorqinlashtirilgan, shu sabab bu joylarga to'qroq yashil fon beriladi */
-html[data-theme="dark"] .btn-primary { background: #2f7d65; color: #fff; }
-html[data-theme="dark"] .btn-primary:hover { background: #266654; color: #fff; }
-html[data-theme="dark"] .lp-cta { background: #245848; }
-
-/* Qattiq kodlangan ochiq fonlarni to'q rejimga moslash */
-html[data-theme="dark"] .onboarding-warning {
+.onboarding-warning {
     background: rgba(240, 210, 122, 0.10);
     border-color: rgba(240, 210, 122, 0.28);
     color: #e6c869;
 }
-html[data-theme="dark"] .onboarding-warning .material-symbols-outlined { color: #e6c869; }
+.onboarding-warning .material-symbols-outlined { color: #e6c869; }
 
-/* Janr kartalari: tun rejimida ikonka va matn oq ko'rinsin (kunduzgi to'q-yashil
-   qattiq kodlangan ranglar tun fonida ko'rinmaydi) */
-html[data-theme="dark"] .genre-card .material-symbols-outlined { color: rgba(236, 231, 219, .75); }
-html[data-theme="dark"] .genre-card .genre-name { color: var(--text); }
-html[data-theme="dark"] .genre-card.selected .material-symbols-outlined { color: var(--accent); }
-html[data-theme="dark"] .genre-card.selected .genre-name { color: #fff; }
-html[data-theme="dark"] .anon-banner {
+.genre-card .material-symbols-outlined { color: rgba(236, 231, 219, .75); }
+.genre-card .genre-name { color: var(--text); }
+.genre-card.selected .material-symbols-outlined { color: var(--accent); }
+.genre-card.selected .genre-name { color: #fff; }
+.anon-banner {
     background: rgba(92, 194, 160, 0.10);
     border-color: rgba(92, 194, 160, 0.22);
 }
-html[data-theme="dark"] .msg-edit .msg-edit-input { background: var(--surface); }
-html[data-theme="dark"] .msg-edit .msg-edit-acts [data-edit-save] { background: var(--surface); }
-
-/* Rejim almashganda yumshoq o'tish (JS qisqa vaqtga klass qo'shadi) */
-html.theme-transition,
-html.theme-transition * {
-    transition: background-color .25s ease, border-color .25s ease, color .2s ease, box-shadow .25s ease !important;
-}
-
-/* ===== Kun/tun almashtirish tugmasi (icon swap) ===== */
-.theme-icon-light { display: none; }
-.theme-icon-dark { display: inline-flex; }
-html[data-theme="dark"] .theme-icon-light { display: inline-flex; }
-html[data-theme="dark"] .theme-icon-dark { display: none; }
-
-.theme-toggle .material-symbols-outlined { font-size: 22px; transition: transform .3s ease; }
-.theme-toggle:hover .material-symbols-outlined { transform: rotate(-18deg); }
-
-/* Navbarsiz sahifalar (landing, onboarding) uchun suzuvchi tugma */
-.theme-fab {
-    position: fixed;
-    top: 18px;
-    right: 18px;
-    z-index: 60;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-pill);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    box-shadow: var(--shadow);
-    cursor: pointer;
-    transition: color .15s, border-color .15s, transform .3s ease;
-}
-.theme-fab:hover { color: var(--primary); border-color: var(--primary); }
-.theme-fab .material-symbols-outlined { font-size: 22px; }
-@media (max-width: 860px) {
-    .theme-fab { width: 42px; height: 42px; top: 12px; right: 12px; }
-}
+.msg-edit .msg-edit-input { background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); }
+.msg-edit .msg-edit-acts [data-edit-save] { background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); }
 
 
 /* ===== Mobil pastki navigatsiya (bottom nav) =====
@@ -2930,7 +2873,7 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
         height: calc(58px + env(safe-area-inset-bottom, 0px));
         padding-bottom: env(safe-area-inset-bottom, 0px);
-        background: var(--surface); border-top: 1px solid var(--border);
+        background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-top: 1px solid var(--border);
         box-shadow: 0 -2px 12px rgba(0, 0, 0, .06);
     }
     /* Pastki nav bor sahifalarda burger menyu ortiqcha */
@@ -2971,7 +2914,7 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 }
 .login-card {
     width: 100%; max-width: 380px;
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border);
     border-radius: var(--radius); box-shadow: var(--shadow);
     padding: 32px 24px; text-align: center;
 }
@@ -3048,7 +2991,7 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 .admin-note { margin-top: 14px; font-size: 13px; }
 
 /* Admin server status */
-.admin-server-status { background: var(--surface); border: 1px solid var(--border); }
+.admin-server-status { background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); }
 .status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .status-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
 .status-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -3081,7 +3024,7 @@ html[data-theme="dark"] .theme-icon-dark { display: none; }
 .composer-trigger {
     display: flex; align-items: center; gap: 12px; width: 100%;
     padding: 16px 20px; cursor: pointer; text-align: left;
-    border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border-radius: var(--radius);
     box-shadow: var(--shadow); transition: background .15s;
 }
 .composer-trigger:hover { background: var(--primary-soft); }

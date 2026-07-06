@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MeningVaqtim — /dashboard Dizayn Namunasi</title>
+
+<!--
+  ═══════════════════════════════════════════════════════════════════════════
+  MeningVaqtim.uz — /dashboard DIZAYN NAMUNASI (mustaqil HTML fayl)
+  ───────────────────────────────────────────────────────────────────────────
+  Bu BITTA fayl — hech qanday tashqi CSS/JS/framework talab qilmaydi.
+  Ochish uchun: brauzerda shu faylni oching (ikki marta bosing).
+
+  Maqsad: /dashboard sahifasining ANIQ dizaynini (Next.js / Vercel "Geist"
+  uslubidagi monoxrom oq–qora GLASS panellar + 4K VIDEO ORQA FON) boshqa
+  loyihalarga ko'chirish uchun tayyor namuna.
+
+  Ichida NIMA bor:
+    1) VIDEO ORQA FON  — .mv-bg-video + .mv-bg-video-overlay (z-index layering)
+    2) GLASS PANELLAR  — --gx-* tokenlar, backdrop-filter formulasi
+    3) POMODORO TAYMER — SVG halqa (stroke-dashoffset progress)
+    4) VAZIFALAR / FAOLIYAT kartalari
+    5) TUGMALAR        — Geist primary (oq) + ghost (shaffof chegara)
+    6) DARK/LIGHT toggle + ishlaydigan taymer demo (eng pastdagi <script>)
+
+  Video fayli: bu namunada video YO'Q bo'lsa, ORQADA jonli gradient fallback
+  ishlaydi. Haqiqiy loyihada <video src="videos/time.mp4"> qo'ying (pastga qarang).
+  ═══════════════════════════════════════════════════════════════════════════
+-->
+
+<style>
+/* ════════════════════════════════════════════════════════════════════
+   0. SHRIFT (ixtiyoriy) — loyihada Outfit + Plus Jakarta Sans ishlatiladi.
+   Bu yerda tashqi shrift yuklanmaydi (offline ishlashi uchun system-ui).
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════════
+   1. DIZAYN TOKENLARI (CSS o'zgaruvchilari)
+   ──────────────────────────────────────────────────────────────────
+   --gx-*  = Geist monoxrom GLASS tokenlar (dashboard'ning ASOSIY ko'rinishi)
+   --sp-*  = 8px grid spacing;  --radius-* = burchak radiuslari
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Geist monoxrom glass tokenlar (dashboard-redesign.css dan) */
+  --gx-fg:          #EDEDED;                 /* asosiy matn (oq) */
+  --gx-fg-muted:    #A1A1A1;                 /* ikkilamchi matn (kulrang) */
+  --gx-glass:       rgba(18,18,18,0.38);     /* panel foni — biroz qora, video ko'rinadi */
+  --gx-glass-2:     rgba(28,28,28,0.30);     /* ikkilamchi (ichki) panel */
+  --gx-glass-hover: rgba(28,28,28,0.52);     /* hover holati */
+  --gx-line:        rgba(255,255,255,0.10);  /* nozik chegara */
+  --gx-line-strong: rgba(255,255,255,0.22);  /* kuchli chegara */
+
+  /* Karta xiralashuvi (blur) — --mv-card-blur 0..1 (1 = standart) */
+  --mv-card-blur:   1;
+  --gx-blur:        blur(calc(var(--mv-card-blur, 1) * 22px)) saturate(135%);
+  --gx-blur-2:      blur(calc(var(--mv-card-blur, 1) * 14px)) saturate(130%);
+
+  /* Video ustidagi qorong'ilik — --mv-bg-dim 0..1 (0 = to'liq yorug') */
+  --mv-bg-dim:      0.35;
+
+  /* Spacing — 8px grid */
+  --sp-1: 8px;  --sp-2: 16px;  --sp-3: 24px;  --sp-4: 32px;  --sp-5: 40px;
+
+  /* Tipografiya o'lchamlari */
+  --text-xs: 0.75rem;  --text-sm: 0.8125rem;  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;  --text-xl: 1.25rem;  --text-4xl: 2.375rem;
+
+  /* Radiuslar */
+  --radius-sm: 6px;  --radius: 10px;  --radius-lg: 16px;  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transition */
+  --tr-fast: 150ms ease;  --tr: 250ms ease;
+
+  --navbar-h: 64px;
+
+  --font-heading: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body:    'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+img, svg, video, canvas { max-width: 100%; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+/* Body SHAFFOF — video orqa fon ko'rinishi uchun eng muhim qoida! */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: transparent;            /* ← video ko'rinsin */
+  color: var(--gx-fg);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.006em;
+}
+h1,h2,h3,h4 { font-family: var(--font-heading); letter-spacing: -0.02em; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   2. ⭐ VIDEO ORQA FON — LOYIHANING "YURAGI"
+   ──────────────────────────────────────────────────────────────────
+   Qatlam ierarxiyasi (z-index):
+     .mv-bg-video          → z-index: -2  (eng pastda, to'liq ekran video)
+     .mv-bg-video-overlay  → z-index: -1  (video ustidagi qorong'i gradient)
+     body/kontent          → z-index:  0
+     glass kartalar        → z-index:  1
+     navbar                → z-index: 100
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Video elementi — fixed, to'liq ekran, eng pastda */
+.mv-bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;        /* proporsiyani saqlab ekranni to'ldiradi */
+  z-index: -2;
+  pointer-events: none;     /* klik/scroll videoga tegmaydi */
+  border: 0;
+  background: #101010;       /* video yuklanmasa fallback rang */
+}
+
+/* --- FALLBACK: video bo'lmasa jonli gradient (faqat DEMO uchun) ---
+   Haqiqiy loyihada bu shart emas — video o'rnini bosadi. */
+.mv-bg-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 800px at 15% 10%, #1c2431 0%, transparent 55%),
+    radial-gradient(1000px 700px at 85% 90%, #241c2b 0%, transparent 55%),
+    linear-gradient(135deg, #0b0d12 0%, #121016 50%, #0a0b10 100%);
+  background-size: 200% 200%;
+  animation: bgDrift 24s ease-in-out infinite;
+}
+@keyframes bgDrift {
+  0%,100% { background-position: 0% 0%, 100% 100%, 0% 0%; }
+  50%     { background-position: 40% 30%, 60% 70%, 100% 100%; }
+}
+
+/* Video ustidagi qorong'ilashtirish qatlami — matn o'qilishi oson bo'lsin.
+   --mv-bg-dim orqali "Yorug'lik" boshqariladi (sozlamalardan). */
+.mv-bg-video-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0%,
+      rgba(8,8,8, calc(var(--mv-bg-dim) * 0.9)) 0%,
+      rgba(8,8,8, calc(var(--mv-bg-dim) * 1.4)) 60%),
+    linear-gradient(180deg,
+      rgba(8,8,8, calc(var(--mv-bg-dim) * 1.1)) 0%,
+      rgba(8,8,8, calc(var(--mv-bg-dim) * 1.8)) 100%);
+}
+
+/* Accessibility: animatsiya o'chirilgan bo'lsa videoni ko'rsatmaymiz */
+@media (prefers-reduced-motion: reduce) {
+  .mv-bg-video, .mv-bg-fallback { animation: none; }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   3. NAVBAR — glass, fixed
+   ════════════════════════════════════════════════════════════════════ */
+.app-navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--navbar-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 var(--sp-3);
+  background: rgba(16,16,16,0.55);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid var(--gx-line);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--gx-fg); font-weight: 700; }
+.nav-logo .dot { width: 26px; height: 26px; border-radius: 8px; background: #EDEDED; display: grid; place-items: center; color: #0a0a0a; font-weight: 800; }
+.nav-actions { display: flex; align-items: center; gap: var(--sp-1); }
+.nav-page-link {
+  width: 40px; height: 40px; border-radius: var(--radius);
+  display: grid; place-items: center; cursor: pointer;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gx-line);
+  color: var(--gx-fg-muted);
+  transition: all var(--tr-fast);
+}
+.nav-page-link:hover { background: rgba(255,255,255,0.10); border-color: var(--gx-line-strong); color: var(--gx-fg); transform: translateY(-1px); }
+.nav-page-link.active { background: rgba(255,255,255,0.14); border-color: var(--gx-line-strong); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.12); }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   4. DASHBOARD KONTEYNER
+   ════════════════════════════════════════════════════════════════════ */
+.dashboard-container {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: calc(var(--navbar-h) + var(--sp-4)) var(--sp-3) var(--sp-5);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+   5. ⭐ GLASS PANEL — ASOSIY FORMULA (barcha kartalar shundan)
+   ──────────────────────────────────────────────────────────────────
+   fon    : var(--gx-glass)      → rgba(18,18,18,0.38)
+   blur   : var(--gx-blur)       → blur(22px) saturate(135%)
+   chegara: 1px solid var(--gx-line)
+   radius : 12px
+   soya   : 0 8px 30px rgba(0,0,0,0.28)
+   ════════════════════════════════════════════════════════════════════ */
+.modern-card {
+  background: var(--gx-glass);
+  -webkit-backdrop-filter: var(--gx-blur);
+  backdrop-filter: var(--gx-blur);
+  border: 1px solid var(--gx-line);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.28);
+  color: var(--gx-fg);
+  padding: var(--sp-3);
+  transition: background var(--tr), border-color var(--tr), transform var(--tr);
+}
+.modern-card:hover { background: var(--gx-glass-hover); border-color: var(--gx-line-strong); }
+.modern-card + .modern-card { margin-top: var(--sp-4); }
+
+.modern-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-2); margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-2); border-bottom: 1px solid var(--gx-line);
+}
+.modern-card-title {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0; font-size: var(--text-lg); font-weight: 700; color: var(--gx-fg);
+}
+.modern-card-title .ico { color: var(--gx-fg); opacity: .9; }
+.chevron { margin-left: 4px; color: var(--gx-fg-muted); font-size: .8rem; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   6. ⭐ POMODORO TAYMER KARTASI (.timer-modern)
+   ──────────────────────────────────────────────────────────────────
+   Bu karta butun dizayn tizimining "etaloni" — boshqa barcha kartalar
+   shu ko'rinishga moslashtiriladi.
+   ════════════════════════════════════════════════════════════════════ */
+.timer-modern { text-align: center; position: relative; overflow: hidden; }
+
+/* Segmentli boshqaruv (Fokus / Qisqa / Uzun) */
+.timer-mode-seg {
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap; margin-bottom: var(--sp-3);
+}
+
+/* SVG halqa o'ramasi */
+.timer-ring-wrap { position: relative; z-index: 1; display: inline-flex; margin: 0 auto var(--sp-3); }
+.timer-ring { transform: rotate(-90deg); }
+.timer-ring-bg   { fill: none; stroke: rgba(255,255,255,0.10); stroke-width: 6; }
+.timer-ring-fill {
+  fill: none;
+  stroke: #EDEDED;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 339.29;                                   /* 2πr, r=54 */
+  stroke-dashoffset: calc(339.29 * (1 - var(--progress, 1))); /* progress 0..1 */
+  transition: stroke-dashoffset 1s linear;
+}
+.timer-ring-label {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.timer-ring-time {
+  font-family: var(--font-heading);
+  font-size: var(--text-4xl); font-weight: 800; line-height: 1;
+  color: #fff; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+.timer-ring-status {
+  font-size: var(--text-xs); color: var(--gx-fg-muted);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; font-weight: 600;
+}
+
+.timer-task-line { font-size: var(--text-xs); color: var(--gx-fg-muted); margin-bottom: var(--sp-2); }
+.timer-task-line b { color: #fff; font-weight: 600; }
+.timer-controls { display: flex; gap: var(--sp-1); justify-content: center; flex-wrap: wrap; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   7. ⭐ TUGMALAR (Geist uslubi)
+   ──────────────────────────────────────────────────────────────────
+   btn-primary   → oq fon + qora matn (birlamchi harakat)
+   btn-secondary → shaffof + nozik chegara (ghost)
+   ════════════════════════════════════════════════════════════════════ */
+.btn-mv {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 8px;
+  font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600;
+  cursor: pointer; border: 1px solid transparent;
+  transition: all var(--tr-fast); line-height: 1; white-space: nowrap;
+}
+.btn-mv.btn-sm { padding: 7px 12px; font-size: var(--text-xs); }
+.btn-mv.btn-lg { padding: 13px 24px; font-size: var(--text-base); }
+
+.btn-primary { background: #EDEDED; color: #0A0A0A; border-color: #EDEDED; }
+.btn-primary:hover:not(:disabled) { background: #fff; border-color: #fff; transform: translateY(-1px); }
+.btn-primary:disabled { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.55); border-color: transparent; cursor: default; }
+
+.btn-secondary, .btn-ghost {
+  background: rgba(255,255,255,0.05); color: var(--gx-fg);
+  border-color: var(--gx-line-strong);
+}
+.btn-secondary:hover, .btn-ghost:hover { background: rgba(255,255,255,0.12); border-color: var(--gx-line-strong); }
+.btn-ghost { background: transparent; }
+.btn-mv:disabled { opacity: .55; cursor: default; }
+
+.btn-mv:focus-visible { outline: 2px solid rgba(255,255,255,0.55); outline-offset: 2px; }
+
+/* Karta sarlavhasidagi kichik amal tugmalari */
+.btn-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px; cursor: pointer;
+  font-size: var(--text-sm); font-weight: 600; transition: all var(--tr-fast);
+}
+.btn-action-primary { background: #EDEDED; color: #0A0A0A; border: 1px solid #EDEDED; }
+.btn-action-primary:hover { background: #fff; transform: translateY(-1px); }
+.btn-action-secondary { background: rgba(255,255,255,0.05); color: var(--gx-fg); border: 1px solid var(--gx-line-strong); }
+.btn-action-secondary:hover { background: rgba(255,255,255,0.12); }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   8. VAZIFA ELEMENTLARI (ichki, ikkilamchi glass)
+   ════════════════════════════════════════════════════════════════════ */
+.task-item-modern {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-2); margin-bottom: var(--sp-2); border-radius: 10px;
+  background: var(--gx-glass-2);
+  -webkit-backdrop-filter: var(--gx-blur-2);
+  backdrop-filter: var(--gx-blur-2);
+  border: 1px solid var(--gx-line);
+  transition: all var(--tr-fast);
+}
+.task-item-modern:last-child { margin-bottom: 0; }
+.task-item-modern:hover { background: var(--gx-glass-hover); border-color: var(--gx-line-strong); transform: translateY(-2px); }
+.task-item-icon {
+  width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+  display: grid; place-items: center; font-size: 1.15rem;
+  background: rgba(255,255,255,0.10); border: 1px solid var(--gx-line);
+}
+.task-item-content { flex: 1; min-width: 0; }
+.task-item-name { font-weight: 600; color: #fff; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task-item-meta { font-size: var(--text-xs); color: var(--gx-fg-muted); display: flex; gap: 10px; }
+.task-check {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+  border: 1.5px solid var(--gx-line-strong); background: transparent; cursor: pointer;
+  display: grid; place-items: center; color: transparent; transition: all var(--tr-fast);
+}
+.task-item-modern.done .task-check { background: #EDEDED; color: #0a0a0a; border-color: #EDEDED; }
+.task-item-modern.done .task-item-name { text-decoration: line-through; color: var(--gx-fg-muted); }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   9. FAOLIYAT TIMELINE
+   ════════════════════════════════════════════════════════════════════ */
+.activity-timeline { position: relative; padding-left: var(--sp-3); }
+.activity-list { list-style: none; padding: 0; margin: 0; }
+.activity-item {
+  position: relative; padding: var(--sp-2); margin-bottom: var(--sp-2); border-radius: 10px;
+  background: var(--gx-glass-2);
+  -webkit-backdrop-filter: var(--gx-blur-2);
+  backdrop-filter: var(--gx-blur-2);
+  border: 1px solid var(--gx-line);
+  transition: all var(--tr-fast);
+}
+.activity-item:hover { background: var(--gx-glass-hover); transform: translateX(6px); border-color: var(--gx-line-strong); }
+.activity-item::before {
+  content: ''; position: absolute; left: -20px; top: 16px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #EDEDED; border: 3px solid rgba(20,20,20,0.9);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.15); z-index: 2;
+}
+.activity-item::after {
+  content: ''; position: absolute; left: -14.5px; top: 30px;
+  width: 1px; height: calc(100% + 8px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.03)); z-index: 1;
+}
+.activity-item:last-child::after { display: none; }
+.activity-time { font-size: var(--text-xs); color: var(--gx-fg-muted); margin-bottom: 3px; font-weight: 600; }
+.activity-content { font-size: var(--text-sm); color: #fff; font-weight: 600; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   10. SIDEBAR VIDJETLARI (iqtibos, streak, reyting) — namuna kartalar
+   ════════════════════════════════════════════════════════════════════ */
+.widget-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); margin-top: var(--sp-4); }
+.mini-card {
+  background: var(--gx-glass);
+  -webkit-backdrop-filter: var(--gx-blur);
+  backdrop-filter: var(--gx-blur);
+  border: 1px solid var(--gx-line); border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.28);
+  padding: var(--sp-3); transition: all var(--tr);
+}
+.mini-card:hover { background: var(--gx-glass-hover); border-color: var(--gx-line-strong); transform: translateY(-2px); }
+.mini-card .big { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+.mini-card .lbl { font-size: var(--text-xs); color: var(--gx-fg-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
+.quote-card { grid-column: 1 / -1; }
+.quote-card blockquote { margin: 0; font-size: var(--text-base); color: #fff; font-style: italic; }
+.quote-card cite { display: block; margin-top: 8px; font-size: var(--text-xs); color: var(--gx-fg-muted); font-style: normal; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   11. ☀️ LIGHT MODE OVERRIDE (ixtiyoriy — landing/oq glass varianti)
+   ──────────────────────────────────────────────────────────────────
+   Dashboard'ning asosiy ko'rinishi DARK (yuqoridagi). Agar OQ glass
+   kerak bo'lsa <html> dan "dark" klassini olib tashlang.
+   ════════════════════════════════════════════════════════════════════ */
+html:not(.dark) body { color: #1A1A1A; }
+html:not(.dark) .modern-card,
+html:not(.dark) .mini-card {
+  background: rgba(255,255,255,0.20);
+  -webkit-backdrop-filter: blur(40px) saturate(190%) brightness(1.1);
+  backdrop-filter: blur(40px) saturate(190%) brightness(1.1);
+  border: 1.5px solid rgba(255,255,255,0.6);
+  box-shadow: 0 10px 40px rgba(40,40,40,0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+  color: #1A1A1A;
+}
+html:not(.dark) .modern-card:hover,
+html:not(.dark) .mini-card:hover { background: rgba(255,255,255,0.30); }
+html:not(.dark) .modern-card-title,
+html:not(.dark) .timer-ring-time,
+html:not(.dark) .task-item-name,
+html:not(.dark) .activity-content,
+html:not(.dark) .mini-card .big { color: #1A1A1A; }
+html:not(.dark) .btn-primary, html:not(.dark) .btn-action-primary { background: #171717; color: #fff; border-color: #171717; }
+html:not(.dark) .btn-secondary, html:not(.dark) .btn-ghost, html:not(.dark) .btn-action-secondary { color: #1A1A1A; border-color: rgba(0,0,0,0.15); background: rgba(255,255,255,0.35); }
+html:not(.dark) .timer-ring-fill, html:not(.dark) .task-item-icon { stroke: #171717; }
+html:not(.dark) .mv-bg-video-overlay { --mv-bg-dim: 0.15; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   12. RESPONSIVE
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .dashboard-container { padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  .app-navbar { -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%); }
+  .timer-ring { width: 180px; height: 180px; }
+  .widget-row { grid-template-columns: 1fr; }
+  .modern-card-header { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .timer-ring { width: 160px; height: 160px; }
+  .modern-card-header > .actions { width: 100%; }
+  .modern-card-header > .actions .btn-action { flex: 1 1 0; justify-content: center; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ═══════════════ ⭐ VIDEO ORQA FON (3 qatlam) ═══════════════ -->
+
+<!-- (a) Jonli gradient fallback — video bo'lmaganda ko'rinadi (DEMO uchun) -->
+<div class="mv-bg-fallback" aria-hidden="true"></div>
+
+<!-- (b) Video: haqiqiy loyihada src ni ochib qo'ying. Bu namunada src bo'sh,
+        shuning uchun fallback gradient ko'rinadi. Loyihada:
+        <video class="mv-bg-video" src="videos/time.mp4" ...>            -->
+<video class="mv-bg-video"
+       muted loop playsinline preload="none"
+       aria-hidden="true" tabindex="-1"
+       poster="">
+  <!-- Loyihada shu qatorni faollashtiring: -->
+  <!-- <source src="videos/time.mp4" type="video/mp4" /> -->
+</video>
+
+<!-- (c) Qorong'ilashtirish overlay — matn o'qilishi uchun -->
+<div class="mv-bg-video-overlay" aria-hidden="true"></div>
+
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav class="app-navbar">
+  <a class="nav-logo" href="#">
+    <span class="dot">M</span>
+    <span>MeningVaqtim</span>
+  </a>
+  <div class="nav-actions">
+    <a class="nav-page-link active" href="#" title="Dashboard" aria-label="Bosh sahifa">🏠</a>
+    <a class="nav-page-link" href="#" title="Analitika" aria-label="Analitika">📊</a>
+    <a class="nav-page-link" href="#" title="Yutuqlar" aria-label="Yutuqlar">🏆</a>
+    <button class="nav-page-link" id="theme-toggle" title="Mavzu (yorug'/qorong'u)" aria-label="Mavzuni almashtirish">🌙</button>
+  </div>
+</nav>
+
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div class="dashboard-container">
+
+  <!-- ─────── POMODORO TAYMER ─────── -->
+  <div class="modern-card timer-modern" role="region" aria-label="Pomodoro taymer">
+
+    <!-- Rejim tanlash -->
+    <div class="timer-mode-seg" role="tablist" aria-label="Sessiya turi">
+      <button class="btn-mv btn-sm btn-primary"   data-mode="focus" data-min="25" role="tab" aria-selected="true">🎯 Fokus 25m</button>
+      <button class="btn-mv btn-sm btn-secondary" data-mode="short" data-min="5"  role="tab" aria-selected="false">☕ Qisqa 5m</button>
+      <button class="btn-mv btn-sm btn-secondary" data-mode="long"  data-min="15" role="tab" aria-selected="false">🌙 Uzun 15m</button>
+    </div>
+
+    <!-- SVG halqa (progress = stroke-dashoffset) -->
+    <div class="timer-ring-wrap" role="timer" aria-live="off">
+      <svg class="timer-ring" width="200" height="200" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="timer-ring-bg"   cx="60" cy="60" r="54"/>
+        <circle class="timer-ring-fill" cx="60" cy="60" r="54" id="timer-ring-fill" style="--progress:1"/>
+      </svg>
+      <div class="timer-ring-label">
+        <div class="timer-ring-time" id="timer-display">25:00</div>
+        <div class="timer-ring-status" id="timer-status">Tayyor</div>
+      </div>
+    </div>
+
+    <!-- Tanlangan vazifa -->
+    <div class="timer-task-line">Vazifa: <b id="selected-task">Diplom ishini yoz</b></div>
+
+    <!-- Boshqaruv tugmalari -->
+    <div class="timer-controls" role="group" aria-label="Taymer boshqaruvi">
+      <button class="btn-mv btn-primary btn-lg" id="btn-start">▶ Boshlash</button>
+      <button class="btn-mv btn-secondary" id="btn-pause" disabled>⏸ Pauza</button>
+      <button class="btn-mv btn-ghost" id="btn-reset" disabled>⏹ To'xtatish</button>
+    </div>
+  </div>
+
+  <!-- ─────── VAZIFALAR ─────── -->
+  <div class="modern-card" role="region" aria-label="Vazifalar">
+    <div class="modern-card-header">
+      <h2 class="modern-card-title">
+        <span class="ico">✅</span> Bugungi vazifalar <span class="chevron">▲</span>
+      </h2>
+      <div class="actions" style="display:flex; gap:var(--sp-1);">
+        <button class="btn-action btn-action-secondary">▦ Shablonlar</button>
+        <button class="btn-action btn-action-primary">+ Yangi</button>
+      </div>
+    </div>
+
+    <div id="tasks">
+      <div class="task-item-modern">
+        <button class="task-check" aria-label="Bajarildi deb belgilash">✓</button>
+        <div class="task-item-icon">📝</div>
+        <div class="task-item-content">
+          <div class="task-item-name">Diplom ishini yoz</div>
+          <div class="task-item-meta"><span>🍅 2 / 4 pomodoro</span><span>⏱ 50 daqiqa</span></div>
+        </div>
+      </div>
+      <div class="task-item-modern">
+        <button class="task-check" aria-label="Bajarildi deb belgilash">✓</button>
+        <div class="task-item-icon">💻</div>
+        <div class="task-item-content">
+          <div class="task-item-name">API integratsiyasini tugat</div>
+          <div class="task-item-meta"><span>🍅 0 / 3 pomodoro</span><span>⏱ 0 daqiqa</span></div>
+        </div>
+      </div>
+      <div class="task-item-modern done">
+        <button class="task-check" aria-label="Bajarildi">✓</button>
+        <div class="task-item-icon">📚</div>
+        <div class="task-item-content">
+          <div class="task-item-name">Ingliz tili — 30 daqiqa</div>
+          <div class="task-item-meta"><span>🍅 2 / 2 pomodoro</span><span>✅ Bajarildi</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────── SO'NGGI FAOLIYAT ─────── -->
+  <div class="modern-card" role="region" aria-label="So'nggi faoliyat">
+    <div class="modern-card-header">
+      <h2 class="modern-card-title">
+        <span class="ico">🕘</span> So'nggi faoliyat <span class="chevron">▲</span>
+      </h2>
+    </div>
+    <div class="activity-timeline">
+      <ul class="activity-list">
+        <li class="activity-item">
+          <div class="activity-time">10:24 · bugun</div>
+          <div class="activity-content">Fokus sessiyasi yakunlandi — 25 daqiqa 🎯</div>
+        </li>
+        <li class="activity-item">
+          <div class="activity-time">09:50 · bugun</div>
+          <div class="activity-content">"Ingliz tili" vazifasi bajarildi ✅</div>
+        </li>
+        <li class="activity-item">
+          <div class="activity-time">Kecha · 21:15</div>
+          <div class="activity-content">7 kunlik streak'ga yetdingiz 🔥</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ─────── SIDEBAR VIDJETLARI (namuna) ─────── -->
+  <div class="widget-row">
+    <div class="mini-card quote-card">
+      <blockquote>"Vaqt — bu eng qadrli boylik. Uni behuda sarflama."</blockquote>
+      <cite>— Kunlik iqtibos</cite>
+    </div>
+    <div class="mini-card">
+      <div class="big">7</div>
+      <div class="lbl">🔥 Kunlik streak</div>
+    </div>
+    <div class="mini-card">
+      <div class="big">#12</div>
+      <div class="lbl">🏆 Kunlik reyting</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     (a) Video autoplay menejmenti (loyihadan)
+     (b) Theme toggle (dark/light)
+     (c) Ishlaydigan taymer DEMO
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+/* ─── (a) VIDEO AUTOPLAY MENEJMENTI (loyihadagi bilan bir xil mantiq) ───
+   Brauzerlar autoplay'ni bloklashi mumkin — shuning uchun bir necha
+   nuqtada qayta urinamiz (loadeddata, DOMContentLoaded, birinchi klik). */
+(function () {
+  var v = document.querySelector('.mv-bg-video');
+  if (!v || v.tagName !== 'VIDEO') return;
+
+  // Manba yo'q bo'lsa (bu demo holati) — hech nima qilmaymiz, fallback ko'rinadi.
+  if (!v.querySelector('source') && !v.src) return;
+
+  v.muted = true;              // autoplay siyosati uchun MAJBURIY
+  v.setAttribute('preload', 'auto');
+  try { v.load(); } catch (e) {}
+
+  var tryPlay = function () {
+    var p = v.play();
+    if (p && p.catch) p.catch(function () {}); // bloklansa jimgina o'tamiz
+  };
+  tryPlay();
+  v.addEventListener('loadeddata', tryPlay);
+  document.addEventListener('DOMContentLoaded', tryPlay);
+  document.addEventListener('click', tryPlay, { once: true }); // birinchi klikda
+})();
+
+
+/* ─── (b) THEME TOGGLE (dark ↔ light) ─── */
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  var html = document.documentElement;
+  function apply() { btn.textContent = html.classList.contains('dark') ? '🌙' : '☀️'; }
+  apply();
+  btn.addEventListener('click', function () {
+    html.classList.toggle('dark');
+    apply();
+  });
+})();
+
+
+/* ─── (c) POMODORO TAYMER DEMO ─── */
+(function () {
+  var CIRC = 339.29;                 // 2 * π * 54
+  var fill    = document.getElementById('timer-ring-fill');
+  var display = document.getElementById('timer-display');
+  var status  = document.getElementById('timer-status');
+  var startBtn = document.getElementById('btn-start');
+  var pauseBtn = document.getElementById('btn-pause');
+  var resetBtn = document.getElementById('btn-reset');
+  var modeBtns = document.querySelectorAll('.timer-mode-seg button');
+
+  var totalSec = 25 * 60, remaining = totalSec, timer = null;
+
+  function fmt(s) {
+    var m = Math.floor(s / 60), sec = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+  function render() {
+    display.textContent = fmt(remaining);
+    fill.style.setProperty('--progress', (remaining / totalSec).toFixed(4));
+  }
+  function stopInterval() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function start() {
+    if (timer) return;
+    status.textContent = 'Ishlamoqda';
+    startBtn.disabled = true; pauseBtn.disabled = false; resetBtn.disabled = false;
+    timer = setInterval(function () {
+      if (remaining > 0) { remaining--; render(); }
+      else { stopInterval(); status.textContent = 'Tugadi 🎉'; startBtn.disabled = false; pauseBtn.disabled = true; }
+    }, 1000);
+  }
+  function pause() {
+    stopInterval();
+    status.textContent = 'Pauza';
+    startBtn.disabled = false; pauseBtn.disabled = true;
+  }
+  function reset() {
+    stopInterval();
+    remaining = totalSec; render();
+    status.textContent = 'Tayyor';
+    startBtn.disabled = false; pauseBtn.disabled = true; resetBtn.disabled = true;
+  }
+
+  modeBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      modeBtns.forEach(function (x) {
+        x.classList.remove('btn-primary'); x.classList.add('btn-secondary');
+        x.setAttribute('aria-selected', 'false');
+      });
+      b.classList.remove('btn-secondary'); b.classList.add('btn-primary');
+      b.setAttribute('aria-selected', 'true');
+      totalSec = parseInt(b.dataset.min, 10) * 60;
+      reset();
+    });
+  });
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+
+  // Vazifa checkbox demo
+  document.querySelectorAll('.task-check').forEach(function (c) {
+    c.addEventListener('click', function () { c.closest('.task-item-modern').classList.toggle('done'); });
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
