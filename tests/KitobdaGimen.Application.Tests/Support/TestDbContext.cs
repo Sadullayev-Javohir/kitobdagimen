@@ -30,6 +30,7 @@ public class TestDbContext : DbContext, IAppDbContext
     public DbSet<ReadingGoal> ReadingGoals => Set<ReadingGoal>();
     public DbSet<ReadingProgress> ReadingProgress => Set<ReadingProgress>();
     public DbSet<Quote> Quotes => Set<Quote>();
+    public DbSet<QuoteView> QuoteViews => Set<QuoteView>();
     public DbSet<SavedQuote> SavedQuotes => Set<SavedQuote>();
     public DbSet<QuoteLike> QuoteLikes => Set<QuoteLike>();
     public DbSet<QuoteComment> QuoteComments => Set<QuoteComment>();

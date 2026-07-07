@@ -314,38 +314,22 @@
     @if (showBottomNav)
     {
         <nav class="bottom-nav" aria-label="Asosiy navigatsiya">
-            <a href="/Feed" class="@(mobilePath.StartsWith("/feed") ? "active" : "")">
+            <a href="/Feed" class="@(mobilePath.StartsWith("/feed") ? "active" : "")" title="Tasma" aria-label="Tasma">
                 <span class="material-symbols-outlined">dynamic_feed</span>
-                <span class="bn-label">Tasma</span>
             </a>
-            <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")">
+            <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")" title="Kutubxona" aria-label="Kutubxona">
                 <span class="material-symbols-outlined">menu_book</span>
-                <span class="bn-label">Kutubxona</span>
             </a>
-            <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")">
+            <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
                 <span class="material-symbols-outlined">military_tech</span>
-                <span class="bn-label">Challenge</span>
             </a>
-            <a href="/kitoblar" class="@((mobilePath.StartsWith("/kitoblar") || mobilePath.StartsWith("/kitob/")) ? "active" : "")">
+            <a href="/kitoblar" class="@((mobilePath.StartsWith("/kitoblar") || mobilePath.StartsWith("/kitob/")) ? "active" : "")" title="Kitoblar" aria-label="Kitoblar">
                 <span class="material-symbols-outlined">auto_stories</span>
-                <span class="bn-label">Kitoblar</span>
             </a>
-            <a href="/chat" class="@(mobilePath.StartsWith("/chat") ? "active" : "")">
+            <a href="/chat" class="@(mobilePath.StartsWith("/chat") ? "active" : "")" title="Xabarlar" aria-label="Xabarlar">
                 <span class="material-symbols-outlined">forum</span>
                 <span class="bn-badge" data-msg-badge hidden></span>
-                <span class="bn-label">Xabarlar</span>
             </a>
-            <a href="/profile" class="@(mobilePath.StartsWith("/profile") ? "active" : "")">
-                <span class="material-symbols-outlined">person</span>
-                <span class="bn-label">Profil</span>
-            </a>
-            @if (me != null && me.Role >= KitobdaGimen.Domain.Enums.UserRole.Admin)
-            {
-                <a href="/admin" class="@(mobilePath.StartsWith("/admin") ? "active" : "")">
-                    <span class="material-symbols-outlined">shield_person</span>
-                    <span class="bn-label">Admin</span>
-                </a>
-            }
         </nav>
     }
 

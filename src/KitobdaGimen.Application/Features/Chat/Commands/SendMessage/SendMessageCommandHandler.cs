@@ -13,12 +13,15 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly IChatNotifier _chatNotifier;
+    private readonly IPushSender _push;
 
-    public SendMessageCommandHandler(IAppDbContext db, ICurrentUserService currentUser, IChatNotifier chatNotifier)
+    public SendMessageCommandHandler(
+        IAppDbContext db, ICurrentUserService currentUser, IChatNotifier chatNotifier, IPushSender push)
     {
         _db = db;
         _currentUser = currentUser;
         _chatNotifier = chatNotifier;
+        _push = push;
     }
 
     public async Task<MessageDto> Handle(SendMessageCommand request, CancellationToken cancellationToken)
@@ -120,6 +123,34 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
         await _chatNotifier.NewMessageBadgeAsync(
             otherUserId, conversation.Id, dto.Sender.FullName, dto.Sender.AvatarUrl, cancellationToken);
 
+        // Real device notification (Web Push → phone/system notification tray, even when the app
+        // is closed or in the background). Shows WHO sent the message + a short preview. Best-effort.
+        await _push.SendAsync(otherUserId, new PushNotificationPayload
+        {
+            Title = string.IsNullOrWhiteSpace(dto.Sender.FullName) ? "Yangi xabar" : dto.Sender.FullName,
+            Body = BuildMessagePreview(message),
+            Url = "/chat",
+            Icon = string.IsNullOrWhiteSpace(dto.Sender.AvatarUrl) ? "/img/icons/icon-192.png" : dto.Sender.AvatarUrl,
+            // Per-conversation tag so successive messages from the same person collapse/re-notify
+            // instead of stacking up in the tray.
+            Tag = $"chat-{conversation.Id}"
+        }, cancellationToken);
+
         return dto;
+    }
+
+    /// <summary>A short, notification-friendly preview of what was sent (text/photo/voice/etc.).</summary>
+    private static string BuildMessagePreview(Message message)
+    {
+        if (!string.IsNullOrWhiteSpace(message.Text))
+        {
+            var text = message.Text.Trim();
+            return text.Length > 120 ? text[..120] + "…" : text;
+        }
+        if (!string.IsNullOrWhiteSpace(message.ImageUrl)) return "📷 Rasm";
+        if (!string.IsNullOrWhiteSpace(message.VoiceUrl)) return "🎤 Ovozli xabar";
+        if (!string.IsNullOrWhiteSpace(message.StickerKey)) return "Stiker";
+        if (message.SharedPostId is not null) return "Post ulashdi";
+        return "Yangi xabar";
     }
 }

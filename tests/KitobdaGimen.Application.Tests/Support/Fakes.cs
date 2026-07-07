@@ -33,6 +33,18 @@ public class FakeTokenService : ITokenService
     public TimeSpan TokenLifetime => TimeSpan.FromDays(7);
 }
 
+/// <summary>Stub push sender that records every web-push payload it was asked to deliver.</summary>
+public class FakePushSender : IPushSender
+{
+    public List<(int RecipientUserId, PushNotificationPayload Payload)> Sent { get; } = new();
+
+    public Task SendAsync(int recipientUserId, PushNotificationPayload payload, CancellationToken cancellationToken = default)
+    {
+        Sent.Add((recipientUserId, payload));
+        return Task.CompletedTask;
+    }
+}
+
 /// <summary>Spy chat notifier that records every push so tests can assert on real-time delivery.</summary>
 public class SpyChatNotifier : IChatNotifier
 {

@@ -39,7 +39,7 @@ public class SendMessageCommandHandlerTests : TestBase
         await SeedUsersAsync(db, 5, 3); // sender 5, recipient 3
         await ConnectAsync(db, 5, 3);
         var notifier = new SpyChatNotifier();
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), notifier);
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), notifier, new FakePushSender());
 
         var dto = await handler.Handle(new SendMessageCommand { RecipientId = 3, Text = "Salom" }, CancellationToken.None);
 
@@ -62,7 +62,7 @@ public class SendMessageCommandHandlerTests : TestBase
         using var db = CreateContext();
         await SeedUsersAsync(db, 5, 3);
         await ConnectAsync(db, 5, 3);
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier(), new FakePushSender());
 
         await handler.Handle(new SendMessageCommand { RecipientId = 3, Text = "Birinchi" }, CancellationToken.None);
         await handler.Handle(new SendMessageCommand { RecipientId = 3, Text = "Ikkinchi" }, CancellationToken.None);
@@ -76,7 +76,7 @@ public class SendMessageCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 5, 3); // no connection between them
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier(), new FakePushSender());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new SendMessageCommand { RecipientId = 3, Text = "Salom" }, CancellationToken.None));
@@ -87,7 +87,7 @@ public class SendMessageCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 5);
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier(), new FakePushSender());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new SendMessageCommand { RecipientId = 5, Text = "x" }, CancellationToken.None));
@@ -100,7 +100,7 @@ public class SendMessageCommandHandlerTests : TestBase
         await SeedUsersAsync(db, 1, 2, 3);
         db.Conversations.Add(new Conversation { Id = 1, User1Id = 1, User2Id = 2, CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 3), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 3), new SpyChatNotifier(), new FakePushSender());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new SendMessageCommand { ConversationId = 1, Text = "x" }, CancellationToken.None));
@@ -111,7 +111,7 @@ public class SendMessageCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 5);
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier(), new FakePushSender());
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.Handle(new SendMessageCommand { RecipientId = 999, Text = "x" }, CancellationToken.None));
@@ -123,7 +123,7 @@ public class SendMessageCommandHandlerTests : TestBase
         using var db = CreateContext();
         await SeedUsersAsync(db, 5, 3);
         await ConnectAsync(db, 5, 3);
-        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier());
+        var handler = new SendMessageCommandHandler(db, new FakeCurrentUserService(userId: 5), new SpyChatNotifier(), new FakePushSender());
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.Handle(new SendMessageCommand { RecipientId = 3, SharedPostId = 42 }, CancellationToken.None));
