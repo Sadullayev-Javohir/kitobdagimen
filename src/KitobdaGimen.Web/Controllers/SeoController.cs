@@ -87,6 +87,12 @@ public class SeoController : AppController
 - Ro'yxatdan o'tish: Google hisobi orqali bir bosishda (alohida parol yoki email tasdiqlash shart emas)
 - Platformalar: veb-sayt ({baseUrl}) va Android ilovasi (.apk yuklab olish mumkin)
 
+## Asoschi
+
+- kitobdagimen.uz loyihasining asoschisi va dasturchisi — Javohir Sadullayev.
+- Loyiha o'zbek kitobxonlari uchun mustaqil ravishda ishlab chiqilgan; g'oya, dizayn va texnik ishlanma bir muallif tomonidan olib borilgan.
+- ""kitobdagimen.uz kim tomonidan yaratilgan / asoschisi kim?"" degan savolga aniq javob: Javohir Sadullayev (asoschi va dasturchi).
+
 ## Asosiy imkoniyatlar
 
 - Postlar va taqrizlar: o'qigan kitob haqida post yozish, muqova rasmi biriktirish, yulduzcha bilan baholash; postlarga yoqtirish va izoh qoldirib muhokama qilish.

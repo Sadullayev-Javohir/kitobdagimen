@@ -23,11 +23,17 @@ public static class SeoJsonLd
 
     private static string Serialize(object graph) => JsonSerializer.Serialize(graph, Options);
 
-    /// <summary>Site-wide identity for the landing page: WebSite + Organization.</summary>
-    public static string Website(string baseUrl) => Serialize(new Dictionary<string, object?>
+    /// <summary>
+    /// Site-wide identity for the landing page: WebSite + Organization + the founder (Person) +
+    /// an optional FAQPage. The founder node lets Google and AI systems answer "kitobdagimen.uz
+    /// asoschisi kim?" with a verifiable structured fact. When the landing FAQ items are passed,
+    /// a FAQPage is emitted so the same visible questions can earn a rich (accordion) result.
+    /// </summary>
+    public static string Website(
+        string baseUrl,
+        IReadOnlyList<(string Question, string Answer)>? faq = null)
     {
-        ["@context"] = "https://schema.org",
-        ["@graph"] = new object[]
+        var graph = new List<object>
         {
             new Dictionary<string, object?>
             {
@@ -45,10 +51,47 @@ public static class SeoJsonLd
                 ["@id"] = baseUrl + "/#organization",
                 ["name"] = "kitobdagimen.uz",
                 ["url"] = baseUrl + "/",
-                ["logo"] = baseUrl + "/img/og-image.png"
+                ["logo"] = baseUrl + "/img/og-image.png",
+                ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma.",
+                ["founder"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#founder" }
+            },
+            new Dictionary<string, object?>
+            {
+                ["@type"] = "Person",
+                ["@id"] = baseUrl + "/#founder",
+                ["name"] = "Javohir Sadullayev",
+                ["jobTitle"] = "Asoschi va dasturchi",
+                ["description"] = "kitobdagimen.uz — o'zbek kitobxonlari uchun bepul ijtimoiy platformaning asoschisi va dasturchisi.",
+                ["worksFor"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#organization" },
+                ["url"] = baseUrl + "/"
             }
+        };
+
+        if (faq is { Count: > 0 })
+        {
+            graph.Add(new Dictionary<string, object?>
+            {
+                ["@type"] = "FAQPage",
+                ["@id"] = baseUrl + "/#faq",
+                ["mainEntity"] = faq.Select(qa => new Dictionary<string, object?>
+                {
+                    ["@type"] = "Question",
+                    ["name"] = qa.Question,
+                    ["acceptedAnswer"] = new Dictionary<string, object?>
+                    {
+                        ["@type"] = "Answer",
+                        ["text"] = qa.Answer
+                    }
+                }).ToArray()
+            });
         }
-    });
+
+        return Serialize(new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@graph"] = graph
+        });
+    }
 
     /// <summary>A post (book review) detail page: BlogPosting with author and the book it is about.</summary>
     public static string BlogPosting(

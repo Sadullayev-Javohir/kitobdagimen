@@ -8,7 +8,30 @@
     ViewData["Description"] = "kitobdagimen.uz — o'zbek kitobxonlari uchun bepul ijtimoiy platforma. Kitob haqida post yozing, sevimli iqtiboslarni ulashing, oylik kitobxonlik musobaqasida qatnashib kitob yutib oling, o'qish maqsadlari qo'ying va boshqa kitobsevarlar bilan real vaqtda suhbatlashing.";
     // Barcha landing manzillari (/, /landing, /Home/Landing) bitta kanonik URL'ga birlashtiriladi.
     ViewData["Canonical"] = seoBase + "/";
-    ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.Website(seoBase);
+
+    // Ko'p so'raladigan savollar — bitta manbada. Quyida ko'rinadigan HTML shu ro'yxatdan
+    // render qilinadi VA aynan shu matn FAQPage JSON-LD'ga uzatiladi. Shu tarzda Google
+    // ko'rgan strukturaviy ma'lumot sahifadagi matnga to'liq mos keladi (rich natija sharti).
+    var faq = new (string Question, string Answer)[]
+    {
+        ("Platformadan foydalanish pullikmi?",
+            "Yo'q. kitobdagimen.uz to'liq bepul — barcha imkoniyatlar hech qanday to'lovsiz ochiq."),
+        ("Qanday ro'yxatdan o'taman?",
+            "Faqat Google hisobingiz orqali bir bosishda kirasiz. Alohida parol o'ylab topish yoki email tasdiqlash shart emas."),
+        ("Challenge (musobaqa) qanday ishlaydi?",
+            "Har oy alohida davr — oyning 1-kunidan oxirgi kunigacha davom etadi. Shu davrda eng ko'p kitob o'qigan 3 kitobxon g'olib bo'ladi. Yetakchilar reytingi jonli yangilanib turadi, oy oxirida esa g'oliblar rasman e'lon qilinadi. Qatnashish uchun kutubxonangizga kitob qo'shib, har kuni o'qiganingizni belgilab boring."),
+        ("G'oliblarga qanday sovg'a beriladi?",
+            "Har oyning 1-, 2- va 3-o'rin egalari kitob sovg'asi bilan taqdirlanadi. Sovg'a kitob g'olibning profilida ko'rsatiladi. Ya'ni ko'proq o'qisangiz — sovg'a kitob yutib olish imkoniyatingiz shuncha yuqori bo'ladi."),
+        ("Post va iqtibos qanday joylayman?",
+            "Tasmadan post yozib, unga kitob, rasm va baho biriktirasiz. Iqtibos uchun esa kitobdan yoqqan satrni tanlab, chiroyli kartochka ko'rinishida saqlaysiz. Ikkalasiga ham boshqalar yoqtirish bosishi va izoh qoldirishi mumkin."),
+        ("Kitoblarimni qanday qo'shaman?",
+            "Tasma yoki kutubxona sahifasida kitobni qidiring; agar topilmasa, nom, muallif va muqova bilan yangi kitob qo'shasiz."),
+        ("Boshqalar bilan qanday bog'lanaman?",
+            "Foydalanuvchilarni qidirib, ularni kuzatasiz va ulanish so'rovi yuborib real vaqtda xabar almashasiz."),
+        ("kitobdagimen.uz loyihasini kim yaratgan?",
+            "Loyihaning asoschisi va dasturchisi — Javohir Sadullayev. kitobdagimen.uz o'zbek kitobxonlari uchun mustaqil ishlab chiqilgan bepul ijtimoiy platforma."),
+    };
+    ViewData["JsonLd"] = KitobdaGimen.Web.Seo.SeoJsonLd.Website(seoBase, faq);
 
     var isAuth = CurrentUser.IsAuthenticated;
     // Auth holatига qarab asosiy harakat: kirgan foydalanuvchi tasmaга, anonim — Google login.
@@ -308,41 +331,13 @@
             <p class="muted">Boshlashdan oldin bilishingiz kerak bo'lgan narsalar</p>
         </div>
         <div class="lp-faq">
-            <details class="lp-faq-item">
-                <summary>Platformadan foydalanish pullikmi?</summary>
-                <p>Yo'q. kitobdagimen.uz to'liq bepul — barcha imkoniyatlar hech qanday to'lovsiz ochiq.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>Qanday ro'yxatdan o'taman?</summary>
-                <p>Faqat Google hisobingiz orqali bir bosishda kirasiz. Alohida parol o'ylab topish yoki email tasdiqlash shart emas.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>Challenge (musobaqa) qanday ishlaydi?</summary>
-                <p>Har oy alohida davr — oyning 1-kunidan oxirgi kunigacha davom etadi. Shu davrda eng ko'p
-                    kitob o'qigan 3 kitobxon g'olib bo'ladi. Yetakchilar reytingi jonli yangilanib turadi,
-                    oy oxirida esa g'oliblar rasman e'lon qilinadi. Qatnashish uchun kutubxonangizga kitob
-                    qo'shib, har kuni o'qiganingizni belgilab boring.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>G'oliblarga qanday sovg'a beriladi?</summary>
-                <p>Har oyning 1-, 2- va 3-o'rin egalari kitob sovg'asi bilan taqdirlanadi. Sovg'a kitob
-                    g'olibning profilida ko'rsatiladi. Ya'ni ko'proq o'qisangiz — sovg'a kitob yutib olish
-                    imkoniyatingiz shuncha yuqori bo'ladi.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>Post va iqtibos qanday joylayman?</summary>
-                <p>Tasmadan post yozib, unga kitob, rasm va baho biriktirasiz. Iqtibos uchun esa kitobdan
-                    yoqqan satrni tanlab, chiroyli kartochka ko'rinishida saqlaysiz. Ikkalasiga ham boshqalar
-                    yoqtirish bosishi va izoh qoldirishi mumkin.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>Kitoblarimni qanday qo'shaman?</summary>
-                <p>Tasma yoki kutubxona sahifasida kitobni qidiring; agar topilmasa, nom, muallif va muqova bilan yangi kitob qo'shasiz.</p>
-            </details>
-            <details class="lp-faq-item">
-                <summary>Boshqalar bilan qanday bog'lanaman?</summary>
-                <p>Foydalanuvchilarni qidirib, ularni kuzatasiz va ulanish so'rovi yuborib real vaqtda xabar almashasiz.</p>
-            </details>
+            @foreach (var qa in faq)
+            {
+                <details class="lp-faq-item">
+                    <summary>@qa.Question</summary>
+                    <p>@qa.Answer</p>
+                </details>
+            }
         </div>
     </section>
 
@@ -387,6 +382,7 @@
                 <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
             </div>
             <p class="muted">O'zbek kitobxonlari uchun ijtimoiy platforma.</p>
+            <p class="muted">Asoschisi va dasturchisi — Javohir Sadullayev.</p>
         </div>
         <nav class="lp-footer-links">
             <a href="#imkoniyatlar">Imkoniyatlar</a>
