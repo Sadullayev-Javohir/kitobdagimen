@@ -4,32 +4,39 @@
 @foreach (var b in Model)
 {
     var bookUrl = KitobdaGimen.Web.ViewHelpers.BookUrl(b.Id, b.Title);
-    <a class="card quote-feed-card book-feed-card" href="@bookUrl">
-        <div class="quote-feed-body">
-            <div class="quote-feed-cover">
-                @if (!string.IsNullOrEmpty(b.CoverUrl))
+    var hasCover = !string.IsNullOrEmpty(b.CoverUrl);
+    <a class="bookc" href="@bookUrl">
+        <div class="bookc-cover @(hasCover ? "" : "is-empty")">
+            @if (hasCover)
+            {
+                <img src="@b.CoverUrl" alt="@b.Title" loading="lazy" referrerpolicy="no-referrer" />
+            }
+            else
+            {
+                <span class="bookc-ph-icon material-symbols-outlined">auto_stories</span>
+                <span class="bookc-ph-title">@b.Title</span>
+            }
+            @if (!string.IsNullOrEmpty(b.GenreName))
+            {
+                <span class="bookc-genre">@b.GenreName</span>
+            }
+        </div>
+        <div class="bookc-body">
+            <h3 class="bookc-title">@b.Title</h3>
+            <p class="bookc-author">@b.Author</p>
+            <div class="bookc-stats">
+                <span class="bookc-stat" title="@b.ReviewCount taqriz">
+                    <span class="material-symbols-outlined">rate_review</span>@b.ReviewCount
+                </span>
+                <span class="bookc-stat" title="@b.QuoteCount iqtibos">
+                    <span class="material-symbols-outlined">format_quote</span>@b.QuoteCount
+                </span>
+                @if (b.ReaderCount > 0)
                 {
-                    <img src="@b.CoverUrl" alt="@b.Title" loading="lazy" referrerpolicy="no-referrer" />
+                    <span class="bookc-stat" title="@b.ReaderCount kitobxon">
+                        <span class="material-symbols-outlined">group</span>@b.ReaderCount
+                    </span>
                 }
-                else
-                {
-                    <span class="material-symbols-outlined">menu_book</span>
-                }
-            </div>
-            <div class="quote-feed-main">
-                <div class="quote-feed-book">
-                    <span class="qfb-title book-feed-title">@b.Title</span>
-                    <span class="qfb-author">@b.Author</span>
-                    @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(b.Source))
-                </div>
-                <div class="pd-stats" style="margin-top:10px">
-                    <span><span class="material-symbols-outlined">rate_review</span> @b.ReviewCount taqriz</span>
-                    <span><span class="material-symbols-outlined">format_quote</span> @b.QuoteCount iqtibos</span>
-                    @if (b.ReaderCount > 0)
-                    {
-                        <span><span class="material-symbols-outlined">group</span> @b.ReaderCount kitobxon</span>
-                    }
-                </div>
             </div>
         </div>
     </a>
