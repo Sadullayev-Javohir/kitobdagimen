@@ -22,7 +22,10 @@ public class GetBookPageQueryHandler : IRequestHandler<GetBookPageQuery, BookPag
             {
                 b.Id, b.Title, b.Author, b.CoverUrl, b.Source, b.TotalPages,
                 GenreName = b.Genre != null ? b.Genre.Name : null,
-                ReaderCount = b.ReadingGoals.Count
+                // Noyob kitobxonlar: taqriz yoki iqtibos yozgan foydalanuvchilar (bir kishi ko'p yozsa ham +1).
+                ReaderCount = b.Posts.Select(p => p.UserId)
+                    .Concat(b.Quotes.Select(q => q.UserId))
+                    .Distinct().Count()
             })
             .FirstOrDefaultAsync(cancellationToken);
 

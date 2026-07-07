@@ -16,6 +16,7 @@ public record GetBooksFeedQuery : IRequest<PagedResult<BookFeedItemDto>>
 }
 
 /// <summary>One book card in the <c>/kitoblar</c> listing.</summary>
+/// <param name="ReaderCount">Bu kitobga taqriz yoki iqtibos yozgan noyob kitobxonlar soni.</param>
 public record BookFeedItemDto(
     int Id, string Title, string Author, string? CoverUrl, string? Source, string? GenreName,
-    int ReviewCount, int QuoteCount, DateTime LastActivityAt);
+    int ReviewCount, int QuoteCount, int ReaderCount, DateTime LastActivityAt);

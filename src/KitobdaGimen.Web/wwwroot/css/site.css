@@ -989,6 +989,8 @@ textarea.input { resize: vertical; min-height: 90px; }
 }
 .pd-stats span { display: inline-flex; align-items: center; gap: 6px; }
 .pd-stats .material-symbols-outlined { font-size: 20px; }
+/* Ulashish tugmasi statistika qatorining o'ng chetida. */
+.pd-stats-share { margin-left: auto; }
 .pd-actions { display: flex; gap: 12px; }
 .pd-action-btn {
     display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
@@ -2961,15 +2963,16 @@ button.story-detail-stat { cursor: pointer; }
 .quote-feed-body.no-cover { grid-template-columns: 1fr; }
 .quote-feed-body.no-cover .quote-feed-main { padding-left: 0; }
 
-/* ===== /kitoblar — kitoblar ro'yxati: kattaroq ekranda 2 tadan, planshet va
-   telefonda 1 tadan, barchasi bir xil dizaynda ===== */
+/* ===== /kitoblar — kitoblar ro'yxati: har qatorda 2 tadan (desktop, planshet va
+   telefonda ham), muqova chapda + ma'lumot o'ngda, barchasi bir xil dizaynda ===== */
 .book-grid {
     max-width: 680px; margin: 0 auto;
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
 }
 
+/* Planshet/telefonda ham 2 ta ustun qolsin — endi butun kenglikni egallaydi. */
 @media (max-width: 768px) {
-    .book-grid { grid-template-columns: 1fr; max-width: 480px; }
+    .book-grid { max-width: 100%; gap: 12px; }
 }
 .book-feed-card { padding: 0; overflow: hidden; }
 .book-feed-card .quote-feed-body { grid-template-columns: 64px 1fr; gap: 10px; padding: 14px; }

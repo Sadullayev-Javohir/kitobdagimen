@@ -25,6 +25,10 @@
                 <div class="pd-stats" style="margin-top:10px">
                     <span><span class="material-symbols-outlined">rate_review</span> @b.ReviewCount taqriz</span>
                     <span><span class="material-symbols-outlined">format_quote</span> @b.QuoteCount iqtibos</span>
+                    @if (b.ReaderCount > 0)
+                    {
+                        <span><span class="material-symbols-outlined">group</span> @b.ReaderCount kitobxon</span>
+                    }
                 </div>
             </div>
         </div>

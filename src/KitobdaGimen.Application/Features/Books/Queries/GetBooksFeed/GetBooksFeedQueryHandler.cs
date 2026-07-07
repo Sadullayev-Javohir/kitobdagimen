@@ -36,6 +36,10 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
             GenreName = b.Genre != null ? b.Genre.Name : null,
             ReviewCount = b.Posts.Count,
             QuoteCount = b.Quotes.Count,
+            // Noyob kitobxonlar: taqriz yoki iqtibos yozgan foydalanuvchilar (bir kishi ko'p yozsa ham +1).
+            ReaderCount = b.Posts.Select(p => p.UserId)
+                .Concat(b.Quotes.Select(q => q.UserId))
+                .Distinct().Count(),
             LastPost = b.Posts.Max(p => (DateTime?)p.CreatedAt),
             LastQuote = b.Quotes.Max(q => (DateTime?)q.CreatedAt)
         });
@@ -51,7 +55,7 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
         var items = raw
             .Select(b => new BookFeedItemDto(
                 b.Id, b.Title, b.Author, b.CoverUrl, b.Source, b.GenreName,
-                b.ReviewCount, b.QuoteCount,
+                b.ReviewCount, b.QuoteCount, b.ReaderCount,
                 (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote) ?? DateTime.UtcNow))
             .ToList();
 

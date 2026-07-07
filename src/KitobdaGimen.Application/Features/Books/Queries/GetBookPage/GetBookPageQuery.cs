@@ -18,7 +18,7 @@ public record BookPageDto
     public string? Source { get; init; }
     public int TotalPages { get; init; }
 
-    /// <summary>Bu kitobni o'qish maqsadiga qo'shgan foydalanuvchilar soni.</summary>
+    /// <summary>Bu kitobga taqriz yoki iqtibos yozgan noyob kitobxonlar soni.</summary>
     public int ReaderCount { get; init; }
 
     public IReadOnlyList<BookPagePostDto> Posts { get; init; } = Array.Empty<BookPagePostDto>();
