@@ -2961,10 +2961,15 @@ button.story-detail-stat { cursor: pointer; }
 .quote-feed-body.no-cover { grid-template-columns: 1fr; }
 .quote-feed-body.no-cover .quote-feed-main { padding-left: 0; }
 
-/* ===== /kitoblar — kitoblar ro'yxati: har qatorda 2 tadan, barchasi bir xil dizaynda ===== */
+/* ===== /kitoblar — kitoblar ro'yxati: kattaroq ekranda 2 tadan, planshet va
+   telefonda 1 tadan, barchasi bir xil dizaynda ===== */
 .book-grid {
     max-width: 680px; margin: 0 auto;
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+
+@media (max-width: 768px) {
+    .book-grid { grid-template-columns: 1fr; max-width: 480px; }
 }
 .book-feed-card { padding: 0; overflow: hidden; }
 .book-feed-card .quote-feed-body { grid-template-columns: 64px 1fr; gap: 10px; padding: 14px; }
@@ -2989,10 +2994,10 @@ button.story-detail-stat { cursor: pointer; }
     .quote-feed-book .qfb-author { font-size: 12px; }
 }
 
-/* ===== /kitob/{id} — kitob sahifasi sarlavhasi: chapda muqova + ulashish,
-   o'ngda nomi/muallifi/janri/statistikasi ===== */
+/* ===== /kitob/{id} — kitob sahifasi sarlavhasi: chapda muqova,
+   o'ngda nomi/muallifi/janri/statistikasi/ulashish ===== */
 .book-hero { display: flex; gap: 22px; align-items: flex-start; }
-.book-hero-cover { flex-shrink: 0; width: 140px; display: flex; flex-direction: column; gap: 12px; }
+.book-hero-cover { flex-shrink: 0; width: 140px; }
 .book-hero-cover-img {
     width: 140px; height: 198px; border-radius: 12px; overflow: hidden;
     background: var(--primary-soft); display: flex; align-items: center; justify-content: center;
@@ -3000,12 +3005,12 @@ button.story-detail-stat { cursor: pointer; }
 }
 .book-hero-cover-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .book-hero-cover-img .material-symbols-outlined { font-size: 46px; color: var(--primary); opacity: .55; }
-.book-hero-share { width: 100%; justify-content: center; }
 .book-hero-info { flex: 1; min-width: 0; }
 .book-hero-info h1 { font-size: 26px; line-height: 1.2; letter-spacing: -.01em; margin: 0 0 6px; }
 .book-hero-author { color: var(--text-secondary); font-size: 16px; margin: 0 0 10px; }
 .book-hero-info .pd-genres { margin-top: 10px; }
 .book-hero-info .pd-stats { margin-top: 14px; padding: 14px 0; }
+.book-hero-info .pd-actions { margin-top: 14px; }
 
 @media (max-width: 560px) {
     .book-hero { gap: 14px; }
@@ -3013,12 +3018,16 @@ button.story-detail-stat { cursor: pointer; }
     .book-hero-cover-img { height: 136px; }
     .book-hero-info h1 { font-size: 20px; }
     .book-hero-author { font-size: 14px; }
-    .book-hero-share span:last-child { display: none; }
 }
 
-/* ===== /kitob/{id} — Taqrizlar va Iqtiboslar: har qatorda 2 tadan ===== */
+/* ===== /kitob/{id} — Taqrizlar va Iqtiboslar: kattaroq ekranda 2 tadan,
+   planshet va telefonda 1 tadan (kartalar torayib buzilib qolmasligi uchun) ===== */
 .pd-card-grid {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+
+@media (max-width: 768px) {
+    .pd-card-grid { grid-template-columns: 1fr; }
 }
 .pd-card-grid .post-card,
 .pd-card-grid .quote-feed-card { margin-bottom: 0; }

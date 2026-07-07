@@ -72,10 +72,6 @@
                         <span class="material-symbols-outlined">menu_book</span>
                     }
                 </div>
-                <button type="button" class="pd-action-btn book-hero-share" data-share-url="@shareUrl">
-                    <span class="material-symbols-outlined">share</span>
-                    <span>Ulashish</span>
-                </button>
             </div>
             <div class="book-hero-info">
                 <h1>@Model.Title</h1>
@@ -97,6 +93,12 @@
                     {
                         <span><span class="material-symbols-outlined">group</span> @Model.ReaderCount kitobxon</span>
                     }
+                </div>
+                <div class="pd-actions">
+                    <button type="button" class="pd-action-btn" data-share-url="@shareUrl">
+                        <span class="material-symbols-outlined">share</span>
+                        <span>Ulashish</span>
+                    </button>
                 </div>
             </div>
         </div>
