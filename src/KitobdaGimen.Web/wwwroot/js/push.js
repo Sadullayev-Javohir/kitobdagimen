@@ -86,11 +86,22 @@
 
     window.kitobPush = { enable: enable, disable: disable, subscribe: subscribe };
 
-    // Avtomatik: ruxsat bor bo'lsa jim obuna bo'lamiz; aks holda bir marta so'raymiz.
+    var ASKED_KEY = 'kitobPushAsked';
+    function alreadyAsked() {
+        try { return localStorage.getItem(ASKED_KEY) === '1'; } catch (e) { return false; }
+    }
+    function markAsked() {
+        try { localStorage.setItem(ASKED_KEY, '1'); } catch (e) { /* jim */ }
+    }
+
+    // Avtomatik: ruxsat bor bo'lsa jim obuna bo'lamiz; aks holda faqat BIR MARTA so'raymiz.
+    // Foydalanuvchi popup'ni yopsa (permission 'default' qoladi) boshqa qayta so'ramaymiz —
+    // istasa, sozlamalardagi tugma orqali kitobPush.enable() chaqirib yoqishi mumkin.
     window.addEventListener('load', function () {
         if (Notification.permission === 'granted') {
             subscribe().catch(function () { });
-        } else if (Notification.permission === 'default') {
+        } else if (Notification.permission === 'default' && !alreadyAsked()) {
+            markAsked();
             setTimeout(function () { enable().catch(function () { }); }, 2000);
         }
     });
