@@ -107,7 +107,7 @@
             <div class="pd-stats">
                 <span><span class="material-symbols-outlined">favorite</span> <span class="like-count">@q.LikeCount</span> yoqtirish</span>
                 <span><span class="material-symbols-outlined">chat_bubble</span> <span id="commentCount">@q.CommentCount</span> izoh</span>
-                <span><span class="material-symbols-outlined">bookmark</span> <span class="save-count">@q.SaveCount</span> saqlash</span>
+                <span><span class="material-symbols-outlined">visibility</span> <span class="view-count">@q.ViewCount</span> ko'rish</span>
             </div>
 
             <div class="pd-actions">
@@ -116,10 +116,6 @@
                     <button type="button" class="pd-action-btn like-btn @(q.IsLikedByCurrentUser ? "liked" : "")" data-like-quote="@q.Id">
                         <span class="material-symbols-outlined">favorite</span>
                         <span>Yoqdi (<span class="like-count">@q.LikeCount</span>)</span>
-                    </button>
-                    <button type="button" class="pd-action-btn @(q.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@q.Id">
-                        <span class="material-symbols-outlined">bookmark</span>
-                        <span>Saqlash (<span class="save-count">@q.SaveCount</span>)</span>
                     </button>
                 }
                 <button type="button" class="pd-action-btn" data-share-url="@quoteShareUrl">
