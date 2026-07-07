@@ -10,6 +10,9 @@ public class QuoteConfiguration : IEntityTypeConfiguration<Quote>
     {
         builder.HasKey(q => q.Id);
 
+        builder.Property(q => q.Slug).IsRequired().HasMaxLength(16);
+        builder.HasIndex(q => q.Slug).IsUnique();
+
         builder.Property(q => q.Text).IsRequired().HasMaxLength(2000);
 
         builder.HasOne(q => q.User)

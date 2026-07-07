@@ -164,7 +164,7 @@
         {
             foreach (var qt in Model.Quotes)
             {
-                var quoteUrl = ViewHelpers.QuoteUrl(qt.Id);
+                var quoteUrl = ViewHelpers.QuoteUrl(qt.AuthorUsername, qt.AuthorId, qt.Slug);
                 <article class="card post-card quote-feed-card" style="margin-bottom:12px">
                     <div class="quote-feed-body" style="padding-left:0;padding-right:0">
                         <a class="post-body-link" href="@quoteUrl" aria-label="Iqtibosni ochish"></a>

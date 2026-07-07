@@ -13,6 +13,12 @@ public class Quote : BaseEntity
     public int BookId { get; set; }
     public Book Book { get; set; } = null!;
 
+    /// <summary>
+    /// Short random public identifier (12 chars) used in the shareable URL
+    /// <c>/iqtibos/{username}/{slug}</c> instead of the sequential database id.
+    /// </summary>
+    public string Slug { get; set; } = null!;
+
     public string Text { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
 

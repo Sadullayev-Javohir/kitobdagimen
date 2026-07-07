@@ -1,0 +1,32 @@
+@using KitobdaGimen.Application.Features.Books.Queries.GetBooksFeed
+@model IReadOnlyList<BookFeedItemDto>
+
+@foreach (var b in Model)
+{
+    var bookUrl = KitobdaGimen.Web.ViewHelpers.BookUrl(b.Id, b.Title);
+    <a class="card quote-feed-card book-feed-card" href="@bookUrl">
+        <div class="quote-feed-body">
+            <div class="quote-feed-cover">
+                @if (!string.IsNullOrEmpty(b.CoverUrl))
+                {
+                    <img src="@b.CoverUrl" alt="@b.Title" loading="lazy" referrerpolicy="no-referrer" />
+                }
+                else
+                {
+                    <span class="material-symbols-outlined">menu_book</span>
+                }
+            </div>
+            <div class="quote-feed-main">
+                <div class="quote-feed-book">
+                    <span class="qfb-title book-feed-title">@b.Title</span>
+                    <span class="qfb-author">@b.Author</span>
+                    @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(b.Source))
+                </div>
+                <div class="pd-stats" style="margin-top:10px">
+                    <span><span class="material-symbols-outlined">rate_review</span> @b.ReviewCount taqriz</span>
+                    <span><span class="material-symbols-outlined">format_quote</span> @b.QuoteCount iqtibos</span>
+                </div>
+            </div>
+        </div>
+    </a>
+}

@@ -31,7 +31,7 @@ public class AdminDeleteUserHandlerTests : TestBase
 
         db.Books.Add(new Book { Id = 1, Title = "B", Author = "A", TotalPages = 100, GenreId = 1 });
         // Quote owned by user 3; target user 2 likes and comments on it (Restrict FKs to User).
-        db.Quotes.Add(new Quote { Id = 1, UserId = 3, BookId = 1, Text = "q", CreatedAt = DateTime.UtcNow });
+        db.Quotes.Add(new Quote { Id = 1, UserId = 3, BookId = 1, Slug = "slug1", Text = "q", CreatedAt = DateTime.UtcNow });
         db.QuoteLikes.Add(new QuoteLike { Id = 1, QuoteId = 1, UserId = 2, CreatedAt = DateTime.UtcNow });
         db.QuoteComments.Add(new QuoteComment { Id = 1, QuoteId = 1, UserId = 2, Text = "c", CreatedAt = DateTime.UtcNow });
 

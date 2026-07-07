@@ -116,12 +116,9 @@ public static class ViewHelpers
     public static string ProfileUrl(string? username, int id)
         => $"/profile/{(string.IsNullOrWhiteSpace(username) ? id.ToString() : username)}";
 
-    /// <summary>
-    /// Canonical, shareable and Google-indexable quote URL: <c>/iqtibos/{id}</c>. Kept separate
-    /// from the private <c>/quotes</c> list pages (which stay behind auth / robots-disallowed) so
-    /// only the public quote detail page is crawled and indexed.
-    /// </summary>
-    public static string QuoteUrl(int id) => $"/iqtibos/{id}";
+    /// <summary>Canonical, shareable quote URL: /iqtibos/{username}/{slug}. Falls back to the author id if a username is missing.</summary>
+    public static string QuoteUrl(string? authorUsername, int authorId, string slug)
+        => $"/iqtibos/{(string.IsNullOrWhiteSpace(authorUsername) ? authorId.ToString() : authorUsername)}/{slug}";
 
     /// <summary>
     /// Kanonik, Google indekslaydigan kitob sahifasi: <c>/kitob/{id}-{nom-slug}</c>.

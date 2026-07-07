@@ -30,7 +30,7 @@ public record BookPagePostDto(
     int AuthorId, string AuthorName, string? AuthorUsername, string? AuthorAvatarUrl,
     string Slug, string ReviewText, DateTime CreatedAt, int LikeCount, int CommentCount);
 
-/// <summary>Kitob sahifasidagi iqtibos kartochkasi; kanonik sahifasi /iqtibos/{id}.</summary>
+/// <summary>Kitob sahifasidagi iqtibos kartochkasi; kanonik sahifasi /iqtibos/{username}/{slug}.</summary>
 public record BookPageQuoteDto(
     int Id, int AuthorId, string AuthorName, string? AuthorUsername, string? AuthorAvatarUrl,
-    string Text, DateTime CreatedAt, int LikeCount, int CommentCount);
+    string Slug, string Text, DateTime CreatedAt, int LikeCount, int CommentCount);

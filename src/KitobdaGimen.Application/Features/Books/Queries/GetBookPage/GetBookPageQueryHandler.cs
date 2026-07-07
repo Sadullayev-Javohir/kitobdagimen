@@ -43,7 +43,7 @@ public class GetBookPageQueryHandler : IRequestHandler<GetBookPageQuery, BookPag
             .Take(MaxQuotes)
             .Select(q => new BookPageQuoteDto(
                 q.Id, q.UserId, q.User.FullName, q.User.Username, q.User.AvatarUrl,
-                q.Text, q.CreatedAt, q.Likes.Count, q.Comments.Count))
+                q.Slug, q.Text, q.CreatedAt, q.Likes.Count, q.Comments.Count))
             .ToListAsync(cancellationToken);
 
         return new BookPageDto

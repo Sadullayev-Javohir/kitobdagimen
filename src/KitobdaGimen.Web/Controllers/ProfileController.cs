@@ -7,6 +7,7 @@ using KitobdaGimen.Application.Features.Profile.Queries.CheckUsername;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserByUsername;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserPosts;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserProfile;
+using KitobdaGimen.Application.Features.Quotes.Queries.GetSavedQuotes;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetUserQuotes;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetActiveReadingGoals;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetFinishedReadingGoals;
@@ -69,6 +70,12 @@ public class ProfileController : AppController
         var challengeWins = await Mediator.Send(
             new KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins.GetUserChallengeWinsQuery(userId));
 
+        // Saved quotes are viewer-private (a personal bookmark list) — only ever loaded on the
+        // viewer's own /profile, never on someone else's.
+        var savedQuotes = profile.IsCurrentUser
+            ? (await Mediator.Send(new GetSavedQuotesQuery { PageSize = 50 })).Items
+            : Array.Empty<KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDto>();
+
         return View(new ProfilePageViewModel
         {
             Profile = profile,
@@ -77,6 +84,7 @@ public class ProfileController : AppController
             CurrentBooks = activeBooks,
             Stories = stories,
             MyQuotes = quotes,
+            SavedQuotes = savedQuotes,
             ChallengeWins = challengeWins
         });
     }

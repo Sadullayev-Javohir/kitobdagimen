@@ -15,6 +15,7 @@ internal static class QuoteQueryableExtensions
         return query.Select(q => new QuoteDto
         {
             Id = q.Id,
+            Slug = q.Slug,
             Text = q.Text,
             CreatedAt = q.CreatedAt,
             Author = new UserSummaryDto

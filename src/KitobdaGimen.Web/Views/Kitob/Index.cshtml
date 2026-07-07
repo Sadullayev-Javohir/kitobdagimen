@@ -1,0 +1,95 @@
+@using KitobdaGimen.Application.Common.Interfaces
+@using KitobdaGimen.Application.Common.Models
+@using KitobdaGimen.Application.Features.Books.Queries.GetBooksFeed
+@inject ICurrentUserService CurrentUser
+@model PagedResult<BookFeedItemDto>
+@{
+    ViewData["Title"] = "Kitoblar — taqriz va iqtiboslar";
+    ViewData["Description"] = "Kitobxonlar taqriz va iqtibos yozgan barcha kitoblar — kitobdagimen.uz da.";
+    var isAuth = CurrentUser.IsAuthenticated;
+    var search = ViewData["Search"] as string ?? "";
+}
+
+<div class="container page">
+    @if (!isAuth)
+    {
+        <div class="anon-banner">
+            <a class="brand" href="/">
+                <img class="brand-logo" src="~/img/logo.svg" alt="kitobdagimen.uz logotipi" />
+                <span>kitobdagimen<span style="color:var(--accent)">.uz</span></span>
+            </a>
+            <p>Kitobxonlar jamoasiga qo'shilib, siz ham taqriz va iqtiboslar ulashing!</p>
+            <a class="btn btn-accent" href="/auth/google-login">Ro'yxatdan o'tish</a>
+        </div>
+    }
+
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap">
+        <h1 class="section-title" style="margin-top:0">Kitoblar</h1>
+        <button class="action-btn" id="bookSearchToggle" title="Qidirish" aria-label="Qidirish">
+            <span class="material-symbols-outlined">search</span>
+        </button>
+    </div>
+
+    <form method="get" action="/kitoblar" id="bookSearchForm" style="@(string.IsNullOrEmpty(search) ? "display:none;" : "") margin-top:16px; margin-bottom:20px">
+        <div style="display:flex; align-items:center; gap:10px">
+            <div class="search-box" style="flex:1">
+                <span class="search-ico material-symbols-outlined">search</span>
+                <input class="input" type="search" name="q" id="bookSearchInput"
+                       placeholder="Kitob nomi yoki muallif bo'yicha qidiring..."
+                       value="@search" autocomplete="off" />
+            </div>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                <a class="btn btn-outline" href="/kitoblar" id="bookSearchClear" title="Qidiruvni tozalash">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">close</span>
+                    Tozalash
+                </a>
+            }
+        </div>
+    </form>
+
+    @if (Model.Items.Count == 0)
+    {
+        <div class="card text-center muted">
+            @(string.IsNullOrEmpty(search) ? "Hali hech qanday kitobga taqriz yoki iqtibos yozilmagan." : $"\"{search}\" bo'yicha kitob topilmadi.")
+        </div>
+    }
+    else
+    {
+        <div class="feed" id="bookGrid" data-page="@Model.Page" data-total-pages="@Model.TotalPages" data-search="@search">
+            <partial name="_BookCards" model="Model.Items" />
+        </div>
+        <div class="infinite-loader" id="bookLoader" hidden>
+            <span class="spinner"></span>
+        </div>
+        <div id="bookSentinel" aria-hidden="true"></div>
+    }
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const searchForm = document.getElementById("bookSearchForm");
+    const searchInput = document.getElementById("bookSearchInput");
+    document.getElementById("bookSearchToggle").addEventListener("click", () => {
+        const open = searchForm.style.display !== "none";
+        searchForm.style.display = open ? "none" : "block";
+        if (!open) searchInput.focus();
+    });
+
+    const grid = document.getElementById("bookGrid");
+    const sentinel = document.getElementById("bookSentinel");
+    if (grid && sentinel && window.kitob && kitob.infiniteScroll) {
+        kitob.infiniteScroll({
+            sentinel,
+            container: grid,
+            loader: document.getElementById("bookLoader"),
+            endpoint: "/kitoblar/cards",
+            page: parseInt(grid.dataset.page, 10) || 1,
+            totalPages: parseInt(grid.dataset.totalPages, 10) || 1,
+            search: grid.dataset.search || ""
+        });
+    }
+})();
+</script>
+}

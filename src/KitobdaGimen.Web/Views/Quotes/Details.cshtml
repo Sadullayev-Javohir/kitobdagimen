@@ -8,9 +8,9 @@
     ViewData["Title"] = $"\"{q.Book.Title}\" — {q.Book.Author} kitobidan iqtibos";
     var isAuth = CurrentUser.IsAuthenticated;
     var meId = CurrentUser.UserId;
-    // Kanonik, Google'da indekslanadigan ommaviy URL (/iqtibos/{id}); eski /quotes/{id} ham
-    // shu sahifani ochadi, lekin canonical shu manzilga ishora qiladi.
-    var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Id);
+    // Kanonik, Google'da indekslanadigan ommaviy URL (/iqtibos/{username}/{slug}); eski
+    // /quotes/{id} ham shu sahifani ochadi, lekin canonical shu manzilga ishora qiladi.
+    var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Author.Username, q.Author.Id, q.Slug);
     var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
     var quoteShareUrl = $"{seoBase}{quoteUrl}";
     var loginUrl = "/auth/google-login?returnUrl=" + Uri.EscapeDataString(quoteUrl);

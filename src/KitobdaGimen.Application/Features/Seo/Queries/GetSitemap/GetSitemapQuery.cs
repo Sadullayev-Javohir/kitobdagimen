@@ -23,5 +23,5 @@ public record SitemapPostEntry(string AuthorRef, string Slug, DateTime LastModUt
 /// <summary>A public profile: <c>/u/{Ref}</c>.</summary>
 public record SitemapProfileEntry(string Ref, DateTime LastModUtc);
 
-/// <summary>A public quote: <c>/iqtibos/{Id}</c>.</summary>
-public record SitemapQuoteEntry(int Id, DateTime LastModUtc);
+/// <summary>A public quote: <c>/iqtibos/{AuthorRef}/{Slug}</c>.</summary>
+public record SitemapQuoteEntry(string AuthorRef, string Slug, DateTime LastModUtc);

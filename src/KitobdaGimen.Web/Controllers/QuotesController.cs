@@ -5,10 +5,8 @@ using KitobdaGimen.Application.Features.Quotes.Commands.DeleteQuote;
 using KitobdaGimen.Application.Features.Quotes.Commands.DeleteQuoteComment;
 using KitobdaGimen.Application.Features.Quotes.Commands.ToggleQuoteLike;
 using KitobdaGimen.Application.Features.Quotes.Commands.ToggleSaveQuote;
-using KitobdaGimen.Application.Features.Quotes.Queries.GetMyQuotes;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteById;
-using KitobdaGimen.Application.Features.Quotes.Queries.GetQuotes;
-using KitobdaGimen.Application.Features.Quotes.Queries.GetSavedQuotes;
+using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteBySlug;
 using KitobdaGimen.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,9 +17,6 @@ namespace KitobdaGimen.Web.Controllers;
 [Route("quotes")]
 public class QuotesController : AppController
 {
-    /// <summary>Initial number of quotes rendered with the page; the rest stream in on scroll.</summary>
-    private const int QuotePageSize = 4;
-
     /// <summary>Exposes whether the current user is an admin so quote cards can show moderation actions.</summary>
     private async Task SetIsAdminAsync()
     {
@@ -29,71 +24,38 @@ public class QuotesController : AppController
         ViewData["IsAdmin"] = me != null && me.Role >= UserRole.Admin;
     }
 
-    /// <summary>All quotes (optionally filtered by book).</summary>
-    [HttpGet("")]
-    public async Task<IActionResult> Index(int? bookId, string? q, int page = 1)
-    {
-        var quotes = await Mediator.Send(new GetQuotesQuery { BookId = bookId, Search = q, Page = page, PageSize = QuotePageSize });
-        ViewData["Title"] = "Iqtiboslar";
-        ViewData["Search"] = q;
-        await SetIsAdminAsync();
-        return View("Index", quotes);
-    }
-
-    [HttpGet("my")]
-    public async Task<IActionResult> My(int page = 1)
-    {
-        var quotes = await Mediator.Send(new GetMyQuotesQuery { Page = page, PageSize = QuotePageSize });
-        ViewData["Title"] = "Mening iqtiboslarim";
-        await SetIsAdminAsync();
-        return View("Index", quotes);
-    }
-
-    [HttpGet("saved")]
-    public async Task<IActionResult> Saved(int page = 1)
-    {
-        var quotes = await Mediator.Send(new GetSavedQuotesQuery { Page = page, PageSize = QuotePageSize });
-        ViewData["Title"] = "Saqlangan iqtiboslar";
-        await SetIsAdminAsync();
-        return View("Index", quotes);
-    }
-
-    /// <summary>Returns the next page of quote cards as an HTML fragment (infinite scroll).</summary>
-    /// <param name="tab">Which list to page through: "my", "saved", or anything else for all quotes.</param>
-    [HttpGet("cards")]
-    public async Task<IActionResult> Cards(string? tab, int? bookId, string? q, int page = 2)
-    {
-        var quotes = tab switch
-        {
-            "my" => await Mediator.Send(new GetMyQuotesQuery { Page = page, PageSize = QuotePageSize }),
-            "saved" => await Mediator.Send(new GetSavedQuotesQuery { Page = page, PageSize = QuotePageSize }),
-            _ => await Mediator.Send(new GetQuotesQuery { BookId = bookId, Search = q, Page = page, PageSize = QuotePageSize }),
-        };
-        await SetIsAdminAsync();
-        return PartialView("_QuoteCards", quotes.Items);
-    }
-
+    /// <summary>Creates a quote (from the /Feed composer) and returns to the feed.</summary>
     [HttpPost("create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateQuoteCommand command)
     {
         await Mediator.Send(command);
-        return RedirectToAction(nameof(Index));
+        return Redirect("/Feed");
     }
 
-    /// <summary>Quote detail page with its comment thread, by internal id. Viewable without
-    /// logging in so shared quotes (e.g. sent to someone in chat) open for anonymous visitors too.
-    /// Two routes hit this action:
-    /// <list type="bullet">
-    /// <item><c>/iqtibos/{id}</c> — the canonical, Google-indexable public URL (see robots.txt / sitemap).</item>
-    /// <item><c>/quotes/{id}</c> — legacy/back-compat (older shared links); its canonical tag points to /iqtibos/{id}.</item>
-    /// </list></summary>
+    /// <summary>
+    /// Quote detail page with its comment thread, by internal id. Kept for internal/back-compat
+    /// links (e.g. shared quotes in chat). Viewable without logging in.
+    /// </summary>
     [HttpGet("{id:int}")]
-    [HttpGet("/iqtibos/{id:int}")]
     [AllowAnonymous]
     public async Task<IActionResult> Details(int id)
     {
         var detail = await Mediator.Send(new GetQuoteByIdQuery(id));
+        await SetIsAdminAsync();
+        return View("Details", detail);
+    }
+
+    /// <summary>
+    /// Canonical, shareable quote URL: /iqtibos/{username}/{slug}. Viewable without logging in.
+    /// The username segment is for readability — the random slug alone identifies the quote.
+    /// </summary>
+    [HttpGet("/iqtibos/{username}/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DetailsBySlug(string username, string slug)
+    {
+        var detail = await Mediator.Send(new GetQuoteBySlugQuery(slug));
+        await SetIsAdminAsync();
         return View("Details", detail);
     }
 
@@ -134,6 +96,6 @@ public class QuotesController : AppController
     public async Task<IActionResult> Delete(int id)
     {
         await Mediator.Send(new DeleteQuoteCommand(id));
-        return RedirectToAction(nameof(My));
+        return Redirect("/profile");
     }
 }

@@ -18,13 +18,14 @@
     // (chat sahifasida ham — input pastki nav ustida turadi, balandlik shунга moslashtirilgan).
     var showBottomNav = isAuth && !hideChrome;
     var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
-    // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Iqtiboslar, Challenge va post detali sahifalarida ko'rsatilmaydi.
-    // (/feed va /quotes da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
+    // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Kitoblar, Challenge va post detali sahifalarida ko'rsatilmaydi.
+    // (/feed va /kitoblar da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
     var hideSearch = isChatPage
         || string.Equals(currentController, "Feed", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Profile", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "ReadingGoals", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Quotes", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentController, "Kitob", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Challenge", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase);
 
@@ -225,8 +226,8 @@
                     <a href="/challenge" title="Challenge" aria-label="Challenge">
                         <span class="material-symbols-outlined">military_tech</span>
                     </a>
-                    <a href="/quotes" title="Iqtiboslar" aria-label="Iqtiboslar">
-                        <span class="material-symbols-outlined">format_quote</span>
+                    <a href="/kitoblar" title="Kitoblar" aria-label="Kitoblar">
+                        <span class="material-symbols-outlined">auto_stories</span>
                     </a>
                     <a href="/chat" class="nav-msg-link" title="Xabarlar" aria-label="Xabarlar">
                         <span class="material-symbols-outlined">forum</span>
@@ -237,7 +238,7 @@
                 <div class="nav-actions">
                     @if (!hideSearch)
                     {
-                        <a class="nav-icon-btn desktop-only" href="/quotes" title="Qidiruv" aria-label="Qidiruv">
+                        <a class="nav-icon-btn desktop-only" href="/kitoblar" title="Qidiruv" aria-label="Qidiruv">
                             <span class="material-symbols-outlined">search</span>
                         </a>
                     }
@@ -306,9 +307,9 @@
                 <span class="material-symbols-outlined">military_tech</span>
                 <span class="bn-label">Challenge</span>
             </a>
-            <a href="/quotes" class="@(mobilePath.StartsWith("/quotes") ? "active" : "")">
-                <span class="material-symbols-outlined">format_quote</span>
-                <span class="bn-label">Iqtiboslar</span>
+            <a href="/kitoblar" class="@((mobilePath.StartsWith("/kitoblar") || mobilePath.StartsWith("/kitob/")) ? "active" : "")">
+                <span class="material-symbols-outlined">auto_stories</span>
+                <span class="bn-label">Kitoblar</span>
             </a>
             <a href="/chat" class="@(mobilePath.StartsWith("/chat") ? "active" : "")">
                 <span class="material-symbols-outlined">forum</span>

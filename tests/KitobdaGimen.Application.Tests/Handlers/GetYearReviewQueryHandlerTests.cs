@@ -117,8 +117,8 @@ public class GetYearReviewQueryHandlerTests : TestBase
         SeedUser(db, 2);
         SeedBook(db, 10, "Kitob A");
 
-        db.Quotes.Add(new Quote { Id = 1, UserId = 1, BookId = 10, Text = "Kam iqtibos", CreatedAt = new DateTime(Year, 2, 1) });
-        db.Quotes.Add(new Quote { Id = 2, UserId = 1, BookId = 10, Text = "Sevimli iqtibos", CreatedAt = new DateTime(Year, 4, 1) });
+        db.Quotes.Add(new Quote { Id = 1, UserId = 1, BookId = 10, Slug = "slug1", Text = "Kam iqtibos", CreatedAt = new DateTime(Year, 2, 1) });
+        db.Quotes.Add(new Quote { Id = 2, UserId = 1, BookId = 10, Slug = "slug2", Text = "Sevimli iqtibos", CreatedAt = new DateTime(Year, 4, 1) });
         db.QuoteLikes.Add(new QuoteLike { Id = 1, QuoteId = 2, UserId = 1, CreatedAt = DateTime.UtcNow });
         db.QuoteLikes.Add(new QuoteLike { Id = 2, QuoteId = 2, UserId = 2, CreatedAt = DateTime.UtcNow });
         db.QuoteLikes.Add(new QuoteLike { Id = 3, QuoteId = 1, UserId = 2, CreatedAt = DateTime.UtcNow });

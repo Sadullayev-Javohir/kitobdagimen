@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
@@ -32,10 +33,19 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Quo
             throw new NotFoundException("Kitob", request.BookId);
         }
 
+        // Random public slug; retry on the rare chance of a collision.
+        string slug;
+        do
+        {
+            slug = SlugGenerator.Generate();
+        }
+        while (await _db.Quotes.AnyAsync(q => q.Slug == slug, cancellationToken));
+
         var quote = new Quote
         {
             UserId = userId,
             BookId = request.BookId,
+            Slug = slug,
             Text = request.Text,
             CreatedAt = DateTime.UtcNow
         };
@@ -55,6 +65,8 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Quo
             .ToListAsync(cancellationToken);
         if (followerIds.Count > 0)
         {
+            var username = dto.Author.Username;
+            var url = $"/iqtibos/{(string.IsNullOrWhiteSpace(username) ? dto.Author.Id.ToString() : username)}/{dto.Slug}";
             await _notifications.NotifyManyAsync(followerIds, new NotificationDto
             {
                 Type = "quote",
@@ -62,7 +74,7 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Quo
                 ActorName = dto.Author.FullName,
                 ActorAvatarUrl = dto.Author.AvatarUrl,
                 Message = $"{dto.Author.FullName} yangi iqtibos qo'shdi",
-                Url = $"/quotes/{dto.Id}"
+                Url = url
             }, cancellationToken);
         }
 

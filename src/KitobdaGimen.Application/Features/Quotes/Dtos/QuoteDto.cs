@@ -6,6 +6,7 @@ namespace KitobdaGimen.Application.Features.Quotes.Dtos;
 public record QuoteDto
 {
     public int Id { get; init; }
+    public string Slug { get; init; } = null!;
     public string Text { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
     public UserSummaryDto Author { get; init; } = null!;

@@ -12,7 +12,7 @@ public class ToggleSaveQuoteCommandHandlerTests : TestBase
     {
         db.Users.Add(new User { Id = 1, GoogleId = "g-1", Email = "u1@e.com", FullName = "U1", CreatedAt = DateTime.UtcNow });
         db.Books.Add(new Book { Id = 1, Title = "B", Author = "A", TotalPages = 100 });
-        db.Quotes.Add(new Quote { Id = 1, UserId = 1, BookId = 1, Text = "Iqtibos", CreatedAt = DateTime.UtcNow });
+        db.Quotes.Add(new Quote { Id = 1, UserId = 1, BookId = 1, Slug = "slug1", Text = "Iqtibos", CreatedAt = DateTime.UtcNow });
         await db.SaveChangesAsync();
     }
 

@@ -50,9 +50,9 @@ public class SeoController : AppController
         foreach (var p in data.Posts)
             urlset.Add(Url($"{baseUrl}/post/{Seg(p.AuthorRef)}/{Seg(p.Slug)}", p.LastModUtc, "weekly", "0.8"));
 
-        // Iqtiboslar (kanonik /iqtibos/{id})
+        // Iqtiboslar (kanonik /iqtibos/{username}/{slug})
         foreach (var qt in data.Quotes)
-            urlset.Add(Url($"{baseUrl}/iqtibos/{qt.Id}", qt.LastModUtc, "weekly", "0.7"));
+            urlset.Add(Url($"{baseUrl}/iqtibos/{Seg(qt.AuthorRef)}/{Seg(qt.Slug)}", qt.LastModUtc, "weekly", "0.7"));
 
         // Ommaviy profillar (/u/{username})
         foreach (var u in data.Profiles)

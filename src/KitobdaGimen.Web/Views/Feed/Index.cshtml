@@ -24,7 +24,7 @@
                 <div class="search-box">
                     <span class="search-ico material-symbols-outlined">search</span>
                     <input class="input" type="search" name="q" id="feedSearchInput"
-                           placeholder="Post matni, kitob, muallif yoki muallif ismi bo'yicha qidiring..."
+                           placeholder="Taqriz matni, kitob, muallif yoki muallif ismi bo'yicha qidiring..."
                            value="@search" autocomplete="off" />
                 </div>
             </form>
@@ -41,7 +41,7 @@
         {
             <div class="muted" style="margin-bottom:16px; font-size:14px">
                 <strong>"@search"</strong> bo'yicha qidiruv natijalari —
-                <a href="/Feed">barcha postlarga qaytish</a>
+                <a href="/Feed">barcha taqrizlarga qaytish</a>
             </div>
         }
 
@@ -62,10 +62,33 @@
             <span class="material-symbols-outlined composer-trigger-ico">edit_square</span>
         </button>
 
-        <!-- Modal oyna -->
+        <!-- Taqriz yoki iqtibos tanlash modali — kompozer tugmasi bosilganda birinchi shu ochiladi -->
+        <div class="composer-modal" id="typeChoiceModal" hidden>
+            <div class="composer-modal-backdrop" data-type-choice-close></div>
+            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Taqriz yoki iqtibos" style="max-width:340px">
+                <div class="composer-modal-head">
+                    <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
+                    <button type="button" class="composer-close" data-type-choice-close aria-label="Yopish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:12px; padding:4px 0 8px">
+                    <button type="button" class="btn btn-primary btn-block" id="chooseTaqriz">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">article</span>
+                        Taqriz
+                    </button>
+                    <button type="button" class="btn btn-outline btn-block" id="chooseIqtibos">
+                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">format_quote</span>
+                        Iqtibos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Taqriz (post) modali -->
         <div class="composer-modal" id="composerModal" hidden>
             <div class="composer-modal-backdrop" data-composer-close></div>
-            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi post">
+            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi taqriz">
                 <div class="composer-modal-head">
                     <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
                     <button type="button" class="composer-close" data-composer-close aria-label="Yopish">
@@ -152,6 +175,81 @@
             </form>
             </div>
         </div>
+
+        <!-- Iqtibos modali -->
+        <div class="composer-modal" id="quoteComposerModal" hidden>
+            <div class="composer-modal-backdrop" data-quote-composer-close></div>
+            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi iqtibos">
+                <div class="composer-modal-head">
+                    <h3>Qaysi kitobdan iqtibos qo'shasiz?</h3>
+                    <button type="button" class="composer-close" data-quote-composer-close aria-label="Yopish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+            <form id="quoteComposerForm" method="post" action="/quotes/create">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BookId" id="quoteBookId" />
+
+                <!-- Tanlangan kitob (tanlangach ko'rinadi) -->
+                <div id="quoteSelectedBook" class="composer-selected" hidden>
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <span id="quoteSelectedBookLabel"></span>
+                    <button type="button" class="composer-clear" id="quoteClearBook" aria-label="Bekor qilish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <!-- Kitob qidirish / qo'shish (kitob tanlanmaganda ko'rinadi) -->
+                <div id="quoteBookPicker">
+                    <div class="composer-book">
+                        <input class="input" id="quoteBookSearch" placeholder="Kitobni qidiring..." autocomplete="off" />
+                        <button type="button" class="btn btn-outline btn-sm" id="quoteNewBookToggle">Yangi kitob</button>
+                        <button type="button" class="btn btn-ghost btn-sm" data-asaxiy-refresh="#quoteBookSearch"
+                                title="Kitob qidiruvi ishlamayaptimi? Bosing — qayta ishga tushadi.">
+                            <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">refresh</span>
+                            Kitoblarni yangilash
+                        </button>
+                    </div>
+                    <div class="book-suggestions" id="quoteBookSuggestions" hidden></div>
+
+                    <div id="quoteNewBookForm" class="composer-newbook stack" hidden>
+                        <input class="input" id="qNbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
+                        <input class="input" id="qNbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
+                        <input class="input" id="qNbPages" type="number" min="1" max="100000" placeholder="Sahifalar soni" />
+                        <select class="input" id="qNbGenre">
+                            <option value="">Kategoriyani tanlang</option>
+                            @foreach (var genre in genres)
+                            {
+                                <option value="@genre.Id">@genre.Name</option>
+                            }
+                        </select>
+
+                        <div class="nb-cover">
+                            <div class="nb-cover-preview" id="qNbCoverPreview">
+                                <span class="material-symbols-outlined">image</span>
+                            </div>
+                            <div class="nb-cover-actions">
+                                <label class="btn btn-outline btn-sm" for="qNbCover">Muqova rasmi</label>
+                                <input type="file" id="qNbCover" accept="image/*" hidden />
+                                <button type="button" class="btn btn-ghost btn-sm" id="qNbCoverClear" hidden>O'chirish</button>
+                                <span class="muted" id="qNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-outline btn-sm" id="qNbSave">Kitobni qo'shish</button>
+                    </div>
+                </div>
+
+                <textarea class="input" name="Text" id="quoteText" placeholder="Iqtibos matni..." minlength="3" maxlength="400" required></textarea>
+
+                <div class="composer-actions">
+                    <span class="muted" id="quoteComposerHint" style="font-size:13px">Avval kitobni tanlang yoki qo'shing.</span>
+                    <button type="submit" class="btn btn-primary" id="quoteSubmit" disabled>Saqlash</button>
+                </div>
+            </form>
+            </div>
+        </div>
         }
 
         <!-- Postlar -->
@@ -161,8 +259,8 @@
                 <span class="material-symbols-outlined">@(string.IsNullOrEmpty(search) ? "auto_stories" : "search_off")</span>
                 <p>
                     @(string.IsNullOrEmpty(search)
-                        ? "Hozircha postlar yo'q. Birinchi bo'lib fikr ulashing yoki boshqa kitobxonlarni kuzating!"
-                        : $"\"{search}\" bo'yicha post topilmadi.")
+                        ? "Hozircha taqriz yo'q. Birinchi bo'lib fikr ulashing yoki boshqa kitobxonlarni kuzating!"
+                        : $"\"{search}\" bo'yicha taqriz topilmadi.")
                 </p>
             </div>
         }
@@ -192,24 +290,49 @@
 
 @section Scripts {
 <script>
-// --- Post yaratish modali: yopiq tugma bosilganda ochiladi, close/Escape/backdrop yopadi ---
+// --- Kompozer tugmasi bosilganda avval "Taqriz yoki Iqtibos" tanlash modali ochiladi;
+// tanlovga qarab tegishli modal (taqriz yoki iqtibos) ochiladi. Escape/backdrop/close hammasini yopadi. ---
 (function () {
     const trigger = document.getElementById("composerTrigger");
-    const modal = document.getElementById("composerModal");
-    if (!trigger || !modal) return;
-    function openModal() {
+    const typeModal = document.getElementById("typeChoiceModal");
+    const postModal = document.getElementById("composerModal");
+    const quoteModal = document.getElementById("quoteComposerModal");
+    if (!trigger || !typeModal || !postModal || !quoteModal) return;
+
+    function openModal(modal, focusId) {
         modal.hidden = false;
         document.body.classList.add("modal-open");
-        const focusTarget = document.getElementById("bookSearch");
+        const focusTarget = focusId && document.getElementById(focusId);
         if (focusTarget) setTimeout(() => focusTarget.focus(), 50);
     }
-    function closeModal() {
+    function closeModal(modal) {
         modal.hidden = true;
         document.body.classList.remove("modal-open");
     }
-    trigger.addEventListener("click", openModal);
-    modal.querySelectorAll("[data-composer-close]").forEach((el) => el.addEventListener("click", closeModal));
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+    function closeAll() {
+        [typeModal, postModal, quoteModal].forEach(closeModal);
+    }
+
+    trigger.addEventListener("click", () => openModal(typeModal));
+    typeModal.querySelectorAll("[data-type-choice-close]").forEach((el) => el.addEventListener("click", () => closeModal(typeModal)));
+    postModal.querySelectorAll("[data-composer-close]").forEach((el) => el.addEventListener("click", () => closeModal(postModal)));
+    quoteModal.querySelectorAll("[data-quote-composer-close]").forEach((el) => el.addEventListener("click", () => closeModal(quoteModal)));
+
+    document.getElementById("chooseTaqriz").addEventListener("click", () => {
+        closeModal(typeModal);
+        openModal(postModal, "bookSearch");
+    });
+    document.getElementById("chooseIqtibos").addEventListener("click", () => {
+        closeModal(typeModal);
+        openModal(quoteModal, "quoteBookSearch");
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        if (!typeModal.hidden) closeModal(typeModal);
+        else if (!postModal.hidden) closeModal(postModal);
+        else if (!quoteModal.hidden) closeModal(quoteModal);
+    });
 })();
 
 // --- Qidiruv: ikona bosilganda qidiruv maydonini ochish/yopish ---
@@ -531,6 +654,193 @@
         } else if (imageUploading) {
             e.preventDefault();
             alert("Rasm hali yuklanmoqda, biroz kuting.");
+        }
+    });
+
+    refreshState();
+})();
+
+// --- Iqtibos qo'shish formasi: kitob tanlash/qo'shish + matn ---
+(function () {
+    const form = document.getElementById("quoteComposerForm");
+    if (!form) return; // Qidiruv rejimida composer yo'q
+    const bookIdInput = document.getElementById("quoteBookId");
+    const bookPicker = document.getElementById("quoteBookPicker");
+    const search = document.getElementById("quoteBookSearch");
+    const suggestions = document.getElementById("quoteBookSuggestions");
+    const selectedBook = document.getElementById("quoteSelectedBook");
+    const selectedLabel = document.getElementById("quoteSelectedBookLabel");
+    const newBookForm = document.getElementById("quoteNewBookForm");
+    let searchTimer;
+    const submitBtn = document.getElementById("quoteSubmit");
+    const hint = document.getElementById("quoteComposerHint");
+    const quoteText = document.getElementById("quoteText");
+    const nbCover = document.getElementById("qNbCover");
+    const nbCoverPreview = document.getElementById("qNbCoverPreview");
+    const nbCoverClear = document.getElementById("qNbCoverClear");
+    const nbCoverHint = document.getElementById("qNbCoverHint");
+    let coverUrl = null;       // server URL once uploaded
+    let coverFile = null;      // pending file chosen by the user
+
+    function resetCover() {
+        coverUrl = null;
+        coverFile = null;
+        nbCover.value = "";
+        nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
+        nbCoverClear.hidden = true;
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+    }
+
+    nbCover.addEventListener("change", () => {
+        const f = nbCover.files && nbCover.files[0];
+        if (!f) { resetCover(); return; }
+        coverFile = f;
+        coverUrl = null; // re-upload on next save
+        nbCoverClear.hidden = false;
+        nbCoverHint.textContent = f.name;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            nbCoverPreview.innerHTML = "";
+            const img = document.createElement("img");
+            img.src = ev.target.result;
+            nbCoverPreview.appendChild(img);
+        };
+        reader.readAsDataURL(f);
+    });
+
+    nbCoverClear.addEventListener("click", resetCover);
+
+    async function uploadCover(file) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/books/upload-cover", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "RequestVerificationToken": kitob.antiforgeryToken()
+            },
+            body: fd
+        });
+        if (res.status === 401) { window.location.href = "/"; return null; }
+        if (!res.ok) {
+            let message = "Rasmni yuklab bo'lmadi.";
+            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+            throw new Error(message);
+        }
+        const data = await res.json();
+        return data.url;
+    }
+
+    function refreshState() {
+        const hasBook = !!bookIdInput.value;
+        const hasText = (quoteText.value || "").trim().length > 0;
+        submitBtn.disabled = !(hasBook && hasText);
+        if (!hasBook) hint.textContent = "Avval kitobni tanlang yoki qo'shing.";
+        else if (!hasText) hint.textContent = "Endi iqtibos matnini yozing.";
+        else hint.textContent = "Tayyor — iqtibosni saqlashingiz mumkin.";
+    }
+
+    function pickBook(book) {
+        bookIdInput.value = book.id;
+        selectedLabel.textContent = `${book.title} — ${book.author}`;
+        selectedBook.hidden = false;
+        bookPicker.hidden = true;
+        suggestions.hidden = true;
+        suggestions.innerHTML = "";
+        search.value = "";
+        refreshState();
+    }
+
+    function clearBook() {
+        bookIdInput.value = "";
+        selectedBook.hidden = true;
+        bookPicker.hidden = false;
+        refreshState();
+    }
+
+    document.getElementById("quoteClearBook").addEventListener("click", clearBook);
+    quoteText.addEventListener("input", refreshState);
+
+    // --- Kitob qidirish ---
+    search.addEventListener("input", () => {
+        clearTimeout(searchTimer);
+        const q = search.value.trim();
+        if (q.length < 2) { suggestions.hidden = true; return; }
+        suggestions.dataset.q = q;
+        searchTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                if (!res.ok) return;
+                const books = await res.json();
+                suggestions.innerHTML = "";
+                books.forEach(b => {
+                    const div = document.createElement("div");
+                    div.textContent = `${b.title} — ${b.author} (${b.totalPages} bet)`;
+                    div.addEventListener("click", () => pickBook(b));
+                    suggestions.appendChild(div);
+                });
+                suggestions.hidden = books.length === 0;
+                window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
+            } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
+        }, 250);
+    });
+
+    document.getElementById("quoteNewBookToggle").addEventListener("click", () => {
+        newBookForm.hidden = !newBookForm.hidden;
+    });
+
+    const nbSave = document.getElementById("qNbSave");
+    nbSave.addEventListener("click", async () => {
+        const genreId = parseInt(document.getElementById("qNbGenre").value, 10) || 0;
+        const command = {
+            title: document.getElementById("qNbTitle").value.trim(),
+            author: document.getElementById("qNbAuthor").value.trim(),
+            totalPages: parseInt(document.getElementById("qNbPages").value, 10) || 0,
+            genreId: genreId || null
+        };
+        if (!command.title || !command.author || command.totalPages <= 0) {
+            alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
+            return;
+        }
+        if (command.title.length < 3 || command.title.length > 100) {
+            alert("Kitob nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (command.author.length < 3 || command.author.length > 100) {
+            alert("Muallif nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
+            return;
+        }
+        if (command.totalPages > 100000) {
+            alert("Sahifalar soni juda katta.");
+            return;
+        }
+        if (!genreId) {
+            alert("Kitob kategoriyasini tanlang.");
+            return;
+        }
+        nbSave.disabled = true;
+        try {
+            // Upload the cover first (if chosen) so the book is created with its URL.
+            if (coverFile && !coverUrl) {
+                coverUrl = await uploadCover(coverFile);
+            }
+            if (coverUrl) command.coverUrl = coverUrl;
+
+            const book = await kitob.apiPost("/books/create", command);
+            if (book) pickBook(book);
+            newBookForm.hidden = true;
+            resetCover();
+        } catch (err) { alert(err.message); }
+        finally { nbSave.disabled = false; }
+    });
+
+    form.addEventListener("submit", (e) => {
+        if (!bookIdInput.value) {
+            e.preventDefault();
+            alert("Avval kitobni tanlang yoki qo'shing.");
+        } else if (!(quoteText.value || "").trim()) {
+            e.preventDefault();
+            alert("Iqtibos matnini yozing.");
         }
     });
 

@@ -38,12 +38,19 @@ public class GetSitemapQueryHandler : IRequestHandler<GetSitemapQuery, SitemapDt
             .Select(u => new SitemapProfileEntry(u.Username!, u.LastPost))
             .ToList();
 
-        // Ommaviy iqtiboslar (kanonik /iqtibos/{id}) — postlar kabi indekslanadi.
-        var quotes = await _db.Quotes
+        // Ommaviy iqtiboslar (kanonik /iqtibos/{username}/{slug}) — postlar kabi indekslanadi.
+        var rawQuotes = await _db.Quotes
             .OrderByDescending(q => q.CreatedAt)
             .Take(MaxUrls)
-            .Select(q => new SitemapQuoteEntry(q.Id, q.CreatedAt))
+            .Select(q => new { q.User.Username, q.UserId, q.Slug, q.CreatedAt })
             .ToListAsync(cancellationToken);
+
+        var quotes = rawQuotes
+            .Select(q => new SitemapQuoteEntry(
+                string.IsNullOrWhiteSpace(q.Username) ? q.UserId.ToString() : q.Username!,
+                q.Slug,
+                q.CreatedAt))
+            .ToList();
 
         // Kitob sahifalari (/kitob/{id}-{nom}) — faqat kontenti (taqriz yoki iqtibos) borlari;
         // lastmod = oxirgi taqriz/iqtibos sanasi.

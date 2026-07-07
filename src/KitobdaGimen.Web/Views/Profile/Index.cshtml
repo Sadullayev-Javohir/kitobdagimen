@@ -216,6 +216,10 @@
                 <button type="button" class="profile-tab active" data-profile-tab="posts">Postlar</button>
                 <button type="button" class="profile-tab" data-profile-tab="stories">Storylar</button>
                 <button type="button" class="profile-tab" data-profile-tab="quotes">Iqtiboslar</button>
+                @if (p.IsCurrentUser)
+                {
+                    <button type="button" class="profile-tab" data-profile-tab="saved">Saqlangan</button>
+                }
             </nav>
 
             <div data-tab-panel="posts">
@@ -330,12 +334,15 @@
                     <div class="quote-grid">
                         @foreach (var q in Model.MyQuotes)
                         {
+                            var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Author.Username, q.Author.Id, q.Slug);
                             <div class="card quote-card">
-                                <p class="quote-text">@q.Text</p>
-                                <div class="quote-foot">
+                                <a href="@quoteUrl" style="color:inherit; text-decoration:none">
+                                    <p class="quote-text">@q.Text</p>
                                     <div class="quote-source">
                                         <strong>@q.Book.Title</strong><br />@q.Book.Author
                                     </div>
+                                </a>
+                                <div class="quote-foot">
                                     <div class="flex items-center gap-8">
                                         <span class="action-btn" title="Saqlanganlar">
                                             <span class="material-symbols-outlined">bookmark</span>
@@ -356,6 +363,42 @@
                     </div>
                 }
             </div>
+
+            @if (p.IsCurrentUser)
+            {
+                <div data-tab-panel="saved" hidden>
+                    @if (Model.SavedQuotes.Count == 0)
+                    {
+                        <div class="card text-center muted">Hali saqlangan iqtibos yo'q.</div>
+                    }
+                    else
+                    {
+                        <div class="quote-grid">
+                            @foreach (var q in Model.SavedQuotes)
+                            {
+                                var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Author.Username, q.Author.Id, q.Slug);
+                                <div class="card quote-card" data-saved-quote-card="@q.Id">
+                                    <a href="@quoteUrl" style="color:inherit; text-decoration:none">
+                                        <p class="quote-text">@q.Text</p>
+                                        <div class="quote-source">
+                                            <strong>@q.Book.Title</strong><br />@q.Book.Author
+                                        </div>
+                                    </a>
+                                    <div class="quote-foot">
+                                        <div class="flex items-center gap-8">
+                                            <span class="muted" style="font-size:13px">@q.Author.FullName</span>
+                                            <button type="button" class="action-btn liked" data-save-quote="@q.Id" data-unsave title="Saqlashni bekor qilish">
+                                                <span class="material-symbols-outlined">bookmark</span>
+                                                <span class="save-count">@q.SaveCount</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
         </div>
 
         <aside class="profile-side">
@@ -448,6 +491,16 @@
             tabs.forEach((t) => t.classList.toggle("active", t === tab));
             panels.forEach((pn) => { pn.hidden = pn.getAttribute("data-tab-panel") !== name; });
         });
+    });
+
+    // "Saqlangan" tabidagi bookmark tugmasi — site.js dagi umumiy data-save-quote
+    // handleri saqlash holatini serverga yuborib "liked" klassini almashtiradi; shu
+    // klass o'chganda (saqlash bekor qilingani) kartochkani ro'yxatdan olib tashlaymiz.
+    document.querySelectorAll("[data-saved-quote-card] [data-unsave]").forEach((btn) => {
+        const card = btn.closest("[data-saved-quote-card]");
+        new MutationObserver(() => {
+            if (!btn.classList.contains("liked")) card.remove();
+        }).observe(btn, { attributes: true, attributeFilter: ["class"] });
     });
 
     // "Ulashish" — profil havolasini (/u/{id}) clipboard'ga nusxalaymiz

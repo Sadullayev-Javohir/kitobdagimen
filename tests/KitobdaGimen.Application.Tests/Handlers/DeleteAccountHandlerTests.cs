@@ -82,7 +82,7 @@ public class DeleteAccountHandlerTests : TestBase
 
         db.Books.Add(new Book { Id = 1, Title = "B", Author = "A", TotalPages = 100, GenreId = 1 });
         // Quote owned by user 2; user 1 likes and comments on it.
-        db.Quotes.Add(new Quote { Id = 1, UserId = 2, BookId = 1, Text = "q", CreatedAt = DateTime.UtcNow });
+        db.Quotes.Add(new Quote { Id = 1, UserId = 2, BookId = 1, Slug = "slug1", Text = "q", CreatedAt = DateTime.UtcNow });
         db.QuoteLikes.Add(new QuoteLike { Id = 1, QuoteId = 1, UserId = 1, CreatedAt = DateTime.UtcNow });
         db.QuoteComments.Add(new QuoteComment { Id = 1, QuoteId = 1, UserId = 1, Text = "c", CreatedAt = DateTime.UtcNow });
 

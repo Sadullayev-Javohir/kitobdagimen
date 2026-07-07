@@ -1,19 +1,40 @@
 using KitobdaGimen.Application.Features.Books.Queries.GetBookPage;
+using KitobdaGimen.Application.Features.Books.Queries.GetBooksFeed;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KitobdaGimen.Web.Controllers;
 
 /// <summary>
-/// Ommaviy, Google indekslaydigan kitob sahifasi: <c>/kitob/{id}-{nom-slug}</c> —
-/// bitta kitobning barcha taqrizlari va iqtiboslari bir joyda. Bu sahifa "kitob nomi"
-/// qidiruvlariga eng mos landing (SEO-OPTIMIZATSIYA.md dagi №1 band).
-/// URL'dagi id yetakchi; slug qismi noto'g'ri/eskirgan bo'lsa kanonik manzilga 301.
-/// Maxfiy /books yo'llari (kitob qidiruv/yaratish API) bunga aloqasiz va robots'da yopiq.
+/// Ommaviy, Google indekslaydigan kitob sahifalari: bitta kitobning barcha taqrizlari va
+/// iqtiboslari (<c>/kitob/{id}-{nom-slug}</c>), va taqriz yoki iqtibos yozilgan barcha
+/// kitoblar ro'yxati (<c>/kitoblar</c>) — bu ro'yxat avvalgi <c>/quotes</c> sahifasi o'rnini
+/// bosadi. Maxfiy /books yo'llari (kitob qidiruv/yaratish API) bunga aloqasiz va robots'da yopiq.
 /// </summary>
 [AllowAnonymous]
 public class KitobController : AppController
 {
+    /// <summary>Initial number of book cards rendered with the page; the rest stream in on scroll.</summary>
+    private const int BookPageSize = 12;
+
+    /// <summary>Taqriz yoki iqtibos yozilgan barcha kitoblar ro'yxati (eng so'nggi faollik bo'yicha).</summary>
+    [HttpGet("/kitoblar")]
+    public async Task<IActionResult> Index(string? q, int page = 1)
+    {
+        var books = await Mediator.Send(new GetBooksFeedQuery { Search = q, Page = page, PageSize = BookPageSize });
+        ViewData["Title"] = "Kitoblar";
+        ViewData["Search"] = q;
+        return View("Index", books);
+    }
+
+    /// <summary>Returns the next page of book cards as an HTML fragment (infinite scroll).</summary>
+    [HttpGet("/kitoblar/cards")]
+    public async Task<IActionResult> Cards(string? q, int page = 2)
+    {
+        var books = await Mediator.Send(new GetBooksFeedQuery { Search = q, Page = page, PageSize = BookPageSize });
+        return PartialView("_BookCards", books.Items);
+    }
+
     [HttpGet("/kitob/{idSlug}")]
     public async Task<IActionResult> Details(string idSlug)
     {
