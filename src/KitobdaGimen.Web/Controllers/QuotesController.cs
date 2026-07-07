@@ -3,6 +3,7 @@ using KitobdaGimen.Application.Features.Quotes.Commands.AddQuoteComment;
 using KitobdaGimen.Application.Features.Quotes.Commands.CreateQuote;
 using KitobdaGimen.Application.Features.Quotes.Commands.DeleteQuote;
 using KitobdaGimen.Application.Features.Quotes.Commands.DeleteQuoteComment;
+using KitobdaGimen.Application.Features.Quotes.Commands.RecordQuoteView;
 using KitobdaGimen.Application.Features.Quotes.Commands.ToggleQuoteLike;
 using KitobdaGimen.Application.Features.Quotes.Commands.ToggleSaveQuote;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteById;
@@ -64,6 +65,17 @@ public class QuotesController : AppController
     {
         var result = await Mediator.Send(new ToggleSaveQuoteCommand(id));
         return Json(result);
+    }
+
+    /// <summary>
+    /// Records that the current user saw this quote in the feed (fired when the card scrolls
+    /// into view) and returns the new total. Idempotent — counts once per user per quote.
+    /// </summary>
+    [HttpPost("{id:int}/view")]
+    public async Task<IActionResult> RecordView(int id)
+    {
+        var viewCount = await Mediator.Send(new RecordQuoteViewCommand(id));
+        return Json(new { viewCount });
     }
 
     [HttpPost("{id:int}/like")]

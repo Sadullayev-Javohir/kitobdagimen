@@ -398,6 +398,7 @@
             onAppend: (nodes) => {
                 highlightCards(nodes);
                 if (kitob.initRichEditors) nodes.forEach((n) => kitob.initRichEditors(n));
+                if (kitob.observeQuoteViews) nodes.forEach((n) => kitob.observeQuoteViews(n));
             }
         });
     }

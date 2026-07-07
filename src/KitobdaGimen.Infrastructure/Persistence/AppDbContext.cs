@@ -31,6 +31,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<SavedQuote> SavedQuotes => Set<SavedQuote>();
     public DbSet<QuoteLike> QuoteLikes => Set<QuoteLike>();
     public DbSet<QuoteComment> QuoteComments => Set<QuoteComment>();
+    public DbSet<QuoteView> QuoteViews => Set<QuoteView>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<MessageReaction> MessageReactions => Set<MessageReaction>();

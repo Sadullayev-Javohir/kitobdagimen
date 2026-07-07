@@ -16,6 +16,7 @@ public record QuoteDto
 
     public int LikeCount { get; init; }
     public int CommentCount { get; init; }
+    public int ViewCount { get; init; }
     public bool IsLikedByCurrentUser { get; init; }
 
     /// <summary>True when the current user is this quote's author.</summary>

@@ -26,4 +26,5 @@ public class Quote : BaseEntity
     public ICollection<SavedQuote> SavedBy { get; set; } = new List<SavedQuote>();
     public ICollection<QuoteLike> Likes { get; set; } = new List<QuoteLike>();
     public ICollection<QuoteComment> Comments { get; set; } = new List<QuoteComment>();
+    public ICollection<QuoteView> Views { get; set; } = new List<QuoteView>();
 }

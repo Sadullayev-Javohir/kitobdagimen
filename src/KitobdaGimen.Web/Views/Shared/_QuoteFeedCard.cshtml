@@ -68,10 +68,10 @@
             <span class="material-symbols-outlined">chat_bubble</span>
             <span>@Model.CommentCount</span>
         </a>
-        <button class="action-btn @(Model.IsSavedByCurrentUser ? "liked" : "")" data-save-quote="@Model.Id" aria-label="Saqlash" title="Saqlash">
-            <span class="material-symbols-outlined">bookmark</span>
-            <span class="save-count">@Model.SaveCount</span>
-        </button>
+        <span class="action-btn action-static" aria-label="Ko'rishlar" title="Ko'rishlar">
+            <span class="material-symbols-outlined">visibility</span>
+            <span class="quote-view-count">@Model.ViewCount</span>
+        </span>
         <span class="post-actions-end">
             <button type="button" class="action-btn" data-share-url="@quoteShareUrl" aria-label="Ulashish" title="Ulashish">
                 <span class="material-symbols-outlined">share</span>

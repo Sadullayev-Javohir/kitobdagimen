@@ -920,6 +920,51 @@ document.addEventListener("click", async (e) => {
 
 window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks };
 
+// ===== Iqtibos ko'rishlari =====
+// Feed'da iqtibos kartasi ekranga chiqishi bilan (foydalanuvchi ichiga kirmasa ham) ko'rish
+// hisoblanadi. Serverda (QuoteId, UserId) unikal — shu sabab har foydalanuvchi uchun bir marta
+// +1 bo'ladi; qayta chaqiruvlar shunchaki joriy sonni qaytaradi. Bir sahifa sessiyasida bir
+// kartani qayta yubormaslik uchun `seen` to'plami ishlatiladi.
+(function () {
+    if (!("IntersectionObserver" in window)) return;
+    const seen = new Set();
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const card = entry.target;
+            observer.unobserve(card);
+            const id = card.getAttribute("data-quote-id");
+            if (!id || seen.has(id)) return;
+            seen.add(id);
+            recordView(id);
+        });
+    }, { threshold: 0.5 });
+
+    async function recordView(id) {
+        try {
+            const r = await apiPost(`/quotes/${id}/view`);
+            if (r && typeof r.viewCount === "number") {
+                document.querySelectorAll(`[data-quote-id="${id}"] .quote-view-count`)
+                    .forEach((el) => { el.textContent = r.viewCount; });
+            }
+        } catch { /* jim o'tkazamiz — ko'rish hisobi muhim emas */ }
+    }
+
+    // Berilgan ildiz (yoki butun sahifa) ichidagi iqtibos kartalarini kuzatuvga qo'shadi.
+    function observeQuoteViews(root) {
+        const scope = root || document;
+        if (scope.matches && scope.matches(".quote-feed-card[data-quote-id]")) {
+            observer.observe(scope);
+            return;
+        }
+        scope.querySelectorAll(".quote-feed-card[data-quote-id]").forEach((c) => observer.observe(c));
+    }
+
+    window.kitob.observeQuoteViews = observeQuoteViews;
+    observeQuoteViews(document);
+})();
+
 initNotifications();
 
 // ===== Kichik matn muharriri (rich text): qalin / kursiv / tagchiziq / marker =====
