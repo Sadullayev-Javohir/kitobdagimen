@@ -2965,11 +2965,15 @@ button.story-detail-stat { cursor: pointer; }
    Rasmi yo'q kitoblar gradient + ikon + nom bilan to'ldirilgan chiroyli
    placeholder oladi — hech qachon bo'sh ko'rinmaydi. ===== */
 .book-grid {
-    max-width: 760px; margin: 0 auto;
+    max-width: 1160px; margin: 0 auto;
     display: grid; grid-template-columns: 1fr; gap: 14px;
     align-items: stretch;
 }
-@media (max-width: 768px) { .book-grid { max-width: 100%; gap: 12px; } }
+/* Tablet — 2 tadan karta. */
+@media (min-width: 640px) { .book-grid { grid-template-columns: repeat(2, 1fr); } }
+/* Laptop — 3 tadan karta. */
+@media (min-width: 1024px) { .book-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 639px) { .book-grid { max-width: 100%; gap: 12px; } }
 
 /* Karta: gorizontal (muqova + tana), bir xil balandlik, hover'da ko'tariladi. */
 .bookc {
