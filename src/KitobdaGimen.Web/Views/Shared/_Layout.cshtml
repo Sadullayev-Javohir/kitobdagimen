@@ -1,5 +1,6 @@
 @using KitobdaGimen.Application.Common.Interfaces
 @using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser
+@using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl
 @using MediatR
 @inject ICurrentUserService CurrentUser
 @inject ISender Mediator
@@ -10,6 +11,23 @@
     {
         me = await Mediator.Send(new GetCurrentUserQuery());
     }
+
+    // Fon video — super admin /admin panelidan yuklagan bo'lsa o'sha, aks holda standart video.
+    // Barcha sahifalarda (landing ham) bir xil ko'rinishi uchun shu umumiy layoutda hisoblanadi.
+    var bgVideoUrl = await Mediator.Send(new GetBackgroundVideoUrlQuery());
+    if (string.IsNullOrWhiteSpace(bgVideoUrl))
+    {
+        bgVideoUrl = "/videos/book.mp4";
+    }
+    var bgVideoType = System.IO.Path.GetExtension(bgVideoUrl).ToLowerInvariant() switch
+    {
+        ".webm" => "video/webm",
+        ".ogv" or ".ogg" => "video/ogg",
+        ".mov" => "video/quicktime",
+        ".mkv" => "video/x-matroska",
+        ".avi" => "video/x-msvideo",
+        _ => "video/mp4"
+    };
     var initial = string.IsNullOrEmpty(me?.FullName) ? "?" : me!.FullName.Trim()[..1].ToUpper();
     var hideChrome = ViewData["HideChrome"] as bool? ?? false;
     var currentController = ViewContext.RouteData.Values["controller"] as string ?? "";
@@ -193,9 +211,10 @@
 <body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
 
-    @* Orqa fon video (kitob mavzusida) — barcha sahifalarda fixed fon *@
+    @* Orqa fon video (kitob mavzusida) — barcha sahifalarda fixed fon. Super admin /admin
+       panelidan boshqa video yuklasa, shu yerda barcha foydalanuvchi va landing uchun almashadi. *@
     <video class="lp-bg-video" muted loop playsinline preload="auto" autoplay aria-hidden="true" tabindex="-1">
-        <source src="~/videos/book.mp4" type="video/mp4" />
+        <source src="@bgVideoUrl" type="@bgVideoType" />
     </video>
     <div class="lp-bg-video-overlay" aria-hidden="true"></div>
 

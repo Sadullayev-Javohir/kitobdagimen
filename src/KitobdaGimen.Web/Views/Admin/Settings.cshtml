@@ -1,0 +1,136 @@
+@{
+    ViewData["Title"] = "Tizim sozlamalari";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+<div class="container page">
+    <div class="admin-head">
+        <a href="/admin" class="muted" style="display:inline-flex; align-items:center; gap:6px; margin-bottom:10px; font-size:14px">
+            <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+            Admin panel
+        </a>
+        <h1>Tizim sozlamalari</h1>
+    </div>
+
+    <div class="card" style="padding:18px">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px">
+            <!-- Keshni tozalash -->
+            <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                <div style="flex:1; min-width:0">
+                    <strong style="display:block; margin-bottom:4px">Redis keshlarini tozalash</strong>
+                    <div class="muted" style="font-size:13px">Barcha keshlangan ma'lumotlar (feed, profillar, kitoblar) tozalanadi.</div>
+                </div>
+                <button type="button" id="clearCacheBtn" class="btn btn-danger btn-sm" style="flex-shrink:0">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">delete_sweep</span>
+                    Tozalash
+                </button>
+            </div>
+
+            <!-- Muqovalarni tiklash -->
+            <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                <div style="flex:1; min-width:0">
+                    <strong style="display:block; margin-bottom:4px">Kitob muqovalarini tiklash</strong>
+                    <div class="muted" style="font-size:13px">Yo'qolgan muqovalar asaxiy.uz dan qayta yuklanadi.</div>
+                </div>
+                <button type="button" id="refreshCoversBtn" class="btn btn-primary btn-sm" style="flex-shrink:0">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
+                    Tiklash
+                </button>
+            </div>
+
+            <!-- Landing statistikasi -->
+            <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                <div style="flex:1; min-width:0">
+                    <strong style="display:block; margin-bottom:4px">Landing statistikasini yangilash</strong>
+                    <div class="muted" style="font-size:13px">Bosh sahifadagi kitobxonlar / kitoblar / betlar soni har kuni o'zi yangilanadi; yangilanmay qolsa shu yerdan majburan yangilang.</div>
+                </div>
+                <button type="button" id="refreshLandingStatsBtn" class="btn btn-primary btn-sm" style="flex-shrink:0">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">monitoring</span>
+                    Yangilash
+                </button>
+            </div>
+        </div>
+
+        <div id="settingsStatus" class="muted" style="font-size:13px; margin-top:12px; min-height:20px"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    function token() { var el = document.querySelector('input[name="__RequestVerificationToken"]'); return el ? el.value : ''; }
+    var status = document.getElementById("settingsStatus");
+
+    // Keshni tozalash
+    var clearCacheBtn = document.getElementById("clearCacheBtn");
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener("click", async function () {
+            if (!confirm("Barcha keshlarni tozalashni tasdiqlaysizmi? Bu sahifalar sekinroq yuklanishiga olib kelishi mumkin.")) {
+                return;
+            }
+            clearCacheBtn.disabled = true;
+            status.textContent = "Tozalanmoqda...";
+            try {
+                var r = await fetch("/admin/clear-cache", {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
+                var d = await r.json();
+                status.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
+            } catch (e) {
+                status.textContent = "✗ Xato: " + e.message;
+            } finally {
+                clearCacheBtn.disabled = false;
+            }
+        });
+    }
+
+    // Muqovalarni tiklash
+    var refreshCoversBtn = document.getElementById("refreshCoversBtn");
+    if (refreshCoversBtn) {
+        refreshCoversBtn.addEventListener("click", async function () {
+            refreshCoversBtn.disabled = true;
+            status.textContent = "Tiklanmoqda... (biroz vaqt oladi)";
+            try {
+                var r = await fetch("/admin/refresh-covers", {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
+                var d = await r.json();
+                status.textContent = "✓ Tiklandi: " + d.fixedCount + " ta. Qolgan: " + d.remaining +
+                    ". Jami asaxiy kitoblar: " + d.totalAsaxiy + ".";
+                if (d.fixedCount > 0) setTimeout(function () { location.reload(); }, 1500);
+            } catch (e) {
+                status.textContent = "✗ Xato: " + e.message;
+            } finally {
+                refreshCoversBtn.disabled = false;
+            }
+        });
+    }
+
+    // Landing statistikasini majburan yangilash
+    var refreshLandingStatsBtn = document.getElementById("refreshLandingStatsBtn");
+    if (refreshLandingStatsBtn) {
+        refreshLandingStatsBtn.addEventListener("click", async function () {
+            refreshLandingStatsBtn.disabled = true;
+            status.textContent = "Statistika qayta hisoblanmoqda...";
+            try {
+                var r = await fetch("/admin/landing-stats/refresh", {
+                    method: "POST",
+                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
+                });
+                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
+                var d = await r.json();
+                status.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
+            } catch (e) {
+                status.textContent = "✗ Xato: " + e.message;
+            } finally {
+                refreshLandingStatsBtn.disabled = false;
+            }
+        });
+    }
+})();
+</script>
+}

@@ -18,4 +18,11 @@ public static class AppSettingKeys
     /// yangilanadi; super admin /admin dan majburan yangilashi ham mumkin.
     /// </summary>
     public const string LandingStats = "Landing:Stats";
+
+    /// <summary>
+    /// Barcha sahifalarda (shu jumladan landing) fon sifatida ko'rsatiladigan video URL manzili
+    /// (masalan "/uploads/videos/xxxx.mp4"). Bo'sh/yo'q bo'lsa standart "/videos/book.mp4" ishlatiladi.
+    /// Faqat super admin o'rnatadi (/admin dagi video yuklash orqali).
+    /// </summary>
+    public const string BackgroundVideoUrl = "Landing:BackgroundVideoUrl";
 }

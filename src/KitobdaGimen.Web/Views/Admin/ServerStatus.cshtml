@@ -1,0 +1,225 @@
+@using KitobdaGimen.Application.Features.Admin.Monitoring
+@{
+    ViewData["Title"] = "Server holati";
+    ViewData["Robots"] = "noindex, nofollow";
+    var serverSnapshot = ViewData["ServerSnapshot"] as ServerSnapshot;
+}
+
+<div class="container page">
+    <div class="admin-head">
+        <a href="/admin" class="muted" style="display:inline-flex; align-items:center; gap:6px; margin-bottom:10px; font-size:14px">
+            <span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>
+            Admin panel
+        </a>
+        <h1>Server holati</h1>
+    </div>
+
+    @if (serverSnapshot == null)
+    {
+        <div class="card" style="margin-bottom:18px; padding:16px; display:flex; align-items:center; gap:10px">
+            <span class="material-symbols-outlined" style="font-size:20px">hourglass_top</span>
+            <span class="muted">Server metrikalari yig'ilmoqda — bir necha soniyadan so'ng sahifani yangilang.</span>
+        </div>
+    }
+
+    @if (serverSnapshot != null)
+    {
+        var bannerClass = serverSnapshot.OverallRisk switch
+        {
+            RiskLevel.Critical => "risk-banner risk-critical",
+            RiskLevel.Warning => "risk-banner risk-warning",
+            _ => "risk-banner risk-ok"
+        };
+        var activeRisks = serverSnapshot.Risks.Where(r => r.Severity != RiskLevel.Ok).ToList();
+        var bannerText = serverSnapshot.OverallRisk switch
+        {
+            RiskLevel.Critical => $"Jiddiy muammo — {activeRisks.Count} ta xavf aniqlandi",
+            RiskLevel.Warning => $"{activeRisks.Count} ta ogohlantirish",
+            _ => "Tizim barqaror — muammolar yo'q"
+        };
+        var bannerIcon = serverSnapshot.OverallRisk switch
+        {
+            RiskLevel.Critical => "error",
+            RiskLevel.Warning => "warning",
+            _ => "check_circle"
+        };
+
+        <div class="@bannerClass" style="margin-bottom:18px; padding:14px 18px; border-radius:14px; display:flex; align-items:center; gap:10px">
+            <span class="material-symbols-outlined">@bannerIcon</span>
+            <strong>@bannerText</strong>
+        </div>
+
+        @if (activeRisks.Count > 0)
+        {
+            <div class="card" style="margin-bottom:18px; padding:16px">
+                <h2 style="margin:0 0 12px 0; font-size:16px; display:flex; align-items:center; gap:8px">
+                    <span class="material-symbols-outlined" style="font-size:20px">gpp_maybe</span>
+                    Xavf-xatarlar
+                </h2>
+                <div style="display:flex; flex-direction:column; gap:8px">
+                    @foreach (var risk in activeRisks)
+                    {
+                        var dot = risk.Severity == RiskLevel.Critical ? "status-error" : "status-warn";
+                        <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
+                            <span class="status-dot @dot" style="margin-top:3px; width:10px; height:10px; border-radius:50%; flex-shrink:0"></span>
+                            <div>
+                                <strong style="display:block">@risk.Title</strong>
+                                <span class="muted" style="font-size:13px">@risk.Detail</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="card admin-server-status" style="margin-bottom:18px; padding:20px">
+            <h2 style="margin:0 0 16px 0; font-size:18px; display:flex; align-items:center; gap:8px">
+                <span class="material-symbols-outlined" style="font-size:22px">monitoring</span>
+                Server holati
+            </h2>
+            <div class="status-grid">
+                <!-- Database -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Database.Up ? "status-ok" : "status-error")">
+                        <span class="material-symbols-outlined">storage</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Ma'lumotlar bazasi</div>
+                        <div class="status-value">@(serverSnapshot.Database.Up ? "Faol" : "Ulanmagan")</div>
+                        @if (serverSnapshot.Database.Up)
+                        {
+                            <div class="status-detail">Ping: @serverSnapshot.Database.PingMs.ToString("0.0") ms</div>
+                            <div class="status-detail">Ulanishlar: @serverSnapshot.Database.ActiveConnections</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Redis -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Redis.Up ? "status-ok" : serverSnapshot.Redis.Configured ? "status-error" : "status-warn")">
+                        <span class="material-symbols-outlined">memory</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Redis (kesh)</div>
+                        <div class="status-value">
+                            @if (!serverSnapshot.Redis.Configured)
+                            {
+                                <span>Sozlanmagan</span>
+                            }
+                            else if (serverSnapshot.Redis.Up)
+                            {
+                                <span>Faol</span>
+                            }
+                            else
+                            {
+                                <span>Ulanmagan</span>
+                            }
+                        </div>
+                        @if (serverSnapshot.Redis.Up)
+                        {
+                            <div class="status-detail">Ping: @serverSnapshot.Redis.PingMs.ToString("0.0") ms</div>
+                            <div class="status-detail">Xotira: @serverSnapshot.Redis.UsedMemory</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- CPU & RAM -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.System.CpuPercent < 80 ? "status-ok" : "status-warn")">
+                        <span class="material-symbols-outlined">speed</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">CPU va xotira</div>
+                        <div class="status-value">CPU: @serverSnapshot.System.CpuPercent.ToString("0.0")%</div>
+                        <div class="status-detail">RAM: @serverSnapshot.System.WorkingSetMb MB</div>
+                        <div class="status-detail">Managed: @serverSnapshot.System.ManagedHeapMb MB</div>
+                    </div>
+                </div>
+
+                <!-- Realtime -->
+                <div class="status-card">
+                    <div class="status-icon status-ok">
+                        <span class="material-symbols-outlined">hub</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Real-time (SignalR)</div>
+                        <div class="status-value">@serverSnapshot.Realtime.OnlineUsers ta onlayn</div>
+                        <div class="status-detail">Ulanishlar: @serverSnapshot.Realtime.ActiveConnections</div>
+                    </div>
+                </div>
+
+                <!-- HTTP traffic -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Http.ErrorRate5xxPercent < 1 ? "status-ok" : "status-warn")">
+                        <span class="material-symbols-outlined">traffic</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">HTTP trafik</div>
+                        <div class="status-value">@serverSnapshot.Http.RequestsPerSecond.ToString("0.0") so'rov/s</div>
+                        <div class="status-detail">O'rtacha: @serverSnapshot.Http.AvgResponseMs.ToString("0") ms | p95: @serverSnapshot.Http.P95ResponseMs.ToString("0") ms</div>
+                        <div class="status-detail">
+                            5xx: @serverSnapshot.Http.ErrorRate5xxPercent.ToString("0.0")% |
+                            429/daq: @serverSnapshot.Http.RateLimitedPerMinute
+                        </div>
+                        <div class="status-detail">Jami so'rovlar: @serverSnapshot.Http.TotalRequests</div>
+                    </div>
+                </div>
+
+                <!-- Hangfire -->
+                @if (serverSnapshot.Hangfire.Available)
+                {
+                    <div class="status-card">
+                        <div class="status-icon @(serverSnapshot.Hangfire.Failed > 0 ? "status-warn" : "status-ok")">
+                            <span class="material-symbols-outlined">schedule</span>
+                        </div>
+                        <div class="status-info">
+                            <div class="status-label">Hangfire (fon vazifalari)</div>
+                            <div class="status-value">@serverSnapshot.Hangfire.Enqueued navbatda</div>
+                            <div class="status-detail">Muvaffaqiyatli: @serverSnapshot.Hangfire.Succeeded</div>
+                            @if (serverSnapshot.Hangfire.Failed > 0)
+                            {
+                                <div class="status-detail status-error-text">Xato: @serverSnapshot.Hangfire.Failed</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Disk -->
+                <div class="status-card">
+                    <div class="status-icon @(serverSnapshot.Disk.FreePercent > 20 ? "status-ok" : "status-warn")">
+                        <span class="material-symbols-outlined">hard_drive</span>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-label">Disk</div>
+                        <div class="status-value">Bo'sh: @serverSnapshot.Disk.FreePercent.ToString("0.0")%</div>
+                        <div class="status-detail">Yuklangan fayllar: @serverSnapshot.Disk.UploadsSizeMb MB</div>
+                        <div class="status-detail">Bo'sh joy: @serverSnapshot.Disk.DriveFreeMb MB</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (serverSnapshot.Http.TopEndpoints.Any())
+            {
+                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color)">
+                    <div class="status-label" style="margin-bottom:8px">Eng band endpointlar</div>
+                    <div style="display:flex; flex-direction:column; gap:6px">
+                        @foreach (var ep in serverSnapshot.Http.TopEndpoints)
+                        {
+                            <div style="display:flex; justify-content:space-between; gap:12px; font-size:13px">
+                                <code style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">@ep.Path</code>
+                                <span class="muted" style="flex-shrink:0">@ep.Count ta · @ep.AvgMs.ToString("0") ms</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color); font-size:13px; color:var(--text-muted)">
+                <strong>Tizim:</strong> @serverSnapshot.System.OsDescription |
+                <strong>Uptime:</strong> @serverSnapshot.System.Uptime |
+                <strong>.NET:</strong> @serverSnapshot.System.DotNetVersion |
+                <strong>Oxirgi yangilanish:</strong> @serverSnapshot.Timestamp.ToString("HH:mm:ss")
+            </div>
+        </div>
+    }
+</div>

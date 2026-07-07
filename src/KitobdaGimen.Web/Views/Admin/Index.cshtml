@@ -1,13 +1,11 @@
-@using KitobdaGimen.Application.Features.Admin.Dtos
-@using KitobdaGimen.Application.Features.Admin.Monitoring
 @using KitobdaGimen.Domain.Enums
-@model IReadOnlyList<AdminUserDto>
 @{
     ViewData["Title"] = "Admin panel";
     ViewData["Robots"] = "noindex, nofollow";
     var myRole = (UserRole)(ViewData["MyRole"] ?? UserRole.User);
     var isSuper = myRole == UserRole.SuperAdmin;
-    var serverSnapshot = ViewData["ServerSnapshot"] as ServerSnapshot;
+    var userCount = (int)(ViewData["UserCount"] ?? 0);
+    var bgVideoUrl = ViewData["BackgroundVideoUrl"] as string;
 
     string RoleLabel(UserRole r) => r switch
     {
@@ -15,18 +13,12 @@
         UserRole.Admin => "Admin",
         _ => "Foydalanuvchi"
     };
-    string RoleClass(UserRole r) => r switch
-    {
-        UserRole.SuperAdmin => "role-super",
-        UserRole.Admin => "role-admin",
-        _ => "role-user"
-    };
 }
 
 <div class="container page">
     <div class="admin-head">
         <h1>Admin panel</h1>
-        <p class="muted">Jami @Model.Count foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
+        <p class="muted">Jami @userCount foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
         @if (isSuper)
         {
             <a href="/admin/analytics" class="btn btn-primary" style="margin-top:10px; display:inline-flex; align-items:center; gap:8px">
@@ -42,403 +34,81 @@
 
     @if (isSuper)
     {
-        var yrReportYear = (int)(ViewData["YrReportYear"] ?? 0);
-        var yrPublished = (bool)(ViewData["YrPublished"] ?? false);
-        <div class="card" style="margin-bottom:18px; padding:18px" data-yr-report-year="@yrReportYear">
+        <div class="card" style="margin-bottom:18px; padding:18px">
             <h2 style="margin:0 0 8px 0; font-size:18px; display:flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined" style="font-size:22px">campaign</span>
-                Yillik kitob yakunini yuborish
+                <span class="material-symbols-outlined" style="font-size:22px">movie</span>
+                Fon video (barcha sahifalar va landing uchun)
             </h2>
             <p class="muted" style="font-size:13px; margin:0 0 14px 0; line-height:1.5">
-                <strong>@yrReportYear-yil</strong> yakuni. Uni <strong>faqat super admin</strong> yuboradi
-                (odatda <strong>20-dekabr</strong> kuni). Yuborilgach, barcha foydalanuvchilar saytga
-                kirganda hisobot kartochkasi avtomatik ko'rinadi. Bu tugma avtomatik tizimdan
-                mustaqil — agar boshqa narsa ishlamay qolsa ham, shu yerdan qo'lda yuborasiz.
+                Bu yerda yuklagan video <strong>barcha foydalanuvchilarga va landing sahifasiga</strong> fon
+                sifatida qo'llanadi. .mp4, .webm, .mov, .mkv, .ogg, .avi formatlari qabul qilinadi
+                (hajmi 150 MB dan oshmasin).
             </p>
+
+            <video id="bgVideoPreview" muted loop playsinline autoplay
+                   style="width:100%; max-width:420px; border-radius:12px; border:1px solid var(--border); display:block; margin-bottom:14px">
+                <source id="bgVideoPreviewSource" src="@(bgVideoUrl ?? "/videos/book.mp4")" type="video/mp4" />
+            </video>
 
             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-                <span id="yrStatusBadge" class="role-badge @(yrPublished ? "role-super" : "role-user")">
-                    @(yrPublished ? $"Yuborilgan ({yrReportYear})" : "Yuborilmagan")
-                </span>
-                <button type="button" id="yrPublishBtn" class="btn btn-primary btn-sm"
-                        style="@(yrPublished ? "display:none" : "")">
-                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">send</span>
-                    Hisobotni yuborish
-                </button>
-                <button type="button" id="yrUnpublishBtn" class="btn btn-outline btn-sm"
-                        style="@(yrPublished ? "" : "display:none")">
-                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">unpublished</span>
-                    To'xtatish
+                <label class="btn btn-outline btn-sm" for="bgVideoInput">
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">upload</span>
+                    Video tanlash
+                </label>
+                <input type="file" id="bgVideoInput" accept="video/*,.mp4,.webm,.mov,.mkv,.ogg,.ogv,.avi" hidden />
+                <span id="bgVideoFileName" class="muted" style="font-size:13px"></span>
+                <button type="button" id="bgVideoUploadBtn" class="btn btn-primary btn-sm" disabled>
+                    <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">cloud_upload</span>
+                    Yuklash
                 </button>
             </div>
-            <div id="yrStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
+            <div id="bgVideoStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
         </div>
+    }
 
-        <div class="card" style="margin-bottom:18px; padding:18px">
-            <h2 style="margin:0 0 8px 0; font-size:18px; display:flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined" style="font-size:22px">campaign</span>
-                Barcha foydalanuvchilarga xabar (broadcast)
-            </h2>
-            <p class="muted" style="font-size:13px; margin:0 0 14px 0; line-height:1.5">
-                Sarlavha va matn yozing — <strong>barcha foydalanuvchilarga</strong> darhol bildirishnoma
-                sifatida yuboriladi (onlayn foydalanuvchilar refreshsiz, real-time ko'radi). Havola qo'shsangiz,
-                bildirishnomada tugma bo'lib chiqadi va bosilganda o'sha manzilga o'tadi.
-            </p>
+    <div class="admin-hub-grid">
+        <a class="admin-hub-tile" href="/admin/allusers">
+            <span class="status-icon status-ok"><span class="material-symbols-outlined">group</span></span>
+            <div>
+                <div class="admin-hub-tile-label">Foydalanuvchilar</div>
+                <div class="admin-hub-tile-desc">Ro'yxat, rol va o'chirish</div>
+            </div>
+        </a>
 
-            <form id="broadcastForm" style="display:grid; gap:10px; max-width:560px">
-                <input type="text" id="bcTitle" name="Title" maxlength="150" required
-                       placeholder="Sarlavha (masalan: Yangi kitoblar qo'shildi!)"
-                       class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px" />
-                <textarea id="bcMessage" name="Message" maxlength="300" required rows="3"
-                          placeholder="Xabar matni…"
-                          class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px; resize:vertical"></textarea>
-                <input type="url" id="bcUrl" name="Url"
-                       placeholder="Havola (ixtiyoriy) — masalan: https://kitobdagimen.uz/kitoblar"
-                       class="input" style="padding:10px 12px; border:1px solid var(--border,#d0d0d0); border-radius:8px; font-size:14px" />
+        <a class="admin-hub-tile" href="/admin/server-status">
+            <span class="status-icon status-ok"><span class="material-symbols-outlined">monitoring</span></span>
+            <div>
+                <div class="admin-hub-tile-label">Server holati</div>
+                <div class="admin-hub-tile-desc">CPU, DB, Redis, HTTP trafik</div>
+            </div>
+        </a>
+
+        @if (isSuper)
+        {
+            <a class="admin-hub-tile" href="/admin/year-review">
+                <span class="status-icon status-ok"><span class="material-symbols-outlined">campaign</span></span>
                 <div>
-                    <button type="submit" id="bcSubmit" class="btn btn-primary btn-sm">
-                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">send</span>
-                        Barchaga yuborish
-                    </button>
+                    <div class="admin-hub-tile-label">Yillik kitob</div>
+                    <div class="admin-hub-tile-desc">Yillik yakunni yuborish</div>
                 </div>
-            </form>
-            <div id="bcStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
-        </div>
-    }
+            </a>
 
-    @if (serverSnapshot == null)
-    {
-        <div class="card" style="margin-bottom:18px; padding:16px; display:flex; align-items:center; gap:10px">
-            <span class="material-symbols-outlined" style="font-size:20px">hourglass_top</span>
-            <span class="muted">Server metrikalari yig'ilmoqda — bir necha soniyadan so'ng sahifani yangilang.</span>
-        </div>
-    }
-
-    @if (serverSnapshot != null)
-    {
-        var bannerClass = serverSnapshot.OverallRisk switch
-        {
-            RiskLevel.Critical => "risk-banner risk-critical",
-            RiskLevel.Warning => "risk-banner risk-warning",
-            _ => "risk-banner risk-ok"
-        };
-        var activeRisks = serverSnapshot.Risks.Where(r => r.Severity != RiskLevel.Ok).ToList();
-        var bannerText = serverSnapshot.OverallRisk switch
-        {
-            RiskLevel.Critical => $"Jiddiy muammo — {activeRisks.Count} ta xavf aniqlandi",
-            RiskLevel.Warning => $"{activeRisks.Count} ta ogohlantirish",
-            _ => "Tizim barqaror — muammolar yo'q"
-        };
-        var bannerIcon = serverSnapshot.OverallRisk switch
-        {
-            RiskLevel.Critical => "error",
-            RiskLevel.Warning => "warning",
-            _ => "check_circle"
-        };
-
-        <div class="@bannerClass" style="margin-bottom:18px; padding:14px 18px; border-radius:14px; display:flex; align-items:center; gap:10px">
-            <span class="material-symbols-outlined">@bannerIcon</span>
-            <strong>@bannerText</strong>
-        </div>
-
-        @if (activeRisks.Count > 0)
-        {
-            <div class="card" style="margin-bottom:18px; padding:16px">
-                <h2 style="margin:0 0 12px 0; font-size:16px; display:flex; align-items:center; gap:8px">
-                    <span class="material-symbols-outlined" style="font-size:20px">gpp_maybe</span>
-                    Xavf-xatarlar
-                </h2>
-                <div style="display:flex; flex-direction:column; gap:8px">
-                    @foreach (var risk in activeRisks)
-                    {
-                        var dot = risk.Severity == RiskLevel.Critical ? "status-error" : "status-warn";
-                        <div style="display:flex; align-items:flex-start; gap:10px; padding:10px 12px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
-                            <span class="status-dot @dot" style="margin-top:3px; width:10px; height:10px; border-radius:50%; flex-shrink:0"></span>
-                            <div>
-                                <strong style="display:block">@risk.Title</strong>
-                                <span class="muted" style="font-size:13px">@risk.Detail</span>
-                            </div>
-                        </div>
-                    }
+            <a class="admin-hub-tile" href="/admin/broadcast">
+                <span class="status-icon status-ok"><span class="material-symbols-outlined">forum</span></span>
+                <div>
+                    <div class="admin-hub-tile-label">Broadcast</div>
+                    <div class="admin-hub-tile-desc">Barchaga xabar yuborish</div>
                 </div>
-            </div>
+            </a>
+
+            <a class="admin-hub-tile" href="/admin/settings">
+                <span class="status-icon status-ok"><span class="material-symbols-outlined">settings</span></span>
+                <div>
+                    <div class="admin-hub-tile-label">Tizim sozlamalari</div>
+                    <div class="admin-hub-tile-desc">Kesh, muqovalar, statistika</div>
+                </div>
+            </a>
         }
-
-        <div class="card admin-server-status" style="margin-bottom:18px; padding:20px">
-            <h2 style="margin:0 0 16px 0; font-size:18px; display:flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined" style="font-size:22px">monitoring</span>
-                Server holati
-            </h2>
-            <div class="status-grid">
-                <!-- Database -->
-                <div class="status-card">
-                    <div class="status-icon @(serverSnapshot.Database.Up ? "status-ok" : "status-error")">
-                        <span class="material-symbols-outlined">storage</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">Ma'lumotlar bazasi</div>
-                        <div class="status-value">@(serverSnapshot.Database.Up ? "Faol" : "Ulanmagan")</div>
-                        @if (serverSnapshot.Database.Up)
-                        {
-                            <div class="status-detail">Ping: @serverSnapshot.Database.PingMs.ToString("0.0") ms</div>
-                            <div class="status-detail">Ulanishlar: @serverSnapshot.Database.ActiveConnections</div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Redis -->
-                <div class="status-card">
-                    <div class="status-icon @(serverSnapshot.Redis.Up ? "status-ok" : serverSnapshot.Redis.Configured ? "status-error" : "status-warn")">
-                        <span class="material-symbols-outlined">memory</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">Redis (kesh)</div>
-                        <div class="status-value">
-                            @if (!serverSnapshot.Redis.Configured)
-                            {
-                                <span>Sozlanmagan</span>
-                            }
-                            else if (serverSnapshot.Redis.Up)
-                            {
-                                <span>Faol</span>
-                            }
-                            else
-                            {
-                                <span>Ulanmagan</span>
-                            }
-                        </div>
-                        @if (serverSnapshot.Redis.Up)
-                        {
-                            <div class="status-detail">Ping: @serverSnapshot.Redis.PingMs.ToString("0.0") ms</div>
-                            <div class="status-detail">Xotira: @serverSnapshot.Redis.UsedMemory</div>
-                        }
-                    </div>
-                </div>
-
-                <!-- CPU & RAM -->
-                <div class="status-card">
-                    <div class="status-icon @(serverSnapshot.System.CpuPercent < 80 ? "status-ok" : "status-warn")">
-                        <span class="material-symbols-outlined">speed</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">CPU va xotira</div>
-                        <div class="status-value">CPU: @serverSnapshot.System.CpuPercent.ToString("0.0")%</div>
-                        <div class="status-detail">RAM: @serverSnapshot.System.WorkingSetMb MB</div>
-                        <div class="status-detail">Managed: @serverSnapshot.System.ManagedHeapMb MB</div>
-                    </div>
-                </div>
-
-                <!-- Realtime -->
-                <div class="status-card">
-                    <div class="status-icon status-ok">
-                        <span class="material-symbols-outlined">hub</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">Real-time (SignalR)</div>
-                        <div class="status-value">@serverSnapshot.Realtime.OnlineUsers ta onlayn</div>
-                        <div class="status-detail">Ulanishlar: @serverSnapshot.Realtime.ActiveConnections</div>
-                    </div>
-                </div>
-
-                <!-- HTTP traffic -->
-                <div class="status-card">
-                    <div class="status-icon @(serverSnapshot.Http.ErrorRate5xxPercent < 1 ? "status-ok" : "status-warn")">
-                        <span class="material-symbols-outlined">traffic</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">HTTP trafik</div>
-                        <div class="status-value">@serverSnapshot.Http.RequestsPerSecond.ToString("0.0") so'rov/s</div>
-                        <div class="status-detail">O'rtacha: @serverSnapshot.Http.AvgResponseMs.ToString("0") ms | p95: @serverSnapshot.Http.P95ResponseMs.ToString("0") ms</div>
-                        <div class="status-detail">
-                            5xx: @serverSnapshot.Http.ErrorRate5xxPercent.ToString("0.0")% |
-                            429/daq: @serverSnapshot.Http.RateLimitedPerMinute
-                        </div>
-                        <div class="status-detail">Jami so'rovlar: @serverSnapshot.Http.TotalRequests</div>
-                    </div>
-                </div>
-
-                <!-- Hangfire -->
-                @if (serverSnapshot.Hangfire.Available)
-                {
-                    <div class="status-card">
-                        <div class="status-icon @(serverSnapshot.Hangfire.Failed > 0 ? "status-warn" : "status-ok")">
-                            <span class="material-symbols-outlined">schedule</span>
-                        </div>
-                        <div class="status-info">
-                            <div class="status-label">Hangfire (fon vazifalari)</div>
-                            <div class="status-value">@serverSnapshot.Hangfire.Enqueued navbatda</div>
-                            <div class="status-detail">Muvaffaqiyatli: @serverSnapshot.Hangfire.Succeeded</div>
-                            @if (serverSnapshot.Hangfire.Failed > 0)
-                            {
-                                <div class="status-detail status-error-text">Xato: @serverSnapshot.Hangfire.Failed</div>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <!-- Disk -->
-                <div class="status-card">
-                    <div class="status-icon @(serverSnapshot.Disk.FreePercent > 20 ? "status-ok" : "status-warn")">
-                        <span class="material-symbols-outlined">hard_drive</span>
-                    </div>
-                    <div class="status-info">
-                        <div class="status-label">Disk</div>
-                        <div class="status-value">Bo'sh: @serverSnapshot.Disk.FreePercent.ToString("0.0")%</div>
-                        <div class="status-detail">Yuklangan fayllar: @serverSnapshot.Disk.UploadsSizeMb MB</div>
-                        <div class="status-detail">Bo'sh joy: @serverSnapshot.Disk.DriveFreeMb MB</div>
-                    </div>
-                </div>
-            </div>
-
-            @if (serverSnapshot.Http.TopEndpoints.Any())
-            {
-                <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color)">
-                    <div class="status-label" style="margin-bottom:8px">Eng band endpointlar</div>
-                    <div style="display:flex; flex-direction:column; gap:6px">
-                        @foreach (var ep in serverSnapshot.Http.TopEndpoints)
-                        {
-                            <div style="display:flex; justify-content:space-between; gap:12px; font-size:13px">
-                                <code style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap">@ep.Path</code>
-                                <span class="muted" style="flex-shrink:0">@ep.Count ta · @ep.AvgMs.ToString("0") ms</span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
-
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color); font-size:13px; color:var(--text-muted)">
-                <strong>Tizim:</strong> @serverSnapshot.System.OsDescription |
-                <strong>Uptime:</strong> @serverSnapshot.System.Uptime |
-                <strong>.NET:</strong> @serverSnapshot.System.DotNetVersion |
-                <strong>Oxirgi yangilanish:</strong> @serverSnapshot.Timestamp.ToString("HH:mm:ss")
-            </div>
-        </div>
-    }
-
-    @if (isSuper)
-    {
-        <div class="card" style="margin-bottom:18px; padding:18px">
-            <h2 style="margin:0 0 16px 0; font-size:18px; display:flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined" style="font-size:22px">settings</span>
-                Tizim sozlamalari
-            </h2>
-            
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px">
-                <!-- Keshni tozalash -->
-                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
-                    <div style="flex:1; min-width:0">
-                        <strong style="display:block; margin-bottom:4px">Redis keshlarini tozalash</strong>
-                        <div class="muted" style="font-size:13px">Barcha keshlangan ma'lumotlar (feed, profillar, kitoblar) tozalanadi.</div>
-                    </div>
-                    <button type="button" id="clearCacheBtn" class="btn btn-danger btn-sm" style="flex-shrink:0">
-                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">delete_sweep</span>
-                        Tozalash
-                    </button>
-                </div>
-
-                <!-- Muqovalarni tiklash -->
-                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
-                    <div style="flex:1; min-width:0">
-                        <strong style="display:block; margin-bottom:4px">Kitob muqovalarini tiklash</strong>
-                        <div class="muted" style="font-size:13px">Yo'qolgan muqovalar asaxiy.uz dan qayta yuklanadi.</div>
-                    </div>
-                    <button type="button" id="refreshCoversBtn" class="btn btn-primary btn-sm" style="flex-shrink:0">
-                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">image</span>
-                        Tiklash
-                    </button>
-                </div>
-
-                <!-- Landing statistikasi -->
-                <div style="display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg); border-radius:10px; border:1px solid var(--border)">
-                    <div style="flex:1; min-width:0">
-                        <strong style="display:block; margin-bottom:4px">Landing statistikasini yangilash</strong>
-                        <div class="muted" style="font-size:13px">Bosh sahifadagi kitobxonlar / kitoblar / betlar soni har kuni o'zi yangilanadi; yangilanmay qolsa shu yerdan majburan yangilang.</div>
-                    </div>
-                    <button type="button" id="refreshLandingStatsBtn" class="btn btn-primary btn-sm" style="flex-shrink:0">
-                        <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">monitoring</span>
-                        Yangilash
-                    </button>
-                </div>
-            </div>
-
-            <div id="settingsStatus" class="muted" style="font-size:13px; margin-top:12px; min-height:20px"></div>
-        </div>
-    }
-
-    <div class="card admin-card">
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Foydalanuvchi</th>
-                        <th>Rol</th>
-                        <th>Ro'yxatdan o'tgan</th>
-                        <th>Oxirgi kirgan</th>
-                        <th>Post / Iqtibos</th>
-                        <th>Amallar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var u in Model)
-                    {
-                        <tr>
-                            <td>
-                                <div class="admin-user">
-                                    @if (!string.IsNullOrEmpty(u.AvatarUrl))
-                                    {
-                                        <img class="avatar sm" src="@u.AvatarUrl" alt="@u.FullName" referrerpolicy="no-referrer" />
-                                    }
-                                    else
-                                    {
-                                        <span class="avatar sm">@KitobdaGimen.Web.ViewHelpers.Initial(u.FullName)</span>
-                                    }
-                                    <div class="admin-user-meta">
-                                        <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(u.Username, u.Id)">@u.FullName</a>
-                                        <span class="muted">@u.Email</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="role-badge @RoleClass(u.Role)">@RoleLabel(u.Role)</span></td>
-                            <td class="admin-time">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.CreatedAt)</td>
-                            <td class="admin-time">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.LastSeenAt)</td>
-                            <td>@u.PostCount / @u.QuoteCount</td>
-                            <td>
-                                @if (isSuper && u.Role != UserRole.SuperAdmin)
-                                {
-                                    <div class="admin-actions">
-                                        @if (u.Role == UserRole.Admin)
-                                        {
-                                            <form method="post" action="/admin/users/@u.Id/role" style="display:inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="makeAdmin" value="false" />
-                                                <button type="submit" class="btn btn-outline btn-sm">Adminlikdan olish</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form method="post" action="/admin/users/@u.Id/role" style="display:inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="makeAdmin" value="true" />
-                                                <button type="submit" class="btn btn-primary btn-sm">Admin qilish</button>
-                                            </form>
-                                        }
-                                        <form method="post" action="/admin/users/@u.Id/delete" style="display:inline"
-                                              onsubmit="return confirm('@u.FullName ni va uning barcha kontentini butunlay o\'chirishni tasdiqlaysizmi?');">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-danger btn-sm">O'chirish</button>
-                                        </form>
-                                    </div>
-                                }
-                                else if (u.Role == UserRole.SuperAdmin)
-                                {
-                                    <span class="muted">—</span>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <p class="muted admin-note">
@@ -452,174 +122,55 @@
 <script>
 (function () {
     function token() { var el = document.querySelector('input[name="__RequestVerificationToken"]'); return el ? el.value : ''; }
-    var status = document.getElementById("settingsStatus");
-    
-    // Keshni tozalash
-    var clearCacheBtn = document.getElementById("clearCacheBtn");
-    if (clearCacheBtn) {
-        clearCacheBtn.addEventListener("click", async function () {
-            if (!confirm("Barcha keshlarni tozalashni tasdiqlaysizmi? Bu sahifalar sekinroq yuklanishiga olib kelishi mumkin.")) {
-                return;
-            }
-            clearCacheBtn.disabled = true;
-            status.textContent = "Tozalanmoqda...";
-            try {
-                var r = await fetch("/admin/clear-cache", {
-                    method: "POST",
-                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
-                });
-                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
-                var d = await r.json();
-                status.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
-            } catch (e) {
-                status.textContent = "✗ Xato: " + e.message;
-            } finally {
-                clearCacheBtn.disabled = false;
-            }
-        });
-    }
 
-    // Muqovalarni tiklash
-    var refreshCoversBtn = document.getElementById("refreshCoversBtn");
-    if (refreshCoversBtn) {
-        refreshCoversBtn.addEventListener("click", async function () {
-            refreshCoversBtn.disabled = true;
-            status.textContent = "Tiklanmoqda... (biroz vaqt oladi)";
-            try {
-                var r = await fetch("/admin/refresh-covers", {
-                    method: "POST",
-                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
-                });
-                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
-                var d = await r.json();
-                status.textContent = "✓ Tiklandi: " + d.fixedCount + " ta. Qolgan: " + d.remaining +
-                    ". Jami asaxiy kitoblar: " + d.totalAsaxiy + ".";
-                if (d.fixedCount > 0) setTimeout(function () { location.reload(); }, 1500);
-            } catch (e) {
-                status.textContent = "✗ Xato: " + e.message;
-            } finally {
-                refreshCoversBtn.disabled = false;
-            }
-        });
-    }
-    // Landing statistikasini majburan yangilash (faqat super admin)
-    var refreshLandingStatsBtn = document.getElementById("refreshLandingStatsBtn");
-    if (refreshLandingStatsBtn) {
-        refreshLandingStatsBtn.addEventListener("click", async function () {
-            refreshLandingStatsBtn.disabled = true;
-            status.textContent = "Statistika qayta hisoblanmoqda...";
-            try {
-                var r = await fetch("/admin/landing-stats/refresh", {
-                    method: "POST",
-                    headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
-                });
-                if (!r.ok) throw new Error("Xatolik (" + r.status + ")");
-                var d = await r.json();
-                status.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
-            } catch (e) {
-                status.textContent = "✗ Xato: " + e.message;
-            } finally {
-                refreshLandingStatsBtn.disabled = false;
-            }
-        });
-    }
+    var fileInput = document.getElementById("bgVideoInput");
+    var uploadBtn = document.getElementById("bgVideoUploadBtn");
+    var fileNameEl = document.getElementById("bgVideoFileName");
+    var statusEl = document.getElementById("bgVideoStatus");
+    var preview = document.getElementById("bgVideoPreview");
+    var previewSource = document.getElementById("bgVideoPreviewSource");
+    if (!fileInput || !uploadBtn) { return; }
 
-    // Yillik yakunni yuborish / to'xtatish (faqat super admin)
-    var yrPublishBtn = document.getElementById("yrPublishBtn");
-    var yrUnpublishBtn = document.getElementById("yrUnpublishBtn");
-    var yrStatus = document.getElementById("yrStatus");
-    var yrBadge = document.getElementById("yrStatusBadge");
+    var extToType = { mp4: "video/mp4", webm: "video/webm", ogg: "video/ogg", ogv: "video/ogg",
+        mov: "video/quicktime", mkv: "video/x-matroska", avi: "video/x-msvideo" };
 
-    function yrPost(url, btn, confirmMsg, onOk) {
-        if (confirmMsg && !confirm(confirmMsg)) { return; }
-        if (btn) { btn.disabled = true; }
-        if (yrStatus) { yrStatus.textContent = "Bajarilmoqda..."; }
-        fetch(url, {
-            method: "POST",
-            headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" }
-        }).then(function (r) {
-            if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
-            return r.json();
-        }).then(function (d) {
-            if (yrStatus) { yrStatus.textContent = (d.success ? "✓ " : "✗ ") + (d.message || ""); }
-            if (d.success && typeof onOk === "function") { onOk(d); }
-        }).catch(function (e) {
-            if (yrStatus) { yrStatus.textContent = "✗ Xato: " + e.message; }
-        }).finally(function () {
-            if (btn) { btn.disabled = false; }
-        });
-    }
+    fileInput.addEventListener("change", function () {
+        var f = fileInput.files && fileInput.files[0];
+        fileNameEl.textContent = f ? f.name : "";
+        uploadBtn.disabled = !f;
+    });
 
-    if (yrPublishBtn) {
-        yrPublishBtn.addEventListener("click", function () {
-            yrPost("/admin/year-review/publish", yrPublishBtn,
-                "Yillik yakunni HOZIR barcha foydalanuvchilarga yuborishni tasdiqlaysizmi?",
-                function (d) {
-                    yrPublishBtn.style.display = "none";
-                    if (yrUnpublishBtn) { yrUnpublishBtn.style.display = ""; }
-                    if (yrBadge) {
-                        yrBadge.textContent = "Yuborilgan (" + d.year + ")";
-                        yrBadge.className = "role-badge role-super";
-                    }
-                });
-        });
-    }
-
-    if (yrUnpublishBtn) {
-        yrUnpublishBtn.addEventListener("click", function () {
-            yrPost("/admin/year-review/unpublish", yrUnpublishBtn,
-                "Yillik yakunni to'xtatishni tasdiqlaysizmi? Foydalanuvchilarga ko'rinmay qoladi.",
-                function () {
-                    yrUnpublishBtn.style.display = "none";
-                    if (yrPublishBtn) { yrPublishBtn.style.display = ""; }
-                    if (yrBadge) {
-                        yrBadge.textContent = "Yuborilmagan";
-                        yrBadge.className = "role-badge role-user";
-                    }
-                });
-        });
-    }
-
-    // Broadcast — barcha foydalanuvchilarga xabar yuborish (faqat super admin)
-    var bcForm = document.getElementById("broadcastForm");
-    if (bcForm) {
-        var bcSubmit = document.getElementById("bcSubmit");
-        var bcStatus = document.getElementById("bcStatus");
-        var bcTitle = document.getElementById("bcTitle");
-        var bcMessage = document.getElementById("bcMessage");
-        var bcUrl = document.getElementById("bcUrl");
-        bcForm.addEventListener("submit", function (e) {
-            e.preventDefault();
-            var title = (bcTitle.value || "").trim();
-            var message = (bcMessage.value || "").trim();
-            if (!title || !message) {
-                bcStatus.textContent = "✗ Sarlavha va matn to'ldirilishi shart.";
-                return;
-            }
-            if (!confirm("Bu xabar BARCHA foydalanuvchilarga yuboriladi. Tasdiqlaysizmi?")) { return; }
+    uploadBtn.addEventListener("click", async function () {
+        var f = fileInput.files && fileInput.files[0];
+        if (!f) { return; }
+        uploadBtn.disabled = true;
+        statusEl.textContent = "Yuklanmoqda... (video hajmiga qarab biroz vaqt olishi mumkin)";
+        try {
             var fd = new FormData();
-            fd.append("Title", title);
-            fd.append("Message", message);
-            fd.append("Url", (bcUrl.value || "").trim());
-            bcSubmit.disabled = true;
-            bcStatus.textContent = "Yuborilmoqda...";
-            fetch("/admin/broadcast", {
+            fd.append("file", f);
+            var r = await fetch("/admin/background-video/upload", {
                 method: "POST",
                 headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" },
                 body: fd
-            }).then(function (r) {
-                if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
-                return r.json();
-            }).then(function (d) {
-                bcStatus.textContent = (d.success ? "✓ " : "✗ ") + (d.message || "");
-                if (d.success) { bcForm.reset(); }
-            }).catch(function (e) {
-                bcStatus.textContent = "✗ Xato: " + e.message;
-            }).finally(function () {
-                bcSubmit.disabled = false;
             });
-        });
-    }
+            if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
+            var d = await r.json();
+            statusEl.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
+            if (d.success && d.url) {
+                var ext = (d.url.split(".").pop() || "").toLowerCase();
+                previewSource.src = d.url;
+                previewSource.type = extToType[ext] || "video/mp4";
+                preview.load();
+                preview.play().catch(function () {});
+                fileInput.value = "";
+                fileNameEl.textContent = "";
+            }
+        } catch (e) {
+            statusEl.textContent = "✗ Xato: " + e.message;
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    });
 })();
 </script>
 }

@@ -9,6 +9,7 @@ using KitobdaGimen.Application.Features.Admin.Commands.SetUserRole;
 using KitobdaGimen.Application.Features.Admin.Analytics;
 using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
 using KitobdaGimen.Application.Features.Home.Queries.GetLandingStats;
+using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
 using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
@@ -31,6 +32,12 @@ public class AdminController : AppController
 {
     private const int CoverBatch = 12;
     private const int MaxCoverDimension = 1200;
+    private const long MaxVideoBytes = 150L * 1024 * 1024; // 150 MB
+
+    private static readonly HashSet<string> AllowedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".webm", ".ogv", ".ogg", ".mov", ".mkv", ".avi"
+    };
 
     private readonly IAppDbContext _db;
     private readonly IAsaxiyBookService _asaxiy;
@@ -42,42 +49,105 @@ public class AdminController : AppController
         _asaxiy = asaxiy;
         _cache = cache;
     }
-    /// <summary>User list with exact registration and last-seen timestamps.</summary>
+    /// <summary>Admin hub — faqat navigatsiya kartochkalari (icon/tugma orqali sahifalarga o'tish).</summary>
     [HttpGet("")]
     public async Task<IActionResult> Index()
+    {
+        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
+        if (role < UserRole.Admin)
+        {
+            // Hide the panel from non-admins.
+            return RedirectToAction("Index", "Feed");
+        }
+
+        ViewData["MyRole"] = role;
+        ViewData["UserCount"] = await _db.Users.CountAsync();
+
+        if (role == UserRole.SuperAdmin)
+        {
+            ViewData["BackgroundVideoUrl"] = await _db.AppSettings
+                .Where(s => s.Key == AppSettingKeys.BackgroundVideoUrl)
+                .Select(s => s.Value)
+                .FirstOrDefaultAsync();
+        }
+
+        return View();
+    }
+
+    /// <summary>Foydalanuvchilar ro'yxati — aniq ro'yxatdan o'tgan/oxirgi kirgan vaqtlari bilan.</summary>
+    [HttpGet("allusers")]
+    public async Task<IActionResult> AllUsers()
     {
         try
         {
             var users = await Mediator.Send(new GetAdminUsersQuery());
             var myRole = users.FirstOrDefault(u => u.Id == CurrentUserId)?.Role ?? UserRole.User;
             ViewData["MyRole"] = myRole;
-
-            // Server holati — Admin va SuperAdmin ko'radi (agregat metrikalar, maxfiy ma'lumotsiz).
-            if (myRole >= UserRole.Admin)
-            {
-                var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
-                ViewData["ServerSnapshot"] = snapshot;
-            }
-
-            // Yillik yakun hisobotini boshqarish holati — faqat super admin uchun.
-            if (myRole == UserRole.SuperAdmin)
-            {
-                var reportYear = YearReviewCalendar.CurrentReportYear();
-                ViewData["YrReportYear"] = reportYear;
-                var pubVal = await _db.AppSettings
-                    .Where(s => s.Key == AppSettingKeys.YearReviewPublishedYear)
-                    .Select(s => s.Value)
-                    .FirstOrDefaultAsync();
-                ViewData["YrPublished"] = int.TryParse(pubVal, out var py) && py == reportYear;
-            }
-
             return View(users);
         }
         catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
         {
-            // Hide the panel from non-admins.
             return RedirectToAction("Index", "Feed");
         }
+    }
+
+    /// <summary>Yillik kitob yakunini yuborish/to'xtatish — faqat super admin.</summary>
+    [HttpGet("year-review")]
+    public async Task<IActionResult> YearReview()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        var reportYear = YearReviewCalendar.CurrentReportYear();
+        ViewData["YrReportYear"] = reportYear;
+        var pubVal = await _db.AppSettings
+            .Where(s => s.Key == AppSettingKeys.YearReviewPublishedYear)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync();
+        ViewData["YrPublished"] = int.TryParse(pubVal, out var py) && py == reportYear;
+
+        return View();
+    }
+
+    /// <summary>Barcha foydalanuvchilarga xabar (broadcast) — faqat super admin.</summary>
+    [HttpGet("broadcast")]
+    public async Task<IActionResult> BroadcastPage()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        return View();
+    }
+
+    /// <summary>Server holati — Admin va SuperAdmin ko'radi (agregat metrikalar, maxfiy ma'lumotsiz).</summary>
+    [HttpGet("server-status")]
+    public async Task<IActionResult> ServerStatus()
+    {
+        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
+        if (role < UserRole.Admin)
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        var snapshot = await Mediator.Send(new GetServerSnapshotQuery());
+        ViewData["ServerSnapshot"] = snapshot;
+        return View();
+    }
+
+    /// <summary>Tizim sozlamalari (kesh, muqovalar, landing statistikasi) — faqat super admin.</summary>
+    [HttpGet("settings")]
+    public async Task<IActionResult> Settings()
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        return View();
     }
 
     /// <summary>Founder analytics dashboard — DAU/WAU/MAU, growth, funnel, retention (SuperAdmin).</summary>
@@ -101,7 +171,7 @@ public class AdminController : AppController
     public async Task<IActionResult> SetRole(int id, [FromForm] bool makeAdmin)
     {
         await Mediator.Send(new SetUserRoleCommand(id, makeAdmin));
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(AllUsers));
     }
 
     [HttpPost("users/{id:int}/delete")]
@@ -109,7 +179,7 @@ public class AdminController : AppController
     public async Task<IActionResult> DeleteUser(int id)
     {
         await Mediator.Send(new AdminDeleteUserCommand(id));
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(AllUsers));
     }
 
     [HttpPost("posts/{id:int}/delete")]
@@ -264,6 +334,64 @@ public class AdminController : AppController
 
         await _db.SaveChangesAsync();
         return Json(new { fixedCount, attempted, remaining, totalAsaxiy = books.Count });
+    }
+
+    /// <summary>
+    /// SuperAdmin: fon videoni (barcha sahifalarda, shu jumladan landingda ko'rinadigan) yangi
+    /// video bilan almashtiradi. .mp4 va boshqa keng tarqalgan video formatlari qabul qilinadi.
+    /// </summary>
+    [HttpPost("background-video/upload")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(MaxVideoBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxVideoBytes)]
+    public async Task<IActionResult> UploadBackgroundVideo(IFormFile? file)
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return Forbid();
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            return Json(new { success = false, message = "Video tanlanmadi." });
+        }
+        if (file.Length > MaxVideoBytes)
+        {
+            return Json(new { success = false, message = "Video hajmi 150 MB dan oshmasligi kerak." });
+        }
+
+        var ext = Path.GetExtension(file.FileName);
+        if (string.IsNullOrEmpty(ext) || !AllowedVideoExtensions.Contains(ext))
+        {
+            return Json(new { success = false, message = "Faqat video fayllar (.mp4, .webm, .mov, .mkv, .ogg, .avi) yuklash mumkin." });
+        }
+
+        var oldUrl = await _db.AppSettings
+            .Where(s => s.Key == AppSettingKeys.BackgroundVideoUrl)
+            .Select(s => s.Value)
+            .FirstOrDefaultAsync();
+
+        var videosDir = KitobdaGimen.Web.UploadPaths.Dir("videos");
+        var fileName = $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}";
+        var fullPath = Path.Combine(videosDir, fileName);
+        await using (var stream = System.IO.File.Create(fullPath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var url = $"/uploads/videos/{fileName}";
+        await SetSettingAsync(AppSettingKeys.BackgroundVideoUrl, url);
+
+        if (!string.IsNullOrEmpty(oldUrl) && oldUrl.StartsWith("/uploads/videos/"))
+        {
+            var oldPath = Path.Combine(videosDir, Path.GetFileName(oldUrl));
+            if (System.IO.File.Exists(oldPath))
+            {
+                try { System.IO.File.Delete(oldPath); } catch { /* eski faylni o'chirib bo'lmasa ham davom etamiz */ }
+            }
+        }
+
+        return Json(new { success = true, url, message = "Fon video muvaffaqiyatli yangilandi — barcha foydalanuvchilarga qo'llanadi." });
     }
 
     /// <summary>
