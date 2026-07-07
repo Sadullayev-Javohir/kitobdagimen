@@ -374,9 +374,9 @@
             }
         };
 
-        // Post matni, kitob nomi/muallifi va muallif ismi bo'yicha
+        // Post/iqtibos matni, kitob nomi/muallifi va muallif ismi bo'yicha
         cards.forEach((card) => {
-            card.querySelectorAll(".post-text, .post-book-title, .post-book-author, .name").forEach(highlightNode);
+            card.querySelectorAll(".post-text, .post-book-title, .post-book-author, .quote-feed-text, .qfb-title, .qfb-author, .name").forEach(highlightNode);
         });
     }
     highlightCards(Array.from(document.querySelectorAll(".post-card")));

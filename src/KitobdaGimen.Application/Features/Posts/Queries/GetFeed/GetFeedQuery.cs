@@ -7,8 +7,8 @@ namespace KitobdaGimen.Application.Features.Posts.Queries.GetFeed;
 /// (followed users + your own; global when you follow no one).</summary>
 public record GetFeedQuery : IRequest<PagedResult<FeedItemDto>>
 {
-    /// <summary>Free-text search across post text, book title, book author and the post author's name.
-    /// When set, the feed searches ALL posts (quotes are not searched) and shows posts only.</summary>
+    /// <summary>Free-text search across post/quote text, book title, book author and the author's name.
+    /// When set, the feed searches ALL posts and quotes.</summary>
     public string? Search { get; init; }
 
     public int Page { get; init; } = 1;

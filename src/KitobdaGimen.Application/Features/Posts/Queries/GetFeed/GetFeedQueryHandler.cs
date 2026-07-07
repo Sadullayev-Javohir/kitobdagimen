@@ -13,7 +13,7 @@ namespace KitobdaGimen.Application.Features.Posts.Queries.GetFeed;
 /// Builds the unified feed: posts and quotes blended into one recency-ordered, paginated stream.
 /// Keeps the original follow-mix cadence (followed authors + the user's own content lead, with a
 /// share of non-followed content for discovery; global when the user follows no one). Quotes are
-/// woven into each bucket by recency alongside posts. Search mode scans all posts (quotes excluded).
+/// woven into each bucket by recency alongside posts. Search mode scans all posts and quotes.
 /// </summary>
 public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<FeedItemDto>>
 {
@@ -36,18 +36,23 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, PagedResult<Fee
         var viewerEmail = _currentUser.Email?.ToLowerInvariant();
         var hasSearch = !string.IsNullOrWhiteSpace(request.Search);
 
-        // ── Search: posts only, by recency (quotes are not searchable) ──
+        // ── Search: posts and quotes, by recency ──
         if (hasSearch)
         {
             var term = request.Search!.Trim().ToLower();
-            var matches = _db.Posts.Where(p =>
+            var matchingPosts = _db.Posts.Where(p =>
                 p.ReviewText.ToLower().Contains(term) ||
                 p.Book.Title.ToLower().Contains(term) ||
                 p.Book.Author.ToLower().Contains(term) ||
                 p.User.FullName.ToLower().Contains(term));
+            var matchingQuotes = _db.Quotes.Where(q =>
+                q.Text.ToLower().Contains(term) ||
+                q.Book.Title.ToLower().Contains(term) ||
+                q.Book.Author.ToLower().Contains(term) ||
+                q.User.FullName.ToLower().Contains(term));
 
-            var total = await matches.CountAsync(cancellationToken);
-            var bucket = await TakeBucketAsync(matches, _db.Quotes.Where(_ => false), (page - 1) * pageSize, pageSize, userId, viewerEmail, cancellationToken);
+            var total = await matchingPosts.CountAsync(cancellationToken) + await matchingQuotes.CountAsync(cancellationToken);
+            var bucket = await TakeBucketAsync(matchingPosts, matchingQuotes, (page - 1) * pageSize, pageSize, userId, viewerEmail, cancellationToken);
             return PagedResult<FeedItemDto>.Create(bucket, page, pageSize, total);
         }
 
