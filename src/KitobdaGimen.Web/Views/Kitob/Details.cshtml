@@ -59,46 +59,44 @@
     }
 
     <!-- Kitob sarlavhasi -->
-    <article class="card pd-article" style="margin-bottom:16px">
-        <div class="quote-feed-body" style="padding-left:0;padding-right:0">
-            <div class="quote-feed-cover">
-                @if (!string.IsNullOrEmpty(Model.CoverUrl))
-                {
-                    <img src="@Model.CoverUrl" alt="@Model.Title — @Model.Author kitobi muqovasi" referrerpolicy="no-referrer" />
-                }
-                else
-                {
-                    <span class="material-symbols-outlined">menu_book</span>
-                }
-            </div>
-            <div class="quote-feed-main">
-                <div class="pd-bookhead" style="margin:0">
-                    <h1>@Model.Title</h1>
-                    <p class="pd-book-author">@Model.Author</p>
-                    @Html.Raw(ViewHelpers.SourceCredit(Model.Source))
-                    @if (!string.IsNullOrEmpty(Model.GenreName))
+    <article class="card" style="margin-bottom:16px">
+        <div class="book-hero">
+            <div class="book-hero-cover">
+                <div class="book-hero-cover-img">
+                    @if (!string.IsNullOrEmpty(Model.CoverUrl))
                     {
-                        <div class="pd-genres">
-                            <span class="pd-genre">
-                                <span class="material-symbols-outlined">local_library</span>
-                                @Model.GenreName
-                            </span>
-                        </div>
+                        <img src="@Model.CoverUrl" alt="@Model.Title — @Model.Author kitobi muqovasi" referrerpolicy="no-referrer" />
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">menu_book</span>
                     }
                 </div>
-                <div class="pd-stats" style="margin-top:10px">
+                <button type="button" class="pd-action-btn book-hero-share" data-share-url="@shareUrl">
+                    <span class="material-symbols-outlined">share</span>
+                    <span>Ulashish</span>
+                </button>
+            </div>
+            <div class="book-hero-info">
+                <h1>@Model.Title</h1>
+                <p class="book-hero-author">@Model.Author</p>
+                @Html.Raw(ViewHelpers.SourceCredit(Model.Source))
+                @if (!string.IsNullOrEmpty(Model.GenreName))
+                {
+                    <div class="pd-genres">
+                        <span class="pd-genre">
+                            <span class="material-symbols-outlined">local_library</span>
+                            @Model.GenreName
+                        </span>
+                    </div>
+                }
+                <div class="pd-stats">
                     <span><span class="material-symbols-outlined">rate_review</span> @Model.Posts.Count taqriz</span>
                     <span><span class="material-symbols-outlined">format_quote</span> @Model.Quotes.Count iqtibos</span>
                     @if (Model.ReaderCount > 0)
                     {
                         <span><span class="material-symbols-outlined">group</span> @Model.ReaderCount kitobxon</span>
                     }
-                </div>
-                <div class="pd-actions" style="margin-top:10px">
-                    <button type="button" class="pd-action-btn" data-share-url="@shareUrl">
-                        <span class="material-symbols-outlined">share</span>
-                        <span>Ulashish</span>
-                    </button>
                 </div>
             </div>
         </div>
@@ -116,37 +114,39 @@
         }
         else
         {
-            foreach (var p in Model.Posts)
-            {
-                var postUrl = ViewHelpers.PostUrl(p.AuthorUsername, p.AuthorId, p.Slug);
-                <article class="card post-card" style="margin-bottom:12px">
-                    <header class="post-head">
-                        <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(p.AuthorUsername, p.AuthorId)">
-                            @if (!string.IsNullOrEmpty(p.AuthorAvatarUrl))
-                            {
-                                <img class="avatar" src="@p.AuthorAvatarUrl" alt="@p.AuthorName" referrerpolicy="no-referrer" />
-                            }
-                            else
-                            {
-                                <span class="avatar">@ViewHelpers.Initial(p.AuthorName)</span>
-                            }
-                        </a>
-                        <div class="meta">
-                            <div class="name-row">
-                                <a class="name" href="@ViewHelpers.ProfileUrl(p.AuthorUsername, p.AuthorId)">@p.AuthorName</a>
-                                @Html.Raw(ViewHelpers.FounderBadge(p.AuthorUsername))
+            <div class="pd-card-grid">
+                @foreach (var p in Model.Posts)
+                {
+                    var postUrl = ViewHelpers.PostUrl(p.AuthorUsername, p.AuthorId, p.Slug);
+                    <article class="card post-card">
+                        <header class="post-head">
+                            <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(p.AuthorUsername, p.AuthorId)">
+                                @if (!string.IsNullOrEmpty(p.AuthorAvatarUrl))
+                                {
+                                    <img class="avatar" src="@p.AuthorAvatarUrl" alt="@p.AuthorName" referrerpolicy="no-referrer" />
+                                }
+                                else
+                                {
+                                    <span class="avatar">@ViewHelpers.Initial(p.AuthorName)</span>
+                                }
+                            </a>
+                            <div class="meta">
+                                <div class="name-row">
+                                    <a class="name" href="@ViewHelpers.ProfileUrl(p.AuthorUsername, p.AuthorId)">@p.AuthorName</a>
+                                    @Html.Raw(ViewHelpers.FounderBadge(p.AuthorUsername))
+                                </div>
+                                <div class="time">@ViewHelpers.RelativeTime(p.CreatedAt)</div>
                             </div>
-                            <div class="time">@ViewHelpers.RelativeTime(p.CreatedAt)</div>
-                        </div>
-                    </header>
-                    <p style="margin:8px 0 10px">@Excerpt(p.ReviewText, 300)</p>
-                    <footer class="post-actions">
-                        <span class="action-btn"><span class="material-symbols-outlined">favorite</span> @p.LikeCount</span>
-                        <span class="action-btn"><span class="material-symbols-outlined">chat_bubble</span> @p.CommentCount</span>
-                        <a class="btn btn-outline btn-sm" style="margin-left:auto" href="@postUrl">To'liq o'qish</a>
-                    </footer>
-                </article>
-            }
+                        </header>
+                        <p style="margin:8px 0 10px">@Excerpt(p.ReviewText, 300)</p>
+                        <footer class="post-actions">
+                            <span class="action-btn"><span class="material-symbols-outlined">favorite</span> @p.LikeCount</span>
+                            <span class="action-btn"><span class="material-symbols-outlined">chat_bubble</span> @p.CommentCount</span>
+                            <a class="btn btn-outline btn-sm" style="margin-left:auto" href="@postUrl">To'liq o'qish</a>
+                        </footer>
+                    </article>
+                }
+            </div>
         }
     </section>
 
@@ -162,29 +162,47 @@
         }
         else
         {
-            foreach (var qt in Model.Quotes)
-            {
-                var quoteUrl = ViewHelpers.QuoteUrl(qt.AuthorUsername, qt.AuthorId, qt.Slug);
-                <article class="card post-card quote-feed-card" style="margin-bottom:12px">
-                    <div class="quote-feed-body" style="padding-left:0;padding-right:0">
-                        <a class="post-body-link" href="@quoteUrl" aria-label="Iqtibosni ochish"></a>
-                        <div class="quote-feed-main">
-                            <span class="quote-feed-mark material-symbols-outlined" aria-hidden="true">format_quote</span>
-                            <blockquote class="quote-feed-text">@qt.Text</blockquote>
-                            <div class="quote-feed-book">
-                                <span class="qfb-author">@qt.AuthorName qo'shgan · @ViewHelpers.RelativeTime(qt.CreatedAt)</span>
+            <div class="pd-card-grid">
+                @foreach (var qt in Model.Quotes)
+                {
+                    var quoteUrl = ViewHelpers.QuoteUrl(qt.AuthorUsername, qt.AuthorId, qt.Slug);
+                    <article class="card post-card quote-feed-card">
+                        <header class="post-head">
+                            <a class="post-avatar-wrap" href="@ViewHelpers.ProfileUrl(qt.AuthorUsername, qt.AuthorId)">
+                                @if (!string.IsNullOrEmpty(qt.AuthorAvatarUrl))
+                                {
+                                    <img class="avatar" src="@qt.AuthorAvatarUrl" alt="@qt.AuthorName" referrerpolicy="no-referrer" />
+                                }
+                                else
+                                {
+                                    <span class="avatar">@ViewHelpers.Initial(qt.AuthorName)</span>
+                                }
+                            </a>
+                            <div class="meta">
+                                <div class="name-row">
+                                    <a class="name" href="@ViewHelpers.ProfileUrl(qt.AuthorUsername, qt.AuthorId)">@qt.AuthorName</a>
+                                    @Html.Raw(ViewHelpers.FounderBadge(qt.AuthorUsername))
+                                </div>
+                                <div class="time">@ViewHelpers.RelativeTime(qt.CreatedAt)</div>
+                            </div>
+                        </header>
+                        <div class="quote-feed-body no-cover">
+                            <a class="post-body-link" href="@quoteUrl" aria-label="Iqtibosni ochish"></a>
+                            <div class="quote-feed-main">
+                                <span class="quote-feed-mark material-symbols-outlined" aria-hidden="true">format_quote</span>
+                                <blockquote class="quote-feed-text">@qt.Text</blockquote>
                             </div>
                         </div>
-                    </div>
-                    <footer class="post-actions">
-                        <span class="action-btn"><span class="material-symbols-outlined">favorite</span> @qt.LikeCount</span>
-                        <a class="action-btn" href="@quoteUrl" aria-label="Izohlar">
-                            <span class="material-symbols-outlined">chat_bubble</span>
-                            <span>@qt.CommentCount</span>
-                        </a>
-                    </footer>
-                </article>
-            }
+                        <footer class="post-actions">
+                            <span class="action-btn"><span class="material-symbols-outlined">favorite</span> @qt.LikeCount</span>
+                            <a class="action-btn" href="@quoteUrl" aria-label="Izohlar">
+                                <span class="material-symbols-outlined">chat_bubble</span>
+                                <span>@qt.CommentCount</span>
+                            </a>
+                        </footer>
+                    </article>
+                }
+            </div>
         }
     </section>
 </div>

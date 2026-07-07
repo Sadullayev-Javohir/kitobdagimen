@@ -22,8 +22,13 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
         var author = request.Author.Trim();
 
         // Reuse an existing identical book to avoid duplicate catalogue entries.
+        // Case-insensitive: matching by exact case previously let "Kitob Nomi" and
+        // "kitob nomi" create separate Book rows, silently splitting that book's
+        // reviews/quotes across two records.
+        var titleLower = title.ToLower();
+        var authorLower = author.ToLower();
         var existing = await _db.Books
-            .FirstOrDefaultAsync(b => b.Title == title && b.Author == author, cancellationToken);
+            .FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower && b.Author.ToLower() == authorLower, cancellationToken);
 
         if (existing is not null)
         {

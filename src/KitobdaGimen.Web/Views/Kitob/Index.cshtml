@@ -56,7 +56,7 @@
     }
     else
     {
-        <div class="feed" id="bookGrid" data-page="@Model.Page" data-total-pages="@Model.TotalPages" data-search="@search">
+        <div class="book-grid" id="bookGrid" data-page="@Model.Page" data-total-pages="@Model.TotalPages" data-search="@search">
             <partial name="_BookCards" model="Model.Items" />
         </div>
         <div class="infinite-loader" id="bookLoader" hidden>

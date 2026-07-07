@@ -2954,6 +2954,102 @@ button.story-detail-stat { cursor: pointer; }
     .quote-feed-text { font-size: 15.5px; }
 }
 
+/* Iqtibos kartasi muqovasiz variant (masalan kitob sahifasida — muqova allaqachon
+   sahifa boshida ko'rsatilgan). .quote-feed-body ikki ustunli grid (88px muqova + 1fr matn)
+   kutadi; muqova bo'lmasa yagona farzand (.quote-feed-main) shu 88px'lik birinchi
+   ustunga tushib siqilib qolar edi — shu sabab matn butun kenglikni egallashi kerak. */
+.quote-feed-body.no-cover { grid-template-columns: 1fr; }
+.quote-feed-body.no-cover .quote-feed-main { padding-left: 0; }
+
+/* ===== /kitoblar — kitoblar ro'yxati: har qatorda 2 tadan, barchasi bir xil dizaynda ===== */
+.book-grid {
+    max-width: 680px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+.book-feed-card { padding: 0; overflow: hidden; }
+.book-feed-card .quote-feed-body { grid-template-columns: 64px 1fr; gap: 10px; padding: 14px; }
+.book-feed-card .quote-feed-cover { width: 64px; height: 90px; border-radius: 8px; }
+.book-feed-card .quote-feed-cover .material-symbols-outlined { font-size: 28px; }
+.book-feed-card .quote-feed-main { padding-left: 0; min-width: 0; }
+.book-feed-title {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; line-height: 1.25;
+}
+.quote-feed-book .qfb-author {
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.book-feed-card .pd-stats { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; font-size: 12px; }
+.book-feed-card .pd-stats .material-symbols-outlined { font-size: 16px; }
+
+@media (max-width: 480px) {
+    .book-grid { gap: 10px; }
+    .book-feed-card .quote-feed-body { grid-template-columns: 52px 1fr; gap: 8px; padding: 10px; }
+    .book-feed-card .quote-feed-cover { width: 52px; height: 74px; }
+    .quote-feed-book .qfb-title { font-size: 13px; }
+    .quote-feed-book .qfb-author { font-size: 12px; }
+}
+
+/* ===== /kitob/{id} — kitob sahifasi sarlavhasi: chapda muqova + ulashish,
+   o'ngda nomi/muallifi/janri/statistikasi ===== */
+.book-hero { display: flex; gap: 22px; align-items: flex-start; }
+.book-hero-cover { flex-shrink: 0; width: 140px; display: flex; flex-direction: column; gap: 12px; }
+.book-hero-cover-img {
+    width: 140px; height: 198px; border-radius: 12px; overflow: hidden;
+    background: var(--primary-soft); display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+}
+.book-hero-cover-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.book-hero-cover-img .material-symbols-outlined { font-size: 46px; color: var(--primary); opacity: .55; }
+.book-hero-share { width: 100%; justify-content: center; }
+.book-hero-info { flex: 1; min-width: 0; }
+.book-hero-info h1 { font-size: 26px; line-height: 1.2; letter-spacing: -.01em; margin: 0 0 6px; }
+.book-hero-author { color: var(--text-secondary); font-size: 16px; margin: 0 0 10px; }
+.book-hero-info .pd-genres { margin-top: 10px; }
+.book-hero-info .pd-stats { margin-top: 14px; padding: 14px 0; }
+
+@media (max-width: 560px) {
+    .book-hero { gap: 14px; }
+    .book-hero-cover, .book-hero-cover-img { width: 96px; }
+    .book-hero-cover-img { height: 136px; }
+    .book-hero-info h1 { font-size: 20px; }
+    .book-hero-author { font-size: 14px; }
+    .book-hero-share span:last-child { display: none; }
+}
+
+/* ===== /kitob/{id} — Taqrizlar va Iqtiboslar: har qatorda 2 tadan ===== */
+.pd-card-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+.pd-card-grid .post-card,
+.pd-card-grid .quote-feed-card { margin-bottom: 0; }
+.pd-card-grid .post-head { padding: 12px 14px; gap: 8px; }
+.pd-card-grid .post-head .avatar { width: 34px; height: 34px; font-size: 13px; }
+.pd-card-grid .post-head .name { font-size: 13.5px; }
+.pd-card-grid .post-head .time { font-size: 12px; }
+.pd-card-grid .post-card > p {
+    padding: 0 14px; font-size: 13.5px;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pd-card-grid .post-actions { padding: 8px 14px; }
+.pd-card-grid .quote-feed-body { padding: 4px 14px 14px !important; }
+.pd-card-grid .quote-feed-text {
+    font-size: 14.5px;
+    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+@media (max-width: 560px) {
+    .pd-card-grid { gap: 10px; }
+    .pd-card-grid .post-head { padding: 10px; gap: 6px; }
+    .pd-card-grid .post-head .avatar { width: 28px; height: 28px; font-size: 12px; }
+    .pd-card-grid .post-head .name { font-size: 12.5px; }
+    .pd-card-grid .post-head .time { font-size: 11px; }
+    .pd-card-grid .post-card > p { padding: 0 10px; font-size: 12.5px; -webkit-line-clamp: 4; }
+    .pd-card-grid .post-actions { padding: 6px 10px; }
+    .pd-card-grid .action-btn { padding: 5px 6px; font-size: 12px; }
+    .pd-card-grid .quote-feed-body { padding: 4px 10px 10px !important; }
+    .pd-card-grid .quote-feed-text { font-size: 13px; }
+}
+
 
 /* ===== Admin panel ===== */
 .admin-head { margin-bottom: 18px; }
