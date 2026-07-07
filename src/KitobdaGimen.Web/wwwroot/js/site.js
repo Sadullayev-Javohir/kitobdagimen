@@ -689,41 +689,51 @@ function infiniteScroll(opts) {
     const totalPages = opts.totalPages || 1;
     const search = opts.search || "";
     const onAppend = opts.onAppend;
+    const restoreKey = opts.restoreKey || null; // berilsa — skroll holati saqlanadi/tiklanadi
     let page = opts.page || 1;
-    if (page >= totalPages) return; // yuklash uchun boshqa sahifa yo'q
 
     let loading = false;
     let done = false;
+    let restoring = false; // holat tiklanayotganda kuzatuvchi yangi sahifa yuklamasin
 
-    const observer = new IntersectionObserver(async (entries) => {
-        if (done || loading || !entries[0].isIntersecting) return;
-        loading = true;
-        if (loader) loader.hidden = false;
-        const next = page + 1;
-        try {
-            const url = new URL(opts.endpoint, window.location.origin);
-            url.searchParams.set("page", next);
-            if (search) url.searchParams.set("q", search);
-            Object.keys(params).forEach((k) => {
-                if (params[k] != null && params[k] !== "") url.searchParams.set(k, params[k]);
-            });
-            const res = await fetch(url.toString(), { 
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                credentials: "include"
-            });
-            if (res.status === 401) { window.location.href = "/"; return; }
-            if (!res.ok) throw new Error("network");
-            const html = (await res.text()).trim();
-            const tmp = document.createElement("div");
-            tmp.innerHTML = html;
-            const nodes = Array.from(tmp.children);
-            nodes.forEach((node, i) => {
+    // Bitta sahifani yuklab, kartochkalarni qo'shadi. animate=false — tiklashda
+    // (jimgina, animatsiyasiz) ishlatiladi.
+    async function fetchPage(next, animate) {
+        const url = new URL(opts.endpoint, window.location.origin);
+        url.searchParams.set("page", next);
+        if (search) url.searchParams.set("q", search);
+        Object.keys(params).forEach((k) => {
+            if (params[k] != null && params[k] !== "") url.searchParams.set(k, params[k]);
+        });
+        const res = await fetch(url.toString(), {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "include"
+        });
+        if (res.status === 401) { window.location.href = "/"; return null; }
+        if (!res.ok) throw new Error("network");
+        const html = (await res.text()).trim();
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const nodes = Array.from(tmp.children);
+        nodes.forEach((node, i) => {
+            if (animate) {
                 node.classList.add("card-enter");
                 node.style.animationDelay = (i * 70) + "ms";
-                container.insertBefore(node, insertBefore);
-            });
-            page = next;
-            if (typeof onAppend === "function") onAppend(nodes);
+            }
+            container.insertBefore(node, insertBefore);
+        });
+        page = next;
+        if (typeof onAppend === "function") onAppend(nodes);
+        return nodes;
+    }
+
+    const observer = new IntersectionObserver(async (entries) => {
+        if (done || loading || restoring || !entries[0].isIntersecting) return;
+        if (page >= totalPages) { done = true; observer.disconnect(); return; }
+        loading = true;
+        if (loader) loader.hidden = false;
+        try {
+            await fetchPage(page + 1, true);
             if (page >= totalPages) { done = true; observer.disconnect(); }
         } catch {
             // Tarmoq xatosi — observer saqlanadi, keyingi skrollda yana urinadi.
@@ -734,7 +744,77 @@ function infiniteScroll(opts) {
     }, { rootMargin: "600px 0px" });
 
     observer.observe(sentinel);
+
+    // ===== Skroll holatini saqlash va tiklash =====
+    // Foydalanuvchi ro'yxatdan (feed / kitoblar) biror postga yoki kitobga kirib,
+    // "Asosiyga" tugmasi bilan qaytganda — aynan qolgan joyida paydo bo'lishi uchun.
+    if (restoreKey) {
+        const key = "listScroll:" + restoreKey + ":" + search;
+        const TTL = 30 * 60 * 1000; // 30 daqiqa — undan eski holat tiklanmaydi
+
+        // Detal sahifasidagi "Asosiyga" tugmasi shu ro'yxatga qaytishi uchun eslab qolamiz.
+        try { sessionStorage.setItem("kitob:backTo", location.pathname + location.search); } catch (_) { }
+
+        function saveState() {
+            try {
+                sessionStorage.setItem(key, JSON.stringify({
+                    y: window.scrollY, page: page, ts: Date.now()
+                }));
+            } catch (_) { }
+        }
+        window.addEventListener("pagehide", saveState);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") saveState();
+        });
+
+        // Sahifa qayta yuklansa (reload) — tiklamaymiz, eng tepadan boshlaymiz.
+        let navType = "navigate";
+        try {
+            const navEntry = performance.getEntriesByType("navigation")[0];
+            if (navEntry && navEntry.type) navType = navEntry.type;
+        } catch (_) { }
+
+        let saved = null;
+        try { saved = JSON.parse(sessionStorage.getItem(key) || "null"); } catch (_) { }
+
+        if (saved && navType !== "reload" && (Date.now() - saved.ts) < TTL && (saved.y > 0 || saved.page > page)) {
+            if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+            restoring = true;
+            (async () => {
+                try {
+                    // Qolgan joygacha yetarli sahifani jimgina yuklaymiz.
+                    while (page < saved.page && page < totalPages) {
+                        await fetchPage(page + 1, false);
+                    }
+                } catch (_) { /* tarmoq xatosi — bor joyigacha tiklaymiz */ }
+                finally { restoring = false; }
+
+                // Kontent (ayniqsa rasmlar) joylashgach skroll o'rni siljimasligi uchun
+                // bir necha marta tiklaymiz.
+                const y = saved.y || 0;
+                const restore = () => window.scrollTo(0, y);
+                requestAnimationFrame(() => requestAnimationFrame(restore));
+                window.addEventListener("load", restore, { once: true });
+                setTimeout(restore, 250);
+                setTimeout(restore, 600);
+            })();
+        }
+    }
 }
+
+// ===== "Asosiyga" tugmasi — foydalanuvchi qaysi ro'yxatdan kelgan bo'lsa o'sha yerga qaytaradi =====
+// Kitob/post/iqtibos detal sahifalaridagi .pd-back tugmasi standart holda /Feed yoki
+// /kitoblar ga ketadi; lekin foydalanuvchi qaysi ro'yxatdan kirgan bo'lsa (feed yoki
+// kitoblar), aynan o'sha ro'yxatga (qolgan joyi bilan) qaytishi to'g'riroq.
+(function () {
+    const back = document.querySelector("a.pd-back");
+    if (!back) return;
+    let backTo = null;
+    try { backTo = sessionStorage.getItem("kitob:backTo"); } catch (_) { }
+    if (backTo && /^\/(feed|kitoblar)(\/|\?|$)/i.test(backTo)) {
+        back.setAttribute("href", backTo);
+    }
+})();
 
 // ===== Asoschi (founder) nishoni — mijoz tomonda render qilinadigan ismlar uchun =====
 // Server tomoni ViewHelpers.FounderUsername bilan AYNI qiymat bo'lishi shart.

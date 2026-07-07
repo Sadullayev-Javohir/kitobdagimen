@@ -394,6 +394,7 @@
             page: parseInt(sentinel.dataset.page, 10) || 1,
             totalPages: parseInt(sentinel.dataset.totalPages, 10) || 1,
             search: sentinel.dataset.search || "",
+            restoreKey: "feed",
             onAppend: (nodes) => {
                 highlightCards(nodes);
                 if (kitob.initRichEditors) nodes.forEach((n) => kitob.initRichEditors(n));
