@@ -45,6 +45,8 @@ public class TestDbContext : DbContext, IAppDbContext
     public DbSet<ChallengeWinner> ChallengeWinners => Set<ChallengeWinner>();
     public DbSet<ChallengeWinnerLike> ChallengeWinnerLikes => Set<ChallengeWinnerLike>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<PhysicalBook> PhysicalBooks => Set<PhysicalBook>();
+    public DbSet<PhysicalBookReservation> PhysicalBookReservations => Set<PhysicalBookReservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +72,20 @@ public class TestDbContext : DbContext, IAppDbContext
         {
             e.HasOne(c => c.Requester).WithMany(u => u.SentConnections).HasForeignKey(c => c.RequesterId);
             e.HasOne(c => c.Addressee).WithMany(u => u.ReceivedConnections).HasForeignKey(c => c.AddresseeId);
+        });
+
+        // PhysicalBook -> User (Owner) and Book, both without inverse collections.
+        modelBuilder.Entity<PhysicalBook>(e =>
+        {
+            e.HasOne(p => p.Owner).WithMany().HasForeignKey(p => p.OwnerId);
+            e.HasOne(p => p.Book).WithMany().HasForeignKey(p => p.BookId);
+        });
+
+        // PhysicalBookReservation -> PhysicalBook (with inverse) and User (Reserver, no inverse).
+        modelBuilder.Entity<PhysicalBookReservation>(e =>
+        {
+            e.HasOne(r => r.PhysicalBook).WithMany(p => p.Reservations).HasForeignKey(r => r.PhysicalBookId);
+            e.HasOne(r => r.Reserver).WithMany().HasForeignKey(r => r.ReserverId);
         });
 
         base.OnModelCreating(modelBuilder);

@@ -1,0 +1,88 @@
+@using KitobdaGimen.Application.Features.PhysicalBooks.Dtos
+@using KitobdaGimen.Domain.Enums
+@model PhysicalBookDto
+
+@{
+    var statusClass = Model.Status switch
+    {
+        PhysicalBookStatus.Mavjud => "pb-badge--free",
+        PhysicalBookStatus.BandQilindi => "pb-badge--reserved",
+        PhysicalBookStatus.OqiyApti => "pb-badge--reading",
+        _ => "pb-badge--free"
+    };
+}
+
+<article class="pb-card" data-pb-card="@Model.Id" data-status="@((int)Model.Status)">
+    <div class="pb-cover">
+        @if (!string.IsNullOrEmpty(Model.CoverUrl))
+        {
+            <img src="@Model.CoverUrl" alt="@Model.Title muqovasi" loading="lazy" referrerpolicy="no-referrer" />
+        }
+        else
+        {
+            <span class="material-symbols-outlined pb-cover-ph">menu_book</span>
+        }
+        <span class="pb-badge @statusClass">@Model.StatusText</span>
+    </div>
+
+    <div class="pb-body">
+        <h3 class="pb-title" title="@Model.Title">@Model.Title</h3>
+        <p class="pb-author">@Model.Author</p>
+
+        @if (Model.IsMine)
+        {
+            @* Egasining ko'rinishi *@
+            @if (Model.Status == PhysicalBookStatus.BandQilindi)
+            {
+                <p class="pb-meta">
+                    <span class="material-symbols-outlined">schedule</span>
+                    <span><b>@Model.ReserverName</b> band qildi</span>
+                </p>
+                <div class="pb-actions">
+                    <button class="btn btn-accent btn-sm" data-pb-action="confirm" data-pb-id="@Model.Id">Topshirdim</button>
+                    <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bekor qilish</button>
+                </div>
+            }
+            else if (Model.Status == PhysicalBookStatus.OqiyApti)
+            {
+                <p class="pb-meta">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span><b>@Model.ReserverName</b> o'qiyapti</span>
+                </p>
+                <div class="pb-actions">
+                    <button class="btn btn-accent btn-sm" data-pb-action="return" data-pb-id="@Model.Id">Qaytarildi</button>
+                </div>
+            }
+            else
+            {
+                <p class="pb-meta pb-meta--muted">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    <span>Sizning kitobingiz</span>
+                </p>
+                <div class="pb-actions">
+                    <button class="btn btn-ghost btn-sm" data-pb-action="delete" data-pb-id="@Model.Id">O'chirish</button>
+                </div>
+            }
+        }
+        else
+        {
+            @* Boshqa foydalanuvchi ko'rinishi *@
+            <p class="pb-meta pb-meta--muted">
+                <span class="material-symbols-outlined">person</span>
+                <span>@Model.OwnerName</span>
+            </p>
+            @if (Model.Status == PhysicalBookStatus.Mavjud)
+            {
+                <div class="pb-actions">
+                    <button class="btn btn-accent btn-sm" data-pb-action="reserve" data-pb-id="@Model.Id">O'qimoqchiman</button>
+                </div>
+            }
+            else if (Model.ReservedByMe && Model.Status == PhysicalBookStatus.BandQilindi)
+            {
+                <div class="pb-actions">
+                    <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bandni bekor qilish</button>
+                </div>
+            }
+        }
+    </div>
+</article>

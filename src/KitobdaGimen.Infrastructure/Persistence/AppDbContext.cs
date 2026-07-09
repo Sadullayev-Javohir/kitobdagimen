@@ -43,6 +43,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<ChallengeWinner> ChallengeWinners => Set<ChallengeWinner>();
     public DbSet<ChallengeWinnerLike> ChallengeWinnerLikes => Set<ChallengeWinnerLike>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<PhysicalBook> PhysicalBooks => Set<PhysicalBook>();
+    public DbSet<PhysicalBookReservation> PhysicalBookReservations => Set<PhysicalBookReservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -35,6 +35,9 @@ public static class BackgroundJobsServiceExtensions
         services.AddScoped<ReadingReminderJob>();
         services.AddScoped<ChallengeFinalizeJob>();
 
+        // Jismoniy kitob band qilishlari muddatini (24 soat) tekshiruvchi job.
+        services.AddScoped<ReservationExpiryJob>();
+
         return services;
     }
 }

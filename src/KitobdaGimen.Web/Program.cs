@@ -205,6 +205,14 @@ if (hangfireEnabled)
     // Challenge g'oliblari FAQAT super admin tomonidan qo'lda aniqlanadi (/challenge/admin).
     // Avtomatik aniqlash o'chirilgan — avval rejalashtirilgan bo'lsa, uni olib tashlaymiz.
     RecurringJob.RemoveIfExists(ChallengeFinalizeJob.RecurringJobId);
+
+    // Jismoniy kitob band qilishlari 24 soatdan so'ng avtomatik "Mavjud"ga qaytadi.
+    // Har 15 daqiqada muddati o'tgan band qilishlarni tekshiramiz.
+    RecurringJob.AddOrUpdate<ReservationExpiryJob>(
+        ReservationExpiryJob.RecurringJobId,
+        job => job.RunAsync(CancellationToken.None),
+        "*/15 * * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 }
 
 app.Run();
