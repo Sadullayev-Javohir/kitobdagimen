@@ -209,12 +209,10 @@
         const preview = scope.querySelector("[data-edit-image-preview]");
         const previewImg = scope.querySelector("[data-edit-image-preview-img]");
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            previewImg.src = ev.target.result;
-            preview.hidden = false;
-        };
-        reader.readAsDataURL(file);
+        // Base64 (FileReader) o'rniga obyekt-URL — darhol va ishonchli ko'rinadi.
+        if (previewImg.src && previewImg.src.startsWith("blob:")) URL.revokeObjectURL(previewImg.src);
+        previewImg.src = URL.createObjectURL(file);
+        preview.hidden = false;
 
         try {
             const fd = new FormData();

@@ -494,6 +494,7 @@
     function resetPostImage() {
         postImage.value = "";
         postImageUrl.value = "";
+        if (postImagePreviewImg.src) URL.revokeObjectURL(postImagePreviewImg.src);
         postImagePreviewImg.src = "";
         postImagePreview.hidden = true;
         imageUploading = false;
@@ -504,12 +505,11 @@
         const f = postImage.files && postImage.files[0];
         if (!f) return;
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            postImagePreviewImg.src = ev.target.result;
-            postImagePreview.hidden = false;
-        };
-        reader.readAsDataURL(f);
+        // Base64 (FileReader) o'rniga obyekt-URL — telefon kamerasidan olingan katta
+        // rasmlarda ham darhol va ishonchli ko'rinadi (base64 kodlash sekin/xotira talab qiladi).
+        if (postImagePreviewImg.src) URL.revokeObjectURL(postImagePreviewImg.src);
+        postImagePreviewImg.src = URL.createObjectURL(f);
+        postImagePreview.hidden = false;
 
         postImageUrl.value = "";
         imageUploading = true;
