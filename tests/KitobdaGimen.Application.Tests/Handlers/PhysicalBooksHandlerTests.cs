@@ -152,7 +152,7 @@ public class PhysicalBooksHandlerTests : TestBase
     }
 
     [Fact]
-    public async Task GetLibrary_ExcludesOwnAndNonAvailable()
+    public async Task GetLibrary_ExcludesOwnButShowsAllStatuses()
     {
         var db = CreateContext();
         var user1 = new User { Id = 1, FullName = "User1", Email = "u1@test.uz", GoogleId = "g-1", CreatedAt = DateTime.UtcNow };
@@ -168,9 +168,11 @@ public class PhysicalBooksHandlerTests : TestBase
         var handler = new GetLibraryQueryHandler(db, new FakeCurrentUserService(user1.Id));
         var lib = await handler.Handle(new GetLibraryQuery(), default);
 
-        // Faqat user2'ning mavjud kitoblari ko'rinadi (id=2)
-        Assert.Single(lib);
+        // O'zining kitobi (id=1) ko'rinmaydi; user2'ning barcha statusdagi kitoblari ko'rinadi.
+        // Status bo'yicha tartiblangan: avval Mavjud (id=2), keyin BandQilindi (id=3).
+        Assert.Equal(2, lib.Count);
         Assert.Equal(2, lib[0].Id);
+        Assert.Equal(3, lib[1].Id);
     }
 
     [Fact]
