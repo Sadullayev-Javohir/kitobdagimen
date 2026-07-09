@@ -51,7 +51,7 @@ public static class SeoJsonLd
                 ["@id"] = baseUrl + "/#organization",
                 ["name"] = "kitobdagimen.uz",
                 ["url"] = baseUrl + "/",
-                ["logo"] = baseUrl + "/img/og-image.png",
+                ["logo"] = baseUrl + "/img/logo.png",
                 ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma.",
                 ["founder"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#founder" }
             },
