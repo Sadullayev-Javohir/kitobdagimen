@@ -109,6 +109,50 @@
     background: var(--surface-hover);
 }
 
+/* asaxiy.uz natijalari (Feed pikeri bilan bir xil ko'rinish) — muqova kichik ikonka
+   o'lchamida bo'lishi kerak, aks holda rasm to'liq o'lchamda juda katta chiqadi. */
+.pb-suggestions .book-suggest__src {
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: default;
+    border-top: 1px solid var(--border);
+}
+
+.pb-suggestions .book-suggest__asaxiy {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+
+.pb-suggestions .book-suggest__asaxiy:last-child {
+    border-bottom: none;
+}
+
+.pb-suggestions .book-suggest__asaxiy:hover {
+    background: var(--surface-hover);
+}
+
+.pb-suggestions .book-suggest__asaxiy img {
+    width: 32px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex: 0 0 auto;
+    background: var(--primary-soft);
+}
+
+.pb-suggestions .book-suggest__asaxiy span {
+    flex: 1 1 auto;
+}
+
 .pb-selected {
     display: flex;
     align-items: center;
@@ -119,6 +163,13 @@
     padding: 12px 16px;
     margin-top: 12px;
     font-weight: 500;
+}
+
+/* [hidden] atributi display: flex ni yenga olmaydi — kitob tanlanmaguncha
+   yashil "tanlangan kitob" yorlig'i ko'rinmasligi uchun aniq yashiramiz
+   (Feed'dagi .composer-selected[hidden] bilan bir xil). */
+.pb-selected[hidden] {
+    display: none;
 }
 
 .pb-selected .material-symbols-outlined {
