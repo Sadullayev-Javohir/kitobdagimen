@@ -1,6 +1,5 @@
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.PhysicalBooks.Dtos;
-using KitobdaGimen.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,8 +25,11 @@ public class GetLibraryQueryHandler : IRequestHandler<GetLibraryQuery, IReadOnly
             .AsNoTracking()
             .Include(p => p.Owner)
             .Include(p => p.Book)
-            // Faqat boshqa foydalanuvchilarning mavjud kitoblari.
-            .Where(p => p.Status == PhysicalBookStatus.Mavjud && p.OwnerId != userId);
+            .Include(p => p.Reservations)
+                .ThenInclude(r => r.Reserver)
+            // Boshqa foydalanuvchilarning barcha kitoblari: mavjud, band qilingan va o'qilayotgan
+            // — holati ("Band qilindi"/"O'qiyapti") va kimniki ekani hammaga ko'rinsin.
+            .Where(p => p.OwnerId != userId);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
@@ -39,11 +41,12 @@ public class GetLibraryQueryHandler : IRequestHandler<GetLibraryQuery, IReadOnly
         }
 
         var books = await query
-            .OrderByDescending(p => p.CreatedAt)
+            // Avval band qilish uchun mavjud kitoblar (status Mavjud = 0), keyin yangi qo'shilganlar.
+            .OrderBy(p => p.Status)
+            .ThenByDescending(p => p.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        // Mavjud kitoblarda faol band qilish yo'q — Reservations'ni yuklamaymiz.
         return books.Select(b => PhysicalBookMapper.ToDto(b, userId)).ToList();
     }
 }

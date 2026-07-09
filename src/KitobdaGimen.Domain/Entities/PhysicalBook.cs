@@ -20,6 +20,9 @@ public class PhysicalBook : BaseEntity
     public string? ManualTitle { get; set; }
     public string? ManualAuthor { get; set; }
 
+    /// <summary>Qo'lda kiritilgan kitob uchun yuklangan muqova rasmi (ixtiyoriy).</summary>
+    public string? ManualCoverUrl { get; set; }
+
     public PhysicalBookStatus Status { get; set; } = PhysicalBookStatus.Mavjud;
 
     public DateTime CreatedAt { get; set; }

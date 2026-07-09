@@ -27,6 +27,7 @@ public class AddPhysicalBookCommandHandler : IRequestHandler<AddPhysicalBookComm
         int? bookId = request.BookId;
         string? manualTitle = null;
         string? manualAuthor = null;
+        string? manualCoverUrl = null;
 
         if (bookId is not null)
         {
@@ -41,6 +42,7 @@ public class AddPhysicalBookCommandHandler : IRequestHandler<AddPhysicalBookComm
         {
             manualTitle = request.ManualTitle!.Trim();
             manualAuthor = string.IsNullOrWhiteSpace(request.ManualAuthor) ? null : request.ManualAuthor.Trim();
+            manualCoverUrl = string.IsNullOrWhiteSpace(request.ManualCoverUrl) ? null : request.ManualCoverUrl.Trim();
         }
 
         var physicalBook = new PhysicalBook
@@ -49,6 +51,7 @@ public class AddPhysicalBookCommandHandler : IRequestHandler<AddPhysicalBookComm
             BookId = bookId,
             ManualTitle = manualTitle,
             ManualAuthor = manualAuthor,
+            ManualCoverUrl = manualCoverUrl,
             Status = PhysicalBookStatus.Mavjud,
             CreatedAt = DateTime.UtcNow
         };

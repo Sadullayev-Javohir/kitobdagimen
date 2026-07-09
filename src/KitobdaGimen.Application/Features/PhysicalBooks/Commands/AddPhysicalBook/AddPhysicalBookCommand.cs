@@ -15,4 +15,7 @@ public record AddPhysicalBookCommand : IRequest<PhysicalBookDto>
     /// <summary>Katalogda yo'q kitob uchun qo'lda nom.</summary>
     public string? ManualTitle { get; init; }
     public string? ManualAuthor { get; init; }
+
+    /// <summary>Qo'lda kiritilgan kitob uchun oldindan yuklangan muqova rasmi URL'i (ixtiyoriy).</summary>
+    public string? ManualCoverUrl { get; init; }
 }

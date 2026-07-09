@@ -10,6 +10,8 @@
         PhysicalBookStatus.OqiyApti => "pb-badge--reading",
         _ => "pb-badge--free"
     };
+    // Band qilindi holatida 24 soatlik teskari sanoq uchun tugash vaqti (ISO 8601, UTC).
+    var expiresIso = Model.ReservationExpiresAt?.ToUniversalTime().ToString("o");
 }
 
 <article class="pb-card" data-pb-card="@Model.Id" data-status="@((int)Model.Status)">
@@ -29,15 +31,51 @@
         <h3 class="pb-title" title="@Model.Title">@Model.Title</h3>
         <p class="pb-author">@Model.Author</p>
 
+        @* Kitob kimniki — barcha foydalanuvchilarga ko'rinadi. *@
+        <p class="pb-meta pb-meta--muted">
+            <span class="material-symbols-outlined">person</span>
+            @if (Model.IsMine)
+            {
+                <span>Sizning kitobingiz</span>
+            }
+            else
+            {
+                <span>Egasi: <a class="pb-user-link" href="@Model.OwnerProfileUrl">@Model.OwnerName</a></span>
+            }
+        </p>
+
+        @* Band qilindi / O'qiyapti holati — kim band qilgan yoki o'qiyotgani hammaga ko'rinadi. *@
+        @if (Model.Status == PhysicalBookStatus.BandQilindi && Model.ReserverName is not null)
+        {
+            <p class="pb-meta">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>
+                    <a class="pb-user-link" href="@Model.ReserverProfileUrl">@Model.ReserverName</a> band qildi
+                </span>
+            </p>
+            @if (expiresIso is not null)
+            {
+                <p class="pb-countdown" data-pb-expires="@expiresIso">
+                    <span class="material-symbols-outlined">hourglass_bottom</span>
+                    <span class="pb-countdown-text">—</span>
+                </p>
+            }
+        }
+        else if (Model.Status == PhysicalBookStatus.OqiyApti && Model.ReserverName is not null)
+        {
+            <p class="pb-meta">
+                <span class="material-symbols-outlined">auto_stories</span>
+                <span>
+                    <a class="pb-user-link" href="@Model.ReserverProfileUrl">@Model.ReserverName</a> o'qiyapti
+                </span>
+            </p>
+        }
+
+        @* Amallar — kim ko'rayotganiga qarab. *@
         @if (Model.IsMine)
         {
-            @* Egasining ko'rinishi *@
             @if (Model.Status == PhysicalBookStatus.BandQilindi)
             {
-                <p class="pb-meta">
-                    <span class="material-symbols-outlined">schedule</span>
-                    <span><b>@Model.ReserverName</b> band qildi</span>
-                </p>
                 <div class="pb-actions">
                     <button class="btn btn-accent btn-sm" data-pb-action="confirm" data-pb-id="@Model.Id">Topshirdim</button>
                     <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bekor qilish</button>
@@ -45,20 +83,12 @@
             }
             else if (Model.Status == PhysicalBookStatus.OqiyApti)
             {
-                <p class="pb-meta">
-                    <span class="material-symbols-outlined">auto_stories</span>
-                    <span><b>@Model.ReserverName</b> o'qiyapti</span>
-                </p>
                 <div class="pb-actions">
                     <button class="btn btn-accent btn-sm" data-pb-action="return" data-pb-id="@Model.Id">Qaytarildi</button>
                 </div>
             }
             else
             {
-                <p class="pb-meta pb-meta--muted">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    <span>Sizning kitobingiz</span>
-                </p>
                 <div class="pb-actions">
                     <button class="btn btn-ghost btn-sm" data-pb-action="delete" data-pb-id="@Model.Id">O'chirish</button>
                 </div>
@@ -66,11 +96,6 @@
         }
         else
         {
-            @* Boshqa foydalanuvchi ko'rinishi *@
-            <p class="pb-meta pb-meta--muted">
-                <span class="material-symbols-outlined">person</span>
-                <span>@Model.OwnerName</span>
-            </p>
             @if (Model.Status == PhysicalBookStatus.Mavjud)
             {
                 <div class="pb-actions">

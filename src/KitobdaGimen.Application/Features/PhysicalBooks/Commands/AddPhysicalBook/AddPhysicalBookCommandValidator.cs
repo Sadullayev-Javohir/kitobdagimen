@@ -20,6 +20,9 @@ public class AddPhysicalBookCommandValidator : AbstractValidator<AddPhysicalBook
 
             RuleFor(x => x.ManualAuthor)
                 .MaximumLength(150).WithMessage("Muallif nomi 150 ta belgidan oshmasligi kerak.");
+
+            RuleFor(x => x.ManualCoverUrl)
+                .MaximumLength(500).WithMessage("Muqova havolasi juda uzun.");
         });
     }
 }

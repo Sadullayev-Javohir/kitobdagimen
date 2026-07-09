@@ -22,6 +22,8 @@ public record PhysicalBookDto
     public string OwnerName { get; init; } = null!;
     public string? OwnerUsername { get; init; }
     public string? OwnerAvatarUrl { get; init; }
+    /// <summary>Egasi profiliga havola: /profile/{username|id}.</summary>
+    public string OwnerProfileUrl { get; init; } = null!;
 
     /// <summary>So'rov yuborgan foydalanuvchi shu kitobning egasimi.</summary>
     public bool IsMine { get; init; }
@@ -32,6 +34,8 @@ public record PhysicalBookDto
     public string? ReserverName { get; init; }
     public string? ReserverUsername { get; init; }
     public string? ReserverAvatarUrl { get; init; }
+    /// <summary>Band qilgan/o'qiyotgan foydalanuvchi profiliga havola (agar mavjud bo'lsa).</summary>
+    public string? ReserverProfileUrl { get; init; }
 
     /// <summary>Band qilish muddati tugash vaqti (UTC). Faqat "Band qilindi" holatida to'ladi.</summary>
     public DateTime? ReservationExpiresAt { get; init; }

@@ -12,6 +12,7 @@ public class PhysicalBookConfiguration : IEntityTypeConfiguration<PhysicalBook>
 
         builder.Property(p => p.ManualTitle).HasMaxLength(150);
         builder.Property(p => p.ManualAuthor).HasMaxLength(150);
+        builder.Property(p => p.ManualCoverUrl).HasMaxLength(500);
         builder.Property(p => p.Status).HasConversion<int>();
 
         // Egasi o'chirilsa, uning jismoniy kitoblari ham o'chadi.

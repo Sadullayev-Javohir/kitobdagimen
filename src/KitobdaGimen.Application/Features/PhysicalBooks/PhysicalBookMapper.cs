@@ -24,7 +24,7 @@ public static class PhysicalBookMapper
             Id = b.Id,
             Title = b.Book?.Title ?? b.ManualTitle ?? "Noma'lum kitob",
             Author = b.Book?.Author ?? b.ManualAuthor ?? "Noma'lum muallif",
-            CoverUrl = b.Book?.CoverUrl,
+            CoverUrl = b.Book?.CoverUrl ?? b.ManualCoverUrl,
 
             Status = b.Status,
             StatusText = StatusText(b.Status),
@@ -33,12 +33,14 @@ public static class PhysicalBookMapper
             OwnerName = b.Owner.FullName,
             OwnerUsername = b.Owner.Username,
             OwnerAvatarUrl = b.Owner.AvatarUrl,
+            OwnerProfileUrl = ProfileUrl(b.Owner.Username, b.OwnerId),
             IsMine = currentUserId is not null && b.OwnerId == currentUserId,
 
             ReserverId = active?.ReserverId,
             ReserverName = active?.Reserver.FullName,
             ReserverUsername = active?.Reserver.Username,
             ReserverAvatarUrl = active?.Reserver.AvatarUrl,
+            ReserverProfileUrl = active is null ? null : ProfileUrl(active.Reserver.Username, active.ReserverId),
             ReservationExpiresAt = b.Status == PhysicalBookStatus.BandQilindi ? active?.ExpiresAt : null,
             ReservedByMe = currentUserId is not null && active?.ReserverId == currentUserId,
 
@@ -53,4 +55,11 @@ public static class PhysicalBookMapper
         PhysicalBookStatus.OqiyApti => "O'qiyapti",
         _ => status.ToString()
     };
+
+    /// <summary>
+    /// Profil havolasi: /profile/{username}, username yo'q bo'lsa /profile/{id}.
+    /// Web qatlamidagi <c>ViewHelpers.ProfileUrl</c> bilan bir xil format.
+    /// </summary>
+    private static string ProfileUrl(string? username, int id)
+        => $"/profile/{(string.IsNullOrWhiteSpace(username) ? id.ToString() : username)}";
 }

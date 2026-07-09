@@ -23,10 +23,17 @@
     @* ===== Kitob qo'shish formasi ===== *@
     <div class="pb-add-panel" id="pbAddPanel" hidden>
         <label class="pb-field-label">Kitobni qidiring</label>
-        <div class="search-box">
-            <span class="search-ico material-symbols-outlined">search</span>
-            <input class="input" type="search" id="pbSearchInput" autocomplete="off"
-                   placeholder="Kitob nomi yoki muallif bo'yicha qidiring..." />
+        <div class="pb-search-row">
+            <div class="search-box">
+                <span class="search-ico material-symbols-outlined">search</span>
+                <input class="input" type="search" id="pbSearchInput" autocomplete="off"
+                       placeholder="Kitob nomi yoki muallif bo'yicha qidiring..." />
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm pb-refresh" data-asaxiy-refresh="#pbSearchInput"
+                    title="Kitob qidiruvi ishlamayaptimi? Bosing — qayta ishga tushadi.">
+                <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">refresh</span>
+                Kitoblarni yangilash
+            </button>
         </div>
         <div class="pb-suggestions" id="pbSuggestions" hidden></div>
 
@@ -43,10 +50,22 @@
             Kitob topilmadimi? Qo'lda kiriting
         </button>
 
-        @* Qo'lda kiritish *@
+        @* Qo'lda kiritish — nom, muallif, muqova rasmi *@
         <div class="pb-manual" id="pbManualForm" hidden>
             <input class="input" type="text" id="pbManualTitle" maxlength="150" placeholder="Kitob nomi *" />
             <input class="input" type="text" id="pbManualAuthor" maxlength="150" placeholder="Muallif (ixtiyoriy)" />
+
+            <div class="pb-cover-upload">
+                <div class="pb-cover-preview" id="pbManualCoverPreview">
+                    <span class="material-symbols-outlined">image</span>
+                </div>
+                <div class="pb-cover-upload-actions">
+                    <label class="btn btn-outline btn-sm" for="pbManualCover">Muqova rasmi</label>
+                    <input type="file" id="pbManualCover" accept="image/*" hidden />
+                    <button type="button" class="btn btn-ghost btn-sm" id="pbManualCoverClear" hidden>O'chirish</button>
+                    <span class="muted" id="pbManualCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                </div>
+            </div>
         </div>
 
         <div class="pb-add-actions">
@@ -86,7 +105,7 @@
             }
         </div>
         <p class="pb-empty" id="pbLibEmpty" @(Model.Library.Count > 0 ? "hidden" : null)>
-            Hozircha almashish uchun mavjud kitob yo'q.
+            Hozircha almashish uchun kitob yo'q.
         </p>
     </section>
 </div>
