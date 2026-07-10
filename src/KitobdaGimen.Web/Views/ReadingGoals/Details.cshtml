@@ -26,6 +26,13 @@
             @if (!g.IsActive)
             {
                 <p class="badge badge-accent" style="margin-top:12px">Tugatilgan 🎉</p>
+                @if (Model.IsOwner)
+                {
+                    <p class="muted" style="margin-top:10px;font-size:13px">
+                        Xato kiritilganmi? Pastdagi «O'qish tarixi»dan noto'g'ri yozuvni o'chiring —
+                        kitob yana faol kitoblaringizga qaytadi.
+                    </p>
+                }
             }
         </div>
 
@@ -42,6 +49,10 @@
                         <tr style="text-align:left; color:var(--text-secondary); font-size:14px">
                             <th style="padding:8px 0">Sana</th>
                             <th style="padding:8px 0">O'qilgan sahifalar</th>
+                            @if (Model.IsOwner)
+                            {
+                                <th style="padding:8px 0; text-align:right">Amal</th>
+                            }
                         </tr>
                     </thead>
                     <tbody>
@@ -50,6 +61,18 @@
                             <tr style="border-top:1px solid var(--border)">
                                 <td style="padding:10px 0">@h.Date.ToString("dd.MM.yyyy")</td>
                                 <td style="padding:10px 0">@h.PagesReadToday bet</td>
+                                @if (Model.IsOwner)
+                                {
+                                    <td style="padding:10px 0; text-align:right">
+                                        <button type="button" class="btn btn-ghost btn-sm progress-delete-btn"
+                                                data-goal="@g.Id"
+                                                data-date="@h.Date.ToString("yyyy-MM-dd")"
+                                                data-label="@h.Date.ToString("dd.MM.yyyy") — @h.PagesReadToday bet"
+                                                title="Bu yozuvni o'chirish">
+                                            <span class="material-symbols-outlined" style="font-size:18px;vertical-align:bottom">delete</span>
+                                        </button>
+                                    </td>
+                                }
                             </tr>
                         }
                     </tbody>
@@ -58,3 +81,30 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @if (Model.IsOwner)
+    {
+        <script>
+        (function () {
+            document.querySelectorAll(".progress-delete-btn").forEach(btn => {
+                btn.addEventListener("click", async () => {
+                    const label = btn.dataset.label || "bu yozuv";
+                    if (!confirm(`"${label}" yozuvini o'chirasizmi? Joriy sahifa qayta hisoblanadi.`)) return;
+                    btn.disabled = true;
+                    try {
+                        await window.kitob.apiPost("/reading-books/progress/delete", {
+                            readingGoalId: parseInt(btn.dataset.goal, 10),
+                            date: btn.dataset.date
+                        });
+                        window.location.reload();
+                    } catch (err) {
+                        alert(err.message);
+                        btn.disabled = false;
+                    }
+                });
+            });
+        })();
+        </script>
+    }
+}

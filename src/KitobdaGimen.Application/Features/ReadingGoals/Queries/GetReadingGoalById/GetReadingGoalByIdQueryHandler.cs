@@ -9,10 +9,12 @@ namespace KitobdaGimen.Application.Features.ReadingGoals.Queries.GetReadingGoalB
 public class GetReadingGoalByIdQueryHandler : IRequestHandler<GetReadingGoalByIdQuery, ReadingGoalDetailDto>
 {
     private readonly IAppDbContext _db;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetReadingGoalByIdQueryHandler(IAppDbContext db)
+    public GetReadingGoalByIdQueryHandler(IAppDbContext db, ICurrentUserService currentUser)
     {
         _db = db;
+        _currentUser = currentUser;
     }
 
     public async Task<ReadingGoalDetailDto> Handle(GetReadingGoalByIdQuery request, CancellationToken cancellationToken)
@@ -22,10 +24,12 @@ public class GetReadingGoalByIdQueryHandler : IRequestHandler<GetReadingGoalById
         // Tugatilgan kitoblar profilda ommaviy ko'rinadi, shuning uchun batafsil sahifa
         // (faqat o'qish — tahrirlash boshqaruvlari yo'q) istalgan kishi uchun ochiq.
         // Faqat mavjudligini tekshiramiz; egalik shart emas.
-        var exists = await _db.ReadingGoals
-            .AnyAsync(g => g.Id == request.ReadingGoalId, cancellationToken);
+        var ownerId = await _db.ReadingGoals
+            .Where(g => g.Id == request.ReadingGoalId)
+            .Select(g => (int?)g.UserId)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!exists)
+        if (ownerId is null)
         {
             throw new NotFoundException("O'qish maqsadi", request.ReadingGoalId);
         }
@@ -45,6 +49,11 @@ public class GetReadingGoalByIdQueryHandler : IRequestHandler<GetReadingGoalById
             })
             .ToListAsync(cancellationToken);
 
-        return new ReadingGoalDetailDto { Goal = dto, History = history };
+        return new ReadingGoalDetailDto
+        {
+            Goal = dto,
+            History = history,
+            IsOwner = _currentUser.UserId is int uid && uid == ownerId.Value
+        };
     }
 }

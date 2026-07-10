@@ -1,4 +1,5 @@
 using KitobdaGimen.Application.Features.ReadingGoals.Commands.CreateReadingGoal;
+using KitobdaGimen.Application.Features.ReadingGoals.Commands.DeleteProgressEntry;
 using KitobdaGimen.Application.Features.ReadingGoals.Commands.DeleteReadingGoal;
 using KitobdaGimen.Application.Features.ReadingGoals.Commands.UpdateReadingProgress;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetActiveReadingGoals;
@@ -41,6 +42,15 @@ public class ReadingGoalsController : AppController
 
     [HttpPost("progress")]
     public async Task<IActionResult> UpdateProgress([FromBody] UpdateReadingProgressCommand command)
+    {
+        var goal = await Mediator.Send(command);
+        return Json(goal);
+    }
+
+    /// <summary>Undoes a mistaken daily reading log and reactivates the book if it was
+    /// mistakenly marked finished.</summary>
+    [HttpPost("progress/delete")]
+    public async Task<IActionResult> DeleteProgressEntry([FromBody] DeleteProgressEntryCommand command)
     {
         var goal = await Mediator.Send(command);
         return Json(goal);
