@@ -39,7 +39,10 @@ public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand>
             ? message.Conversation.User2Id
             : message.Conversation.User1Id;
 
-        _db.Messages.Remove(message);
+        // Soft-delete: hide from both participants but keep the row so a super admin can still
+        // audit the message (the chat-monitoring view shows it marked as deleted).
+        message.IsDeleted = true;
+        message.DeletedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
 
         await _chatNotifier.MessageDeletedAsync(otherUserId, conversationId, request.MessageId, cancellationToken);

@@ -40,6 +40,16 @@ public class Message : BaseEntity
     /// <summary>When the sender last edited the text; null if never edited.</summary>
     public DateTime? EditedAt { get; set; }
 
+    /// <summary>
+    /// Soft-delete flag. When a sender deletes a message it is hidden from the conversation
+    /// for both participants but retained in the database so a super admin can still audit it
+    /// (marked as deleted in the chat-monitoring view). Hard deletes are avoided on purpose.
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>UTC time the message was soft-deleted; null if not deleted.</summary>
+    public DateTime? DeletedAt { get; set; }
+
     /// <summary>Emoji reactions left on this message (Telegram-style).</summary>
     public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
 }

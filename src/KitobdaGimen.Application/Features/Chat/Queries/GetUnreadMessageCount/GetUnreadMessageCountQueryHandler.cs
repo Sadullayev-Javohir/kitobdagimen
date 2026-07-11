@@ -21,9 +21,10 @@ public class GetUnreadMessageCountQueryHandler : IRequestHandler<GetUnreadMessag
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
         // Unread incoming messages across every conversation the user takes part in.
+        // Soft-deleted messages are excluded — they are no longer visible to the recipient.
         return await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId)
             .SelectMany(c => c.Messages)
-            .CountAsync(m => m.SenderId != userId && !m.IsRead, cancellationToken);
+            .CountAsync(m => m.SenderId != userId && !m.IsRead && !m.IsDeleted, cancellationToken);
     }
 }

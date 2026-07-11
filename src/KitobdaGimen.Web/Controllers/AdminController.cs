@@ -11,6 +11,7 @@ using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
 using KitobdaGimen.Application.Features.Home.Queries.GetLandingStats;
 using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
+using KitobdaGimen.Application.Features.Chat.Queries.GetChatMonitoring;
 using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -164,6 +165,78 @@ public class AdminController : AppController
             // Hide the page from non-SuperAdmins.
             return RedirectToAction("Index", "Feed");
         }
+    }
+
+    /// <summary>
+    /// SuperAdmin: chat monitoring hub. Lists users and, for a chosen user, audits every message
+    /// they ever sent (including soft-deleted ones). The actual data is served by the JSON
+    /// endpoints below; this renders the shell (optionally pre-selecting a user via ?userId=).
+    /// </summary>
+    [HttpGet("chat-monitor")]
+    public async Task<IActionResult> ChatMonitor(int? userId)
+    {
+        if (!await IsSuperAdminAsync())
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        ViewData["PreselectedUserId"] = userId;
+        return View();
+    }
+
+    /// <summary>JSON: searchable user picker for the chat monitor (with each user's total sent count).</summary>
+    [HttpGet("chat-monitor/users")]
+    public async Task<IActionResult> ChatMonitorUsers(string? q, int page = 1)
+    {
+        if (!await IsSuperAdminAsync()) return Forbid();
+
+        var term = (q ?? "").Trim().ToLowerInvariant();
+        var pageSize = 30;
+        var p = Math.Max(1, page);
+
+        var usersQuery = _db.Users.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            usersQuery = usersQuery.Where(u =>
+                u.FullName.ToLower().Contains(term) ||
+                (u.Username != null && u.Username.ToLower().Contains(term)));
+        }
+
+        var total = await usersQuery.CountAsync();
+        var users = await usersQuery
+            .OrderBy(u => u.FullName)
+            .Skip((p - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl })
+            .ToListAsync();
+
+        var ids = users.Select(u => u.Id).ToList();
+        var counts = await _db.Messages
+            .Where(m => ids.Contains(m.SenderId))
+            .GroupBy(m => m.SenderId)
+            .Select(g => new { SenderId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.SenderId, g => g.Count);
+
+        var items = users.Select(u => new
+        {
+            u.Id,
+            u.FullName,
+            u.Username,
+            u.AvatarUrl,
+            MessageCount = counts.TryGetValue(u.Id, out var c) ? c : 0
+        }).ToList();
+
+        return Json(new { total, page = p, pageSize, items });
+    }
+
+    /// <summary>JSON: full audit for one user (stats, hourly activity, paged message log).</summary>
+    [HttpGet("chat-monitor/data")]
+    public async Task<IActionResult> ChatMonitorData(int userId, int page = 1)
+    {
+        if (!await IsSuperAdminAsync()) return Forbid();
+
+        var result = await Mediator.Send(new GetChatMonitoringQuery { TargetUserId = userId, Page = page });
+        return Json(result);
     }
 
     [HttpPost("users/{id:int}/role")]

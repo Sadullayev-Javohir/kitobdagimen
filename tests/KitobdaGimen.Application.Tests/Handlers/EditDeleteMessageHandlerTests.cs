@@ -75,7 +75,10 @@ public class EditDeleteMessageHandlerTests : TestBase
 
         await handler.Handle(new DeleteMessageCommand(id), CancellationToken.None);
 
-        Assert.Empty(await db.Messages.ToListAsync());
+        // Soft-delete: the row is retained (so a super admin can still audit it) but flagged.
+        var remaining = await db.Messages.SingleAsync();
+        Assert.True(remaining.IsDeleted);
+        Assert.NotNull(remaining.DeletedAt);
         Assert.Single(notifier.Deleted);
         Assert.Equal(3, notifier.Deleted[0].RecipientUserId);
         Assert.Equal(id, notifier.Deleted[0].MessageId);

@@ -69,16 +69,19 @@ public class GetConversationsQueryHandler
                         },
                     LastSeenAt = c.User1Id == userId ? c.User2.LastSeenAt : c.User1.LastSeenAt,
                     LastMessageText = c.Messages
+                        .Where(m => !m.IsDeleted)
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => m.Text ?? "📖 Post ulashildi")
                         .FirstOrDefault(),
                     LastMessageAt = c.Messages
+                        .Where(m => !m.IsDeleted)
                         .OrderByDescending(m => m.SentAt)
                         .Select(m => (DateTime?)m.SentAt)
                         .FirstOrDefault(),
-                    UnreadCount = c.Messages.Count(m => m.SenderId != userId && !m.IsRead)
+                    UnreadCount = c.Messages.Count(m => m.SenderId != userId && !m.IsRead && !m.IsDeleted)
                 },
                 SortKey = c.Messages
+                    .Where(m => !m.IsDeleted)
                     .OrderByDescending(m => m.SentAt)
                     .Select(m => (DateTime?)m.SentAt)
                     .FirstOrDefault() ?? c.CreatedAt

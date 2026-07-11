@@ -15,6 +15,11 @@ public class MessageConfiguration : IEntityTypeConfiguration<Message>
         builder.Property(m => m.StickerKey).HasMaxLength(64);
         builder.Property(m => m.VoiceUrl).HasMaxLength(512);
 
+        // Soft-delete: hidden from normal chats but retained for admin audit. Indexed so the
+        // "show me non-deleted messages" filter stays cheap.
+        builder.Property(m => m.IsDeleted).HasDefaultValue(false);
+        builder.HasIndex(m => new { m.IsDeleted, m.ConversationId, m.SentAt });
+
         builder.HasOne(m => m.Conversation)
             .WithMany(c => c.Messages)
             .HasForeignKey(m => m.ConversationId)

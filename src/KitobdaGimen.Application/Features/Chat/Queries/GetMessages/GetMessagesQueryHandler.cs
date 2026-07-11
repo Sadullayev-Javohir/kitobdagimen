@@ -37,7 +37,7 @@ public class GetMessagesQueryHandler : IRequestHandler<GetMessagesQuery, PagedRe
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-        var source = _db.Messages.Where(m => m.ConversationId == request.ConversationId);
+        var source = _db.Messages.Where(m => m.ConversationId == request.ConversationId && !m.IsDeleted);
         var totalCount = await source.CountAsync(cancellationToken);
 
         // Page from newest backwards, then present each page oldest-to-newest for display.
