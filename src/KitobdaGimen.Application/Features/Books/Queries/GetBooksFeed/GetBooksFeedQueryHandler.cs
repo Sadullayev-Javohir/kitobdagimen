@@ -46,8 +46,15 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
 
         var totalCount = await projected.CountAsync(cancellationToken);
 
+        // Eng so'nggi faollik vaqti: LastPost va LastQuote'ning eng kattasi. Ikkalasidan
+        // biri NULL bo'lishi mumkin (faqat taqrizlari yoki faqat iqtiboslari bor kitob),
+        // shuning uchun NULL ni aniq himoyalaymiz — aks holda "X > NULL" noto'g'ri baholanib,
+        // faqat postli kitoblar NULL bo'yicha tartiblanib pastga tushib qoladi. (The query
+        // guarantees at least one is non-null via the Posts.Any() || Quotes.Any() filter.)
         var raw = await projected
-            .OrderByDescending(b => b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote)
+            .OrderByDescending(b => b.LastPost == null ? b.LastQuote
+                : b.LastQuote == null ? b.LastPost
+                : (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote))
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -56,7 +63,9 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
             .Select(b => new BookFeedItemDto(
                 b.Id, b.Title, b.Author, b.CoverUrl, b.Source, b.GenreName,
                 b.ReviewCount, b.QuoteCount, b.ReaderCount,
-                (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote) ?? DateTime.UtcNow))
+                (b.LastPost == null ? b.LastQuote
+                    : b.LastQuote == null ? b.LastPost
+                    : (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote)) ?? DateTime.UtcNow))
             .ToList();
 
         return PagedResult<BookFeedItemDto>.Create(items, page, pageSize, totalCount);

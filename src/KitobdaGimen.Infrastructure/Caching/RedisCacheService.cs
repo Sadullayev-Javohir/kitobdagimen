@@ -24,14 +24,35 @@ public class RedisCacheService : ICacheService
 
     public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
     {
+        RedisValue value;
         try
         {
-            var value = await _redis.GetDatabase().StringGetAsync(key);
-            return value.HasValue ? JsonSerializer.Deserialize<T>(value!, JsonOptions) : default;
+            value = await _redis.GetDatabase().StringGetAsync(key);
         }
         catch (RedisException ex)
         {
             _logger.LogWarning(ex, "Redis o'qishda xatolik (key: {Key})", key);
+            return default;
+        }
+
+        // A missing key returns null. Because the return type is T?, this is distinguishable
+        // from a legitimately cached 0 / false for value types, so callers must treat null as
+        // "not in cache" (do not coalesce to a default and assume a hit).
+        if (!value.HasValue)
+        {
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(value!, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            // Stored JSON was written with an incompatible T or is malformed (e.g. a non-nullable
+            // value type requested from a stored JSON null). A cache read is best-effort and must
+            // never break the calling request, so treat the bad entry as a miss rather than throw.
+            _logger.LogWarning(ex, "Redis keshni deserializatsiya qilib bo'lmadi (key: {Key})", key);
             return default;
         }
     }

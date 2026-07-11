@@ -26,6 +26,9 @@ public static class BackgroundJobsServiceExtensions
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
             .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
+            // Connection-level pooling is on by default. Hangfire retries failed jobs at the
+            // job level, so a transient Postgres blip during a recurring job is recovered
+            // automatically rather than dropped permanently.
             .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
 
         services.AddHangfireServer();

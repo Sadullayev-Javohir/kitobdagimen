@@ -34,39 +34,63 @@ public class ReservationExpiryJob
 
         // Tasdiqlanmagan va muddati o'tgan band qilishlar. Kitob hali "Band qilindi"da
         // bo'lgani muhim — egasi topshirgan bo'lsa (O'qiyapti) tegmaymiz.
-        var expired = await _db.PhysicalBookReservations
-            .Include(r => r.PhysicalBook)
+        // Faqat xabardor qilish uchun Id/ReserverId ni olishimiz kerak; o'zgarishlar
+        // quyida atomik, server tomonidagi shartli UPDATE/DELETE bilan bajariladi.
+        var candidates = await _db.PhysicalBookReservations
             .Where(r => !r.IsConfirmed
                         && r.ExpiresAt <= now
                         && r.PhysicalBook.Status == PhysicalBookStatus.BandQilindi)
+            .Select(r => new { r.Id, r.ReserverId })
             .ToListAsync(cancellationToken);
 
-        if (expired.Count == 0)
+        if (candidates.Count == 0)
         {
             return;
         }
 
-        foreach (var reservation in expired)
+        var expiredCount = 0;
+        foreach (var candidate in candidates)
         {
-            reservation.PhysicalBook.Status = PhysicalBookStatus.Mavjud;
-            _db.PhysicalBookReservations.Remove(reservation);
-        }
+            // Kitobni "Mavjud"ga faqat shartlar hali ham to'g'ri bo'lsa o'tkazamiz —
+            // ya'ni u hali "Band qilindi"da va band qilish hali tasdiqlanmagan. SHART
+            // serverda, yangilash vaqtida baholanishadi, shuning uchun egasi aynan shu
+            // orada topshirishni tasdiqlasa (IsConfirmed=true, Status=O'qiyapti) bu UPDATE
+            // 0 ta qatorni o'zgartiradi va kitobga tegmaymiz (eski tracking entiteti
+            // bilan ustiga yozish muammosi yo'q).
+            var updated = await _db.PhysicalBooks
+                .Where(pb => pb.Status == PhysicalBookStatus.BandQilindi
+                             && pb.Reservations.Any(r => r.Id == candidate.Id
+                                                          && !r.IsConfirmed
+                                                          && r.ExpiresAt <= now))
+                .ExecuteUpdateAsync(pb => pb.SetProperty(p => p.Status, PhysicalBookStatus.Mavjud),
+                    cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+            if (updated == 0)
+            {
+                // Parallel tasdiqlash birinchi bo'lib sodir bo'ldi — bu band qilishni o'tkazib yuboramiz.
+                continue;
+            }
 
-        // Band qilgan foydalanuvchilarni xabardor qilamiz — muddat o'tdi, kitob yana mavjud.
-        foreach (var reservation in expired)
-        {
-            await _notifications.NotifyAsync(reservation.ReserverId, new NotificationDto
+            // Kitob haqiqatan ham bizga qaytgan: band qilish yozuvini o'chiramiz va foydalanuvchini xabardor qilamiz.
+            await _db.PhysicalBookReservations
+                .Where(r => r.Id == candidate.Id && !r.IsConfirmed)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await _notifications.NotifyAsync(candidate.ReserverId, new NotificationDto
             {
                 Type = "physical_book_expired",
                 ActorName = "Kutubxona",
                 Message = "Band qilingan kitobingiz muddati (24 soat) tugadi va yana boshqalarga mavjud bo'ldi.",
                 Url = "/almashish"
             }, cancellationToken);
+
+            expiredCount++;
         }
 
-        _logger.LogInformation(
-            "Muddati o'tgan {Count} ta kitob band qilishi bekor qilindi.", expired.Count);
+        if (expiredCount > 0)
+        {
+            _logger.LogInformation(
+                "Muddati o'tgan {Count} ta kitob band qilishi bekor qilindi.", expiredCount);
+        }
     }
 }

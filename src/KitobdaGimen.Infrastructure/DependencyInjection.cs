@@ -26,7 +26,15 @@ public static class DependencyInjection
                 "Connection string 'DefaultConnection' topilmadi.");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString));
+            options.UseNpgsql(connectionString, npgsqlOptions =>
+                // Transient PostgreSQL/network faults (brief failover, dropped idle connection,
+                // momentary pool exhaustion) are retried with exponential backoff instead of
+                // surfacing as an immediate 5xx. EF-only: the InMemory provider used by tests
+                // is unaffected.
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 6,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorCodesToAdd: null)));
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
@@ -101,7 +109,7 @@ public static class DependencyInjection
 
         services.AddIdentityServices(configuration);
         services.AddCaching(configuration);
-        services.AddRealTime();
+        services.AddRealTime(configuration);
         services.AddBackgroundJobs(configuration);
 
         return services;
