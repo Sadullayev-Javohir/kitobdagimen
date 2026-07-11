@@ -1,460 +1,493 @@
-@using KitobdaGimen.Domain.Enums
+@using KitobdaGimen.Web
 @{
     ViewData["Title"] = "Chat kuzatuv";
     ViewData["Robots"] = "noindex, nofollow";
-    var preselected = ViewData["PreselectedUserId"] as int?;
+    var preselected = ViewData["PreselectedConversationId"] as int?;
+    var stickers = KitobdaGimen.Web.ChatStickers.All;
 }
 
-<div class="container page chat-monitor">
-    <div class="cm-head">
-        <a href="/admin" class="cm-back" title="Admin panelga qaytish">
-            <span class="material-symbols-outlined">arrow_back</span>
-        </a>
-        <div>
-            <h1>Xabar almashishni kuzatish</h1>
-            <p class="muted">Super admin uchun: foydalanuvchining barcha xabarlari (o'chirilganlari ham), suhbatdoshlari, tahrirlar va faollik vaqti.</p>
+<div class="chat chat-monitor">
+    <aside class="chat-sidebar">
+        <div class="chat-search">
+            <div class="search-box">
+                <span class="search-ico">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+                </span>
+                <input class="input" id="cmSearch" type="search" placeholder="Ism yoki foydalanuvchi nomi..." autocomplete="off" />
+            </div>
         </div>
-    </div>
 
-    <div class="cm-layout">
-        <!-- Foydalanuvchilar ro'yxati -->
-        <aside class="cm-users card">
-            <div class="cm-search">
-                <span class="material-symbols-outlined">search</span>
-                <input type="search" id="cmUserSearch" placeholder="Ism yoki foydalanuvchi nomi..." autocomplete="off" />
-            </div>
-            <div id="cmUserList" class="cm-user-list"></div>
-            <div id="cmUserListMore" class="cm-user-more"></div>
-        </aside>
+        <div class="chat-list-title">Suhbatlar (kim kim bilan)</div>
+        <div id="cmList" class="cm-list"></div>
+        <div id="cmMoreWrap" class="cm-more"></div>
+    </aside>
 
-        <!-- Tafsilotlar -->
-        <section class="cm-detail">
-            <div id="cmEmpty" class="cm-empty card">
+    <section class="chat-main">
+        <div id="cmEmpty" class="chat-empty">
+            <div>
                 <span class="material-symbols-outlined">forum</span>
-                <p>Chap tomondan kuzatmoqchi bo'lgan foydalanuvchini tanlang.</p>
+                <p>Chap tomondan kuzatmoqchi bo‘lgan suhbatni tanlang.</p>
+                <p class="muted">Faqat super admin ko‘ra oladi — bu yerda xabar yuborib bo‘lmaydi.</p>
+            </div>
+        </div>
+
+        <div id="cmThread" class="cm-thread" hidden>
+            <header class="chat-header cm-header" id="cmHeader"></header>
+
+            <div class="messages" id="messages"></div>
+
+            <div class="cm-notice">
+                <span class="material-symbols-outlined">visibility</span>
+                Faqat kuzatuv rejimi — xabar yuborish, tahrirlash yoki o‘chirish mumkin emas.
             </div>
 
-            <div id="cmDetailBody" class="cm-detail-body" hidden>
-                <header class="cm-user-head card">
-                    <div id="cmAvatar" class="cm-avatar"></div>
-                    <div class="cm-user-meta">
-                        <div id="cmName" class="cm-user-name"></div>
-                        <div id="cmUsername" class="muted"></div>
-                    </div>
-                </header>
-
-                <div class="cm-stats">
-                    <div class="cm-stat card">
-                        <div class="cm-stat-val" id="cmStatPartners">0</div>
-                        <div class="cm-stat-label">Suhbatdoshlar</div>
-                    </div>
-                    <div class="cm-stat card">
-                        <div class="cm-stat-val" id="cmStatSent">0</div>
-                        <div class="cm-stat-label">Jami xabarlar</div>
-                    </div>
-                    <div class="cm-stat card">
-                        <div class="cm-stat-val" id="cmStatEdited">0</div>
-                        <div class="cm-stat-label">Tahrirlangan</div>
-                    </div>
-                    <div class="cm-stat card cm-stat-danger">
-                        <div class="cm-stat-val" id="cmStatDeleted">0</div>
-                        <div class="cm-stat-label">O'chirilgan</div>
-                    </div>
-                </div>
-
-                <div class="card cm-chart-card">
-                    <h2 class="cm-section-title">
-                        <span class="material-symbols-outlined">schedule</span>
-                        Faollik vaqti (soat bo'yicha, UTC)
-                    </h2>
-                    <div id="cmChart" class="cm-chart"></div>
-                </div>
-
-                <div class="card cm-msg-card">
-                    <h2 class="cm-section-title">
-                        <span class="material-symbols-outlined">forum</span>
-                        Xabarlar (yangidan eskiga)
-                    </h2>
-                    <div id="cmMessages" class="cm-messages"></div>
-                    <div id="cmLoadMoreWrap" class="cm-loadmore" hidden>
-                        <button type="button" id="cmLoadMore" class="btn btn-outline btn-sm">Yana yuklash</button>
-                    </div>
-                </div>
+            <!-- Rasm lightbox -->
+            <div class="chat-lightbox" id="cmLightbox" hidden>
+                <button type="button" class="chat-lightbox-close" id="cmLightboxClose" aria-label="Yopish">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+                </button>
+                <img id="cmLightboxImg" src="" alt="Rasm" />
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
 </div>
 
 @section Scripts {
 <script>
 (function () {
-    var preselected = @(preselected.HasValue ? preselected.Value.ToString() : "null");
+    "use strict";
+    function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : s; return d.innerHTML; }
+    const pad2 = n => String(n).padStart(2, "0");
 
-    var state = { userId: null, page: 1, hasMore: false, loading: false, userPage: 1, userTerm: "" };
-
-    var userListEl = document.getElementById("cmUserList");
-    var userListMoreEl = document.getElementById("cmUserListMore");
-    var detailBody = document.getElementById("cmDetailBody");
-    var emptyEl = document.getElementById("cmEmpty");
-    var searchEl = document.getElementById("cmUserSearch");
-
-    function escapeHtml(s) {
-        return String(s == null ? "" : s)
-            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    // ── O'zbekiston vaqti (UTC+5) — /chat bilan bir xil, qurilma timezone'idan mustaqil ──
+    const UZ_OFFSET_MS = 5 * 60 * 60 * 1000;
+    function uzDate(value) { const d = new Date(value); return isNaN(d) ? null : new Date(d.getTime() + UZ_OFFSET_MS); }
+    function fmtTime(iso) {
+        if (!iso) return "";
+        const d = uzDate(iso); if (!d) return "";
+        return `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`;
+    }
+    function fmtListTime(iso) {
+        if (!iso) return "";
+        const d = uzDate(iso); if (!d) return "";
+        const now = uzDate(new Date());
+        const sameDay = d.getUTCFullYear() === now.getUTCFullYear()
+            && d.getUTCMonth() === now.getUTCMonth() && d.getUTCDate() === now.getUTCDate();
+        if (sameDay) return fmtTime(iso);
+        return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}.${String(d.getUTCFullYear()).slice(-2)}`;
     }
 
-    function fmtUtc(iso) {
-        var d = new Date(iso);
-        if (isNaN(d)) return "";
-        function p(n) { return (n < 10 ? "0" : "") + n; }
-        return d.getUTCFullYear() + "-" + p(d.getUTCMonth() + 1) + "-" + p(d.getUTCDate()) +
-            " " + p(d.getUTCHours()) + ":" + p(d.getUTCMinutes()) + " UTC";
-    }
+    // Stikerlar (server bilan bir xil manba).
+    const STICKERS = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(stickers));
 
-    function avatarUrl(u) {
-        return u && u.AvatarUrl ? u.AvatarUrl : null;
-    }
+    const ICON = {
+        single: '<svg class="tick-svg" viewBox="0 0 18 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7l3.4 3.4L13 2.4"/></svg>',
+        double: '<svg class="tick-svg dbl" viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7l3.4 3.4L12 2.4"/><path d="M8.5 9.6L16.5 2"/></svg>',
+        book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+        play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
+    };
 
-    function initialOf(name) {
+    function initials(name) {
         if (!name) return "?";
-        var parts = String(name).trim().split(/\s+/);
-        var s = (parts[0] ? parts[0][0] : "") + (parts[1] ? parts[1][0] : "");
-        return (s || "?").toUpperCase();
+        const parts = String(name).trim().split(/\s+/);
+        return ((parts[0] ? parts[0][0] : "") + (parts[1] ? parts[1][0] : "") || "?").toUpperCase();
     }
-
-    // Rasm bo'lsa <img>, bo'lmasa bosh harflar bilan doira qaytaradi (singlisiz, XSS-xavfsiz).
-    function avatarNode(url, name, sizeClass) {
-        if (url) {
-            var img = document.createElement("img");
-            img.className = sizeClass;
-            img.src = url;
-            img.alt = "";
-            return img;
-        }
-        var d = document.createElement("div");
-        d.className = sizeClass + " cm-initial";
-        d.textContent = initialOf(name);
-        return d;
+    function avatarHtml(u, cls) {
+        if (u && u.avatarUrl) return `<img class="${cls}" src="${esc(u.avatarUrl)}" alt="${esc(u.fullName || "")}" referrerpolicy="no-referrer" />`;
+        return `<span class="${cls}">${esc(initials(u ? u.fullName : ""))}</span>`;
     }
+    function msgPreview(m) {
+        if (m.text) return m.text;
+        if (m.imageUrl) return "📷 Rasm";
+        if (m.voiceUrl) return "🎤 Ovozli xabar";
+        if (m.stickerKey) return "Stiker";
+        if (m.sharedPost) return "📚 Post";
+        return "";
+    }
+    function fmtDur(sec) { sec = Math.max(0, Math.round(sec || 0)); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; }
 
-    // ── Foydalanuvchi ro'yxati ─────────────────────────────────────────────
-    async function loadUsers(reset) {
+    const state = {
+        convId: null, page: 1, totalPages: 1, loading: false,
+        userPage: 1, userTerm: "",
+        users: null, perspectiveId: null,
+        messages: []
+    };
+
+    const listEl = document.getElementById("cmList");
+    const moreWrap = document.getElementById("cmMoreWrap");
+    const emptyEl = document.getElementById("cmEmpty");
+    const threadEl = document.getElementById("cmThread");
+    const headerEl = document.getElementById("cmHeader");
+    const messagesEl = document.getElementById("messages");
+    const searchEl = document.getElementById("cmSearch");
+
+    // ── Suhbatlar ro'yxati ───────────────────────────────────────────────
+    async function loadConversations(reset) {
         if (reset) state.userPage = 1;
-        var q = searchEl.value.trim();
+        const q = searchEl.value.trim();
         if (q !== state.userTerm) { state.userTerm = q; state.userPage = 1; }
-        var url = "/admin/chat-monitor/users?q=" + encodeURIComponent(q) + "&page=" + state.userPage;
-        var r = await fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+        const r = await fetch(`/admin/chat-monitor/conversations?q=${encodeURIComponent(q)}&page=${state.userPage}`,
+            { headers: { "X-Requested-With": "XMLHttpRequest" } });
         if (!r.ok) return;
-        var d = await r.json();
-        if (state.userPage === 1) userListEl.innerHTML = "";
-        d.items.forEach(function (u) {
-            var row = document.createElement("button");
-            row.type = "button";
-            row.className = "cm-user-row";
-            row.dataset.id = u.id;
+        const d = await r.json();
+        if (state.userPage === 1) listEl.innerHTML = "";
+        if (state.userPage === 1 && d.items.length === 0) {
+            listEl.innerHTML = `<p class="muted cm-empty-list">Suhbat topilmadi.</p>`;
+        }
+        d.items.forEach(c => listEl.appendChild(buildConvRow(c)));
 
-            var av = avatarNode(avatarUrl(u), u.fullName, "cm-user-avatar");
-
-            var meta = document.createElement("div");
-            meta.className = "cm-user-row-meta";
-            var name = document.createElement("div");
-            name.className = "cm-user-row-name";
-            name.textContent = u.fullName || ("#" + u.id);
-            var sub = document.createElement("div");
-            sub.className = "muted cm-user-row-sub";
-            sub.textContent = (u.username ? "@@" + u.username + " · " : "") + u.messageCount + " xabar";
-            meta.appendChild(name);
-            meta.appendChild(sub);
-
-            row.appendChild(av);
-            row.appendChild(meta);
-            row.addEventListener("click", function () { selectUser(u.id); });
-            userListEl.appendChild(row);
-        });
-
-        var hasMore = (state.userPage * d.pageSize) < d.total;
-        userListMoreEl.innerHTML = "";
+        const hasMore = (state.userPage * d.pageSize) < d.total;
+        moreWrap.innerHTML = "";
         if (hasMore) {
-            var more = document.createElement("button");
-            more.type = "button";
-            more.className = "btn btn-outline btn-sm";
-            more.textContent = "Ko'proq foydalanuvchi";
-            more.addEventListener("click", function () { state.userPage++; loadUsers(false); });
-            userListMoreEl.appendChild(more);
+            const b = document.createElement("button");
+            b.type = "button"; b.className = "btn btn-outline btn-sm"; b.textContent = "Ko‘proq suhbat";
+            b.addEventListener("click", () => { state.userPage++; loadConversations(false); });
+            moreWrap.appendChild(b);
         }
     }
 
-    // ── Tanlangan foydalanuvchi uchun ma'lumotlar ──────────────────────────
-    async function selectUser(userId) {
-        state.userId = userId;
-        state.page = 1;
-        state.hasMore = false;
+    function buildConvRow(c) {
+        const a = document.createElement("a");
+        a.className = "cm-conv";
+        a.dataset.id = c.id;
+        a.href = "#";
+        const active = state.convId === c.id;
+        if (active) a.classList.add("active");
 
-        Array.prototype.forEach.call(userListEl.querySelectorAll(".cm-user-row"), function (el) {
-            el.classList.toggle("active", el.dataset.id === String(userId));
+        const avs = document.createElement("span");
+        avs.className = "cm-avatars";
+        avs.innerHTML = avatarHtml(c.user1, "cm-av cm-av-1") + avatarHtml(c.user2, "cm-av cm-av-2");
+
+        const info = document.createElement("div");
+        info.className = "cm-conv-info";
+        const names = document.createElement("div");
+        names.className = "cm-conv-names";
+        names.innerHTML = `${esc(c.user1.fullName)} <span class="cm-conv-x">⇄</span> ${esc(c.user2.fullName)}`;
+        const last = document.createElement("div");
+        last.className = "cm-conv-last";
+        last.textContent = c.lastMessageText || "Suhbat boshlandi";
+        info.appendChild(names);
+        info.appendChild(last);
+
+        const time = document.createElement("div");
+        time.className = "cm-conv-time";
+        time.textContent = fmtListTime(c.lastMessageAt);
+
+        a.appendChild(avs);
+        a.appendChild(info);
+        a.appendChild(time);
+        a.addEventListener("click", (e) => { e.preventDefault(); openConversation(c.id); });
+        return a;
+    }
+
+    // ── Suhbatni ochish (xabarlar oqimi) ───────────────────────────────
+    async function openConversation(convId) {
+        state.convId = convId;
+        state.page = 1;
+        state.messages = [];
+
+        Array.prototype.forEach.call(listEl.querySelectorAll(".cm-conv"), el => {
+            el.classList.toggle("active", el.dataset.id === String(convId));
         });
 
         emptyEl.hidden = true;
-        detailBody.hidden = false;
-        document.getElementById("cmMessages").innerHTML = "";
+        threadEl.hidden = false;
+        messagesEl.innerHTML = "";
+        headerEl.innerHTML = `<div class="cm-loading">Yuklanmoqda…</div>`;
 
-        var r = await fetch("/admin/chat-monitor/data?userId=" + userId + "&page=1",
+        const r = await fetch(`/admin/chat-monitor/conversation/${convId}/messages?page=1`,
             { headers: { "X-Requested-With": "XMLHttpRequest" } });
-        if (!r.ok) return;
-        var d = await r.json();
+        if (!r.ok) { headerEl.innerHTML = `<div class="cm-loading">Xatolik yuz berdi.</div>`; return; }
+        const d = await r.json();
 
-        // Foydalanuvchi sarlavhasi
-        var avatarBox = document.getElementById("cmAvatar");
-        avatarBox.replaceChildren(avatarNode(avatarUrl(d.user), d.user.fullName, "cm-avatar"));
-        document.getElementById("cmName").textContent = d.user.fullName || ("#" + d.user.id);
-        document.getElementById("cmUsername").textContent =
-            d.user.username ? "@@" + d.user.username : "";
+        state.users = { user1: d.user1, user2: d.user2 };
+        state.page = d.page;
+        state.totalPages = d.totalPages;
+        state.perspectiveId = d.user2.id; // default: ikkinchi ishtirokchi "o'zim" tomonida
+        state.messages = d.items.slice();
 
-        // Statistika
-        document.getElementById("cmStatPartners").textContent = d.stats.conversationPartners;
-        document.getElementById("cmStatSent").textContent = d.stats.messagesSent;
-        document.getElementById("cmStatEdited").textContent = d.stats.messagesEdited;
-        document.getElementById("cmStatDeleted").textContent = d.stats.messagesDeleted;
-
-        renderChart(d.activityByHourUtc);
-        appendMessages(d.messages.items, d.messages);
+        renderHeader();
+        renderAll();
     }
 
-    function renderChart(hours) {
-        var chart = document.getElementById("cmChart");
-        chart.innerHTML = "";
-        var max = Math.max.apply(null, hours.concat([1]));
-        for (var h = 0; h < 24; h++) {
-            var col = document.createElement("div");
-            col.className = "cm-bar-col";
+    function renderHeader() {
+        if (!state.users) return;
+        const u1 = state.users.user1, u2 = state.users.user2;
+        headerEl.innerHTML = "";
 
-            var bar = document.createElement("div");
-            bar.className = "cm-bar";
-            bar.style.height = (hours[h] / max * 100) + "%";
-            bar.title = h + ":00 UTC — " + hours[h] + " xabar";
+        const avs = document.createElement("span");
+        avs.className = "cm-avatars cm-avatars-lg";
+        avs.innerHTML = avatarHtml(u1, "cm-av cm-av-1") + avatarHtml(u2, "cm-av cm-av-2");
 
-            var lbl = document.createElement("div");
-            lbl.className = "cm-bar-lbl";
-            lbl.textContent = h;
+        const info = document.createElement("div");
+        info.className = "cm-head-info";
+        info.innerHTML = `<div class="cm-head-names">${esc(u1.fullName)} <span class="cm-conv-x">⇄</span> ${esc(u2.fullName)}</div>` +
+            `<div class="cm-head-sub muted">Kim kim bilan yozishganini kuzatish</div>`;
 
-            col.appendChild(bar);
-            col.appendChild(lbl);
-            chart.appendChild(col);
-        }
-    }
-
-    function msgContent(m) {
-        if (m.imageUrl) return { kind: "image", value: m.imageUrl };
-        if (m.voiceUrl) return { kind: "voice", value: (m.voiceDurationSeconds || "?") + "s" };
-        if (m.stickerKey) return { kind: "sticker", value: m.stickerKey };
-        if (m.text) return { kind: "text", value: m.text };
-        return { kind: "empty", value: "" };
-    }
-
-    function appendMessages(items, pageInfo) {
-        var box = document.getElementById("cmMessages");
-        items.forEach(function (m) {
-            var wrap = document.createElement("div");
-            wrap.className = "cm-msg" + (m.isDeleted ? " is-deleted" : "");
-
-            var top = document.createElement("div");
-            top.className = "cm-msg-top";
-
-            var av = avatarNode(m.partnerAvatarUrl, m.partnerName, "cm-msg-avatar");
-
-            var who = document.createElement("div");
-            who.className = "cm-msg-who";
-            var pname = document.createElement("span");
-            pname.className = "cm-msg-partner";
-            pname.textContent = m.partnerName || ("#" + m.partnerId);
-            var time = document.createElement("span");
-            time.className = "muted cm-msg-time";
-            time.textContent = fmtUtc(m.sentAt);
-            who.appendChild(pname);
-            who.appendChild(time);
-
-            top.appendChild(av);
-            top.appendChild(who);
-            wrap.appendChild(top);
-
-            var body = document.createElement("div");
-            body.className = "cm-msg-body";
-
-            var c = msgContent(m);
-            if (c.kind === "text") {
-                var t = document.createElement("div");
-                t.className = "cm-msg-text";
-                t.textContent = c.value; // textContent => XSS-xavfsiz
-                body.appendChild(t);
-            } else if (c.kind === "image") {
-                var img = document.createElement("img");
-                img.className = "cm-msg-img";
-                img.src = c.value;
-                img.alt = "Rasm";
-                body.appendChild(img);
-            } else if (c.kind === "voice") {
-                var v = document.createElement("div");
-                v.className = "cm-msg-note";
-                v.textContent = "🎤 Ovozli xabar (" + c.value + ")";
-                body.appendChild(v);
-            } else if (c.kind === "sticker") {
-                var s = document.createElement("div");
-                s.className = "cm-msg-note";
-                s.textContent = "😊 Stiker: " + c.value;
-                body.appendChild(s);
-            }
-
-            // Tahrirlangan belgisi
-            if (m.isEdited) {
-                var ed = document.createElement("div");
-                ed.className = "cm-msg-flag cm-flag-edit";
-                ed.textContent = "✏ Tahrirlangan" + (m.editedAt ? " — " + fmtUtc(m.editedAt) : "");
-                body.appendChild(ed);
-            }
-
-            wrap.appendChild(body);
-
-            // O'chirilgan xabar — pastda aniq belgi
-            if (m.isDeleted) {
-                var del = document.createElement("div");
-                del.className = "cm-msg-flag cm-flag-delete";
-                del.textContent = "🗑 O'chirilgan" + (m.deletedAt ? " — " + fmtUtc(m.deletedAt) : "");
-                wrap.appendChild(del);
-            }
-
-            box.appendChild(wrap);
+        const toggle = document.createElement("div");
+        toggle.className = "cm-persp";
+        toggle.innerHTML = `<span class="cm-persp-label muted">Ko‘rinish:</span>`;
+        [u1, u2].forEach(u => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "cm-persp-btn" + (state.perspectiveId === u.id ? " active" : "");
+            b.innerHTML = `${avatarHtml(u, "cm-persp-av")}<span>${esc(u.fullName.split(" ")[0])}</span>`;
+            b.addEventListener("click", () => {
+                state.perspectiveId = u.id;
+                Array.prototype.forEach.call(toggle.querySelectorAll(".cm-persp-btn"), x => x.classList.remove("active"));
+                b.classList.add("active");
+                renderAll();
+            });
+            toggle.appendChild(b);
         });
 
-        // Sahifalash
-        var total = pageInfo.totalCount;
-        var loaded = items.length + ((state.page - 1) * pageInfo.pageSize);
-        state.hasMore = loaded < total;
-        var moreWrap = document.getElementById("cmLoadMoreWrap");
-        moreWrap.hidden = !state.hasMore;
+        headerEl.appendChild(avs);
+        headerEl.appendChild(info);
+        headerEl.appendChild(toggle);
     }
 
-    document.getElementById("cmLoadMore").addEventListener("click", async function () {
-        if (state.loading || !state.hasMore || !state.userId) return;
-        state.loading = true;
-        state.page++;
-        try {
-            var r = await fetch("/admin/chat-monitor/data?userId=" + state.userId + "&page=" + state.page,
-                { headers: { "X-Requested-With": "XMLHttpRequest" } });
-            if (r.ok) {
-                var d = await r.json();
-                appendMessages(d.messages.items, d.messages);
-            }
-        } finally {
-            state.loading = false;
+    function renderAll() {
+        messagesEl.innerHTML = "";
+        const frag = document.createDocumentFragment();
+        state.messages.forEach(m => frag.appendChild(renderMessage(m)));
+        messagesEl.appendChild(frag);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function buildMsgInner(m) {
+        const mine = m.senderId === state.perspectiveId;
+        let content = "";
+        if (m.replyToId) {
+            content += `<button type="button" class="msg-reply-quote" data-reply-to="${m.replyToId}">` +
+                `<span class="rq-name">${esc(m.replyToSenderName || "")}</span>` +
+                `<span class="rq-text">${esc(m.replyToPreview || "")}</span></button>`;
         }
-    });
+        if (m.stickerKey && STICKERS[m.stickerKey]) content += `<span class="msg-sticker">${STICKERS[m.stickerKey]}</span>`;
+        if (m.imageUrl) content += `<img class="msg-image" src="${esc(m.imageUrl)}" data-full="${esc(m.imageUrl)}" alt="rasm" loading="lazy" />`;
+        if (m.voiceUrl) {
+            content += `<div class="msg-voice" data-voice="${esc(m.voiceUrl)}" data-dur="${m.voiceDurationSeconds || 0}">` +
+                `<button type="button" class="mv-play" aria-label="Ovozni eshitish">${ICON.play}</button>` +
+                `<div class="mv-body"><div class="mv-track"><span class="mv-fill"></span></div>` +
+                `<div class="mv-dur">${fmtDur(m.voiceDurationSeconds)}</div></div>` +
+                `<audio src="${esc(m.voiceUrl)}" preload="none"></audio></div>`;
+        }
+        if (m.text) content += `<span class="msg-text">${esc(m.text)}</span>`;
+        if (m.sharedPost) {
+            content += `<a class="shared-card" href="/posts/${m.sharedPost.postId}">` +
+                `<span class="shared-ico">${ICON.book}</span>` +
+                `<span class="shared-meta"><span class="shared-title">${esc(m.sharedPost.bookTitle || "")}</span>` +
+                `<span class="shared-author">${esc(m.sharedPost.bookAuthor || "")}</span></span></a>`;
+        }
+        let meta = "";
+        if (m.editedAt) meta += `<span class="msg-edited">tahrirlangan</span>`;
+        meta += `<span class="msg-time" data-ts="${esc(m.sentAt || "")}">${fmtTime(m.sentAt)}</span>`;
+        if (mine) meta += `<span class="ticks ${m.isRead ? "read" : ""}">${m.isRead ? ICON.double : ICON.single}</span>`;
 
-    // Qidiruv (debounce)
-    var t;
-    searchEl.addEventListener("input", function () {
-        clearTimeout(t);
-        t = setTimeout(function () { loadUsers(true); }, 250);
-    });
+        const reactions = (m.reactions && m.reactions.length)
+            ? `<div class="msg-reactions">` + m.reactions.map(r =>
+                `<span class="reaction-chip"><span>${esc(r.emoji)}</span><span class="rc-count">${r.count}</span></span>`).join("") + `</div>`
+            : "";
 
-    // Ishga tushirish
-    loadUsers(true);
-    if (preselected) selectUser(preselected);
+        const nameLabel = `<div class="msg-sender">${esc(m.senderName || "")}</div>`;
+        return `<div class="msg-content">${nameLabel}${content}` +
+            (meta ? `<span class="meta-row">${meta}</span>` : "") + `</div>` + reactions;
+    }
+
+    function renderMessage(m) {
+        const mine = m.senderId === state.perspectiveId;
+        const isSticker = !!(m.stickerKey && STICKERS[m.stickerKey]);
+        const div = document.createElement("div");
+        div.className = `msg ${mine ? "out" : "in"} ${isSticker ? "is-sticker" : ""} ${m.imageUrl ? "has-image" : ""} ${m.isDeleted ? "is-deleted" : ""}`;
+        div.dataset.msgId = m.id;
+        div.dataset.replyName = m.senderName || "";
+        div.dataset.replyPreview = msgPreview(m);
+        div.innerHTML = buildMsgInner(m) + (m.isDeleted ? `<div class="msg-del-note">🗑 O‘chirilgan</div>` : "");
+        return div;
+    }
+
+    // ── Eski xabarlarni yuklash (tepaga aylantirilganda) ──
+    async function loadOlder() {
+        if (state.loading || state.page >= state.totalPages || !state.convId) return;
+        state.loading = true;
+        try {
+            const r = await fetch(`/admin/chat-monitor/conversation/${state.convId}/messages?page=${state.page + 1}`,
+                { headers: { "X-Requested-With": "XMLHttpRequest" } });
+            if (!r.ok) return;
+            const d = await r.json();
+            state.page = d.page;
+            state.totalPages = d.totalPages;
+            if (d.items && d.items.length) {
+                const prevHeight = messagesEl.scrollHeight;
+                const frag = document.createDocumentFragment();
+                d.items.forEach(m => { state.messages.unshift(m); frag.appendChild(renderMessage(m)); });
+                messagesEl.insertBefore(frag, messagesEl.firstElementChild);
+                messagesEl.scrollTop += messagesEl.scrollHeight - prevHeight;
+            }
+        } finally { state.loading = false; }
+    }
+
+    if (messagesEl) {
+        messagesEl.addEventListener("scroll", () => { if (messagesEl.scrollTop < 80) loadOlder(); });
+    }
+
+    // ── Ovozli xabar ijrosi ──
+    let currentVoiceEl = null;
+    function toggleVoice(voiceEl) {
+        if (!voiceEl) return;
+        const audio = voiceEl.querySelector("audio");
+        const fill = voiceEl.querySelector(".mv-fill");
+        const durEl = voiceEl.querySelector(".mv-dur");
+        const playBtn = voiceEl.querySelector(".mv-play");
+        if (!audio) return;
+        if (currentVoiceEl && currentVoiceEl !== voiceEl) {
+            const other = currentVoiceEl.querySelector("audio"); if (other) other.pause();
+        }
+        if (audio.paused) {
+            currentVoiceEl = voiceEl;
+            audio.play().catch(() => {});
+            if (playBtn) playBtn.innerHTML = ICON.pause;
+            audio.ontimeupdate = () => {
+                if (audio.duration && fill) fill.style.width = (audio.currentTime / audio.duration * 100) + "%";
+                if (durEl && audio.duration) durEl.textContent = fmtDur(audio.duration - audio.currentTime);
+            };
+            audio.onended = () => {
+                if (playBtn) playBtn.innerHTML = ICON.play;
+                if (fill) fill.style.width = "0";
+                if (durEl) durEl.textContent = fmtDur(parseInt(voiceEl.dataset.dur, 10) || audio.duration);
+                currentVoiceEl = null;
+            };
+        } else {
+            audio.pause();
+            if (playBtn) playBtn.innerHTML = ICON.play;
+        }
+    }
+
+    // ── Rasm lightbox ──
+    const lightbox = document.getElementById("cmLightbox");
+    const lightboxImg = document.getElementById("cmLightboxImg");
+    function openLightbox(url) {
+        if (!lightbox || !url) return;
+        lightboxImg.src = url;
+        lightbox.hidden = false;
+    }
+    function closeLightbox() { if (!lightbox) return; lightbox.hidden = true; lightboxImg.src = ""; }
+    if (lightbox) {
+        lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target.closest("#cmLightboxClose")) closeLightbox(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+    }
+
+    function scrollToMessage(id) {
+        const el = messagesEl ? messagesEl.querySelector(`.msg[data-msg-id="${id}"]`) : null;
+        if (!el) return;
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+    }
+
+    // ── Xabarlar maydonidagi bosishlar ──
+    if (messagesEl) {
+        const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#1B4D3E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>");
+        messagesEl.addEventListener("error", (e) => {
+            const t = e.target;
+            if (t && t.classList && t.classList.contains("msg-image") && !t.dataset.failed) {
+                t.dataset.failed = "1"; t.classList.add("img-failed"); t.removeAttribute("data-full"); t.src = IMG_PLACEHOLDER;
+            }
+        }, true);
+
+        messagesEl.addEventListener("click", (e) => {
+            const img = e.target.closest(".msg-image");
+            if (img) { if (!img.classList.contains("img-failed")) openLightbox(img.dataset.full || img.src); return; }
+            const playBtn = e.target.closest(".mv-play");
+            if (playBtn) { toggleVoice(playBtn.closest(".msg-voice")); return; }
+            const quote = e.target.closest(".msg-reply-quote");
+            if (quote) { scrollToMessage(parseInt(quote.dataset.replyTo, 10)); return; }
+        });
+    }
+
+    // ── Qidiruv (debounce) ──
+    let t;
+    searchEl.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => loadConversations(true), 250); });
+
+    // ── Ishga tushirish ──
+    loadConversations(true);
+    const PRESELECTED = @(preselected.HasValue ? preselected.Value.ToString() : "null");
+    if (PRESELECTED) openConversation(PRESELECTED);
 })();
 </script>
 
 <style>
-    .chat-monitor .cm-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
-    .chat-monitor .cm-back {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 40px; height: 40px; border-radius: 50%;
-        background: var(--surface); border: 1px solid var(--border); color: var(--text);
-        text-decoration: none;
+    .chat-monitor .cm-list { display: flex; flex-direction: column; }
+    .chat-monitor .cm-empty-list { padding: 14px 16px; font-size: 13px; }
+
+    .chat-monitor .cm-conv {
+        display: flex; gap: 12px; align-items: center; padding: 12px 16px;
+        border-bottom: 1px solid var(--border); cursor: pointer; text-decoration: none; color: var(--text);
     }
-    .chat-monitor .cm-head h1 { margin: 0 0 4px; font-size: 22px; }
-    .chat-monitor .cm-head p { margin: 0; font-size: 13px; max-width: 720px; line-height: 1.5; }
+    .chat-monitor .cm-conv:hover, .chat-monitor .cm-conv.active { background: var(--primary-soft); }
+    .chat-monitor .cm-conv-info { flex: 1; min-width: 0; }
+    .chat-monitor .cm-conv-names { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-monitor .cm-conv-x { color: var(--primary); font-weight: 700; margin: 0 2px; }
+    .chat-monitor .cm-conv-last { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .chat-monitor .cm-conv-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    .chat-monitor .cm-more { padding: 12px 16px; text-align: center; }
 
-    .chat-monitor .cm-layout { display: grid; grid-template-columns: 320px 1fr; gap: 18px; align-items: start; }
-    @@media (max-width: 860px) { .chat-monitor .cm-layout { grid-template-columns: 1fr; } }
-
-    .chat-monitor .cm-users { padding: 12px; position: sticky; top: 16px; }
-    .chat-monitor .cm-search {
-        display: flex; align-items: center; gap: 8px;
-        background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+    .chat-monitor .cm-avatars { position: relative; flex-shrink: 0; width: 44px; height: 38px; }
+    .chat-monitor .cm-av {
+        position: absolute; top: 0; width: 30px; height: 30px; border-radius: 50%;
+        object-fit: cover; border: 2px solid var(--surface); display: flex; align-items: center;
+        justify-content: center; font-size: 12px; font-weight: 700; background: var(--primary-soft); color: var(--primary);
     }
-    .chat-monitor .cm-search .material-symbols-outlined { color: var(--text-secondary); font-size: 20px; }
-    .chat-monitor .cm-search input {
-        border: 0; background: transparent; outline: none; color: var(--text); width: 100%; font-size: 14px;
+    .chat-monitor .cm-av-1 { left: 0; z-index: 2; }
+    .chat-monitor .cm-av-2 { left: 16px; z-index: 1; }
+    .chat-monitor .cm-avatars-lg { width: 64px; height: 52px; flex-shrink: 0; }
+    .chat-monitor .cm-avatars-lg .cm-av { width: 40px; height: 40px; font-size: 15px; }
+    .chat-monitor .cm-avatars-lg .cm-av-2 { left: 24px; }
+
+    .chat-monitor .cm-thread { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+    .chat-monitor .cm-loading { padding: 20px; color: var(--text-secondary); }
+
+    .chat-monitor .cm-header { gap: 14px; flex-wrap: wrap; }
+    .chat-monitor .cm-head-info { flex: 1; min-width: 0; }
+    .chat-monitor .cm-head-names { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-monitor .cm-head-sub { font-size: 12px; margin-top: 2px; }
+
+    .chat-monitor .cm-persp { display: flex; align-items: center; gap: 8px; }
+    .chat-monitor .cm-persp-label { font-size: 12px; }
+    .chat-monitor .cm-persp-btn {
+        display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px;
+        border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+        cursor: pointer; color: var(--text); font-size: 13px; font-weight: 600;
     }
-    .chat-monitor .cm-user-list { margin-top: 10px; max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-    .chat-monitor .cm-user-row {
-        display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-        background: transparent; border: 1px solid transparent; border-radius: 10px;
-        padding: 8px; cursor: pointer; color: var(--text);
-    }
-    .chat-monitor .cm-user-row:hover { background: var(--surface-hover); }
-    .chat-monitor .cm-user-row.active { background: var(--primary-soft); border-color: var(--primary); }
-    .chat-monitor .cm-user-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
-    .chat-monitor .cm-user-row-meta { min-width: 0; }
-    .chat-monitor .cm-user-row-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .chat-monitor .cm-user-row-sub { font-size: 12px; }
-    .chat-monitor .cm-user-more { margin-top: 10px; text-align: center; }
+    .chat-monitor .cm-persp-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+    .chat-monitor .cm-persp-av { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: var(--primary-soft); color: var(--primary); }
 
-    .chat-monitor .cm-detail-body { display: flex; flex-direction: column; gap: 16px; }
-    .chat-monitor .cm-empty {
-        padding: 60px 20px; text-align: center; color: var(--text-secondary);
-        display: flex; flex-direction: column; align-items: center; gap: 10px;
-    }
-    .chat-monitor .cm-empty .material-symbols-outlined { font-size: 42px; }
-
-    .chat-monitor .cm-user-head { display: flex; align-items: center; gap: 14px; padding: 16px; }
-    .chat-monitor .cm-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
-    .chat-monitor .cm-initial {
-        display: flex; align-items: center; justify-content: center;
-        background: var(--primary-soft, #e8eefc); color: var(--primary, #2b6cff);
-        font-weight: 700; font-size: 13px; overflow: hidden;
-    }
-    .chat-monitor .cm-avatar.cm-initial { font-size: 20px; }
-    .chat-monitor .cm-user-name { font-size: 18px; font-weight: 700; }
-    .chat-monitor .cm-user-meta .muted { font-size: 13px; }
-
-    .chat-monitor .cm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    @@media (max-width: 620px) { .chat-monitor .cm-stats { grid-template-columns: repeat(2, 1fr); } }
-    .chat-monitor .cm-stat { padding: 14px; text-align: center; }
-    .chat-monitor .cm-stat-val { font-size: 26px; font-weight: 800; line-height: 1.1; }
-    .chat-monitor .cm-stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
-    .chat-monitor .cm-stat-danger .cm-stat-val { color: var(--danger); }
-
-    .chat-monitor .cm-section-title {
-        display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
-        font-size: 15px; font-weight: 700;
-    }
-    .chat-monitor .cm-section-title .material-symbols-outlined { font-size: 20px; color: var(--primary); }
-
-    .chat-monitor .cm-chart-card, .chat-monitor .cm-msg-card { padding: 16px; }
-    .chat-monitor .cm-chart { display: flex; align-items: flex-end; gap: 3px; height: 150px; }
-    .chat-monitor .cm-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; gap: 4px; }
-    .chat-monitor .cm-bar { width: 100%; min-height: 2px; background: var(--primary); border-radius: 3px 3px 0 0; transition: height .2s; }
-    .chat-monitor .cm-bar-lbl { font-size: 9px; color: var(--text-secondary); }
-
-    .chat-monitor .cm-messages { display: flex; flex-direction: column; gap: 10px; }
-    .chat-monitor .cm-msg {
-        border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+    .chat-monitor .cm-notice {
+        display: flex; align-items: center; gap: 8px; padding: 8px 20px;
+        font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border);
         background: var(--surface);
     }
-    .chat-monitor .cm-msg.is-deleted { border-style: dashed; opacity: .8; }
-    .chat-monitor .cm-msg-top { display: flex; align-items: center; gap: 8px; }
-    .chat-monitor .cm-msg-avatar { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
-    .chat-monitor .cm-msg-who { display: flex; flex-direction: column; line-height: 1.2; }
-    .chat-monitor .cm-msg-partner { font-weight: 600; font-size: 13px; }
-    .chat-monitor .cm-msg-time { font-size: 11px; }
-    .chat-monitor .cm-msg-body { margin-top: 6px; font-size: 14px; word-break: break-word; }
-    .chat-monitor .cm-msg.is-deleted .cm-msg-text { text-decoration: line-through; color: var(--text-secondary); }
-    .chat-monitor .cm-msg-img { max-width: 220px; max-height: 220px; border-radius: 8px; display: block; }
-    .chat-monitor .cm-msg-note { color: var(--text-secondary); font-style: italic; }
-    .chat-monitor .cm-msg-flag { margin-top: 6px; font-size: 12px; }
-    .chat-monitor .cm-flag-edit { color: var(--text-secondary); }
-    .chat-monitor .cm-flag-delete { color: var(--danger); font-weight: 600; }
-    .chat-monitor .cm-loadmore { text-align: center; margin-top: 12px; }
+    .chat-monitor .cm-notice .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+
+    /* Xabar ichidagi jo'natuvchi ismi (kuzatuv uchun muhim) */
+    .chat-monitor .msg-sender { font-size: 11px; font-weight: 700; opacity: .72; margin-bottom: 2px; line-height: 1.1; }
+    .chat-monitor .msg.out .msg-sender { color: rgba(255,255,255,.92); }
+    .chat-monitor .msg.in .msg-sender { color: var(--primary); }
+    .chat-monitor .msg.is-sticker .msg-sender { text-align: right; }
+
+    .chat-monitor .msg.is-deleted { border-style: dashed !important; opacity: .85; }
+    .chat-monitor .msg.is-deleted .msg-text { text-decoration: line-through; }
+    .chat-monitor .msg-del-note { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--danger); }
+
+    .chat-monitor .reaction-chip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; background: var(--primary-soft); color: var(--text); font-size: 12px; cursor: default; }
+    .chat-monitor .reaction-chip .rc-count { font-size: 11px; opacity: .7; }
+
+    .chat-monitor .msg.flash { animation: cmFlash 1.1s ease; }
+    @@keyframes cmFlash { 0% { box-shadow: 0 0 0 2px var(--primary); } 100% { box-shadow: none; } }
+
+    @@media (max-width: 768px) {
+        .chat-monitor .cm-persp { width: 100%; }
+        .chat-monitor .cm-head-names { font-size: 14px; }
+    }
 </style>
 }

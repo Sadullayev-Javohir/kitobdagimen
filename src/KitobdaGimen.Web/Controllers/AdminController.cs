@@ -11,7 +11,6 @@ using KitobdaGimen.Application.Features.Admin.Queries.GetAdminUsers;
 using KitobdaGimen.Application.Features.Home.Queries.GetLandingStats;
 using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
-using KitobdaGimen.Application.Features.Chat.Queries.GetChatMonitoring;
 using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -168,76 +167,213 @@ public class AdminController : AppController
     }
 
     /// <summary>
-    /// SuperAdmin: chat monitoring hub. Lists users and, for a chosen user, audits every message
-    /// they ever sent (including soft-deleted ones). The actual data is served by the JSON
-    /// endpoints below; this renders the shell (optionally pre-selecting a user via ?userId=).
+    /// SuperAdmin: chat monitoring hub. Shows every private conversation (both participants) as a
+    /// Telegram-style list; opening one renders the full thread exactly like the public /chat page,
+    /// but read-only — the admin only watches. Data is served by the JSON endpoints below; this
+    /// renders the shell (optionally pre-opening a conversation via ?conversationId=).
     /// </summary>
     [HttpGet("chat-monitor")]
-    public async Task<IActionResult> ChatMonitor(int? userId)
+    public async Task<IActionResult> ChatMonitor(int? conversationId)
     {
         if (!await IsSuperAdminAsync())
         {
             return RedirectToAction("Index", "Feed");
         }
 
-        ViewData["PreselectedUserId"] = userId;
+        ViewData["PreselectedConversationId"] = conversationId;
         return View();
     }
 
-    /// <summary>JSON: searchable user picker for the chat monitor (with each user's total sent count).</summary>
-    [HttpGet("chat-monitor/users")]
-    public async Task<IActionResult> ChatMonitorUsers(string? q, int page = 1)
+    /// <summary>JSON: searchable conversation list for the monitor. Each row carries BOTH participants
+    /// and the last message preview, so the admin sees exactly who chatted with whom.</summary>
+    [HttpGet("chat-monitor/conversations")]
+    public async Task<IActionResult> ChatMonitorConversations(string? q, int page = 1)
     {
         if (!await IsSuperAdminAsync()) return Forbid();
+
+        var viewerEmail = (await _db.Users
+            .Where(u => u.Id == CurrentUserId)
+            .Select(u => u.Email)
+            .FirstOrDefaultAsync())?.ToLowerInvariant();
 
         var term = (q ?? "").Trim().ToLowerInvariant();
         var pageSize = 30;
         var p = Math.Max(1, page);
 
-        var usersQuery = _db.Users.AsQueryable();
+        var query = _db.Conversations.AsQueryable();
         if (!string.IsNullOrWhiteSpace(term))
         {
-            usersQuery = usersQuery.Where(u =>
-                u.FullName.ToLower().Contains(term) ||
-                (u.Username != null && u.Username.ToLower().Contains(term)));
+            query = query.Where(c =>
+                c.User1.FullName.ToLower().Contains(term) ||
+                c.User2.FullName.ToLower().Contains(term) ||
+                (c.User1.Username != null && c.User1.Username.ToLower().Contains(term)) ||
+                (c.User2.Username != null && c.User2.Username.ToLower().Contains(term)));
         }
 
-        var total = await usersQuery.CountAsync();
-        var users = await usersQuery
-            .OrderBy(u => u.FullName)
+        var total = await query.CountAsync();
+
+        var rows = await query
+            .Select(c => new
+            {
+                c.Id,
+                c.CreatedAt,
+                User1 = new { c.User1.Id, c.User1.FullName, c.User1.Username, c.User1.AvatarUrl, c.User1.Email },
+                User2 = new { c.User2.Id, c.User2.FullName, c.User2.Username, c.User2.AvatarUrl, c.User2.Email },
+                LastMessageAt = c.Messages.OrderByDescending(m => m.SentAt).Select(m => (DateTime?)m.SentAt).FirstOrDefault(),
+                LastMessageText = c.Messages.OrderByDescending(m => m.SentAt).Select(m => m.Text
+                    ?? (m.ImageUrl != null ? "📷 Rasm"
+                        : (m.VoiceUrl != null ? "🎤 Ovozli xabar"
+                            : (m.StickerKey != null ? "Stiker"
+                                : (m.SharedPostId != null ? "📚 Post" : ""))))).FirstOrDefault()
+            })
+            .OrderByDescending(x => x.LastMessageAt ?? x.CreatedAt)
             .Skip((p - 1) * pageSize)
             .Take(pageSize)
-            .Select(u => new { u.Id, u.FullName, u.Username, u.AvatarUrl })
             .ToListAsync();
 
-        var ids = users.Select(u => u.Id).ToList();
-        var counts = await _db.Messages
-            .Where(m => ids.Contains(m.SenderId))
-            .GroupBy(m => m.SenderId)
-            .Select(g => new { SenderId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(g => g.SenderId, g => g.Count);
-
-        var items = users.Select(u => new
+        var items = rows.Select(x => new
         {
-            u.Id,
-            u.FullName,
-            u.Username,
-            u.AvatarUrl,
-            MessageCount = counts.TryGetValue(u.Id, out var c) ? c : 0
+            id = x.Id,
+            user1 = MaskUser(x.User1.Id, x.User1.FullName, x.User1.Username, x.User1.AvatarUrl, x.User1.Email, viewerEmail),
+            user2 = MaskUser(x.User2.Id, x.User2.FullName, x.User2.Username, x.User2.AvatarUrl, x.User2.Email, viewerEmail),
+            lastMessageText = x.LastMessageText,
+            lastMessageAt = x.LastMessageAt
         }).ToList();
 
         return Json(new { total, page = p, pageSize, items });
     }
 
-    /// <summary>JSON: full audit for one user (stats, hourly activity, paged message log).</summary>
-    [HttpGet("chat-monitor/data")]
-    public async Task<IActionResult> ChatMonitorData(int userId, int page = 1)
+    /// <summary>JSON: full read-only thread for one conversation (soft-deleted included, flagged).
+    /// Rendered by the client exactly like /chat, so the admin watches a real Telegram-style thread.</summary>
+    [HttpGet("chat-monitor/conversation/{conversationId:int}/messages")]
+    public async Task<IActionResult> ChatMonitorMessages(int conversationId, int page = 1)
     {
         if (!await IsSuperAdminAsync()) return Forbid();
 
-        var result = await Mediator.Send(new GetChatMonitoringQuery { TargetUserId = userId, Page = page });
-        return Json(result);
+        var viewerEmail = (await _db.Users
+            .Where(u => u.Id == CurrentUserId)
+            .Select(u => u.Email)
+            .FirstOrDefaultAsync())?.ToLowerInvariant();
+
+        var conv = await _db.Conversations
+            .Where(c => c.Id == conversationId)
+            .Select(c => new
+            {
+                User1 = new { c.User1.Id, c.User1.FullName, c.User1.Username, c.User1.AvatarUrl, c.User1.Email },
+                User2 = new { c.User2.Id, c.User2.FullName, c.User2.Username, c.User2.AvatarUrl, c.User2.Email }
+            })
+            .FirstOrDefaultAsync();
+        if (conv == null) return NotFound();
+
+        var pageSize = 50;
+        var p = Math.Max(1, page);
+
+        // Monitoring shows everything, including soft-deleted messages (flagged on the client).
+        var source = _db.Messages.Where(m => m.ConversationId == conversationId);
+        var totalCount = await source.CountAsync();
+
+        var raw = await source
+            .OrderByDescending(m => m.SentAt)
+            .Skip((p - 1) * pageSize)
+            .Take(pageSize)
+            .Select(m => new
+            {
+                Id = m.Id,
+                SenderId = m.Sender.Id,
+                SenderName = m.Sender.FullName,
+                SenderEmail = m.Sender.Email,
+                SenderAvatar = m.Sender.AvatarUrl,
+                m.Text,
+                m.ImageUrl,
+                m.StickerKey,
+                m.VoiceUrl,
+                m.VoiceDurationSeconds,
+                m.IsRead,
+                m.ReplyToMessageId,
+                ReplyToSenderName = m.ReplyToMessage == null ? null : m.ReplyToMessage.Sender.FullName,
+                ReplyToText = m.ReplyToMessage == null ? null : m.ReplyToMessage.Text,
+                ReplyToImageUrl = m.ReplyToMessage == null ? null : m.ReplyToMessage.ImageUrl,
+                ReplyToVoiceUrl = m.ReplyToMessage == null ? null : m.ReplyToMessage.VoiceUrl,
+                ReplyToStickerKey = m.ReplyToMessage == null ? null : m.ReplyToMessage.StickerKey,
+                ReplyToSharedPostId = m.ReplyToMessage == null ? null : m.ReplyToMessage.SharedPostId,
+                m.EditedAt,
+                m.IsDeleted,
+                m.SentAt,
+                SharedPost = m.SharedPost == null
+                    ? null
+                    : new { PostId = m.SharedPost.Id, BookTitle = m.SharedPost.Book.Title, BookAuthor = m.SharedPost.Book.Author }
+            })
+            .ToListAsync();
+
+        raw.Reverse();
+
+        var ids = raw.Select(r => r.Id).ToList();
+        var reactionRows = await _db.MessageReactions
+            .Where(r => ids.Contains(r.MessageId))
+            .Select(r => new { r.MessageId, r.Emoji })
+            .ToListAsync();
+        var reactionsByMsg = reactionRows
+            .GroupBy(r => r.MessageId)
+            .ToDictionary(g => g.Key, g => (object)g
+                .GroupBy(x => x.Emoji)
+                .Select(e => new { emoji = e.Key, count = e.Count() })
+                .OrderByDescending(e => e.count)
+                .ToList());
+
+        var items = raw.Select(r =>
+        {
+            var replyPreview = r.ReplyToText != null ? r.ReplyToText
+                : r.ReplyToImageUrl != null ? "📷 Rasm"
+                : r.ReplyToVoiceUrl != null ? "🎤 Ovozli xabar"
+                : r.ReplyToStickerKey != null ? "Stiker"
+                : r.ReplyToSharedPostId != null ? "📚 Post"
+                : "";
+            reactionsByMsg.TryGetValue(r.Id, out var reactions);
+            return new
+            {
+                id = r.Id,
+                senderId = r.SenderId,
+                senderName = r.SenderName,
+                senderAvatar = AvatarPrivacy.Resolve(r.SenderEmail?.ToLowerInvariant(), r.SenderAvatar, viewerEmail),
+                text = r.Text,
+                imageUrl = r.ImageUrl,
+                stickerKey = r.StickerKey,
+                voiceUrl = r.VoiceUrl,
+                voiceDurationSeconds = r.VoiceDurationSeconds,
+                isRead = r.IsRead,
+                replyToId = r.ReplyToMessageId,
+                replyToSenderName = r.ReplyToSenderName,
+                replyToPreview = replyPreview,
+                editedAt = r.EditedAt,
+                isDeleted = r.IsDeleted,
+                sentAt = r.SentAt,
+                sharedPost = r.SharedPost,
+                reactions = (object)(reactions ?? new List<object>())
+            };
+        }).ToList();
+
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return Json(new
+        {
+            conversationId,
+            user1 = MaskUser(conv.User1.Id, conv.User1.FullName, conv.User1.Username, conv.User1.AvatarUrl, conv.User1.Email, viewerEmail),
+            user2 = MaskUser(conv.User2.Id, conv.User2.FullName, conv.User2.Username, conv.User2.AvatarUrl, conv.User2.Email, viewerEmail),
+            page = p,
+            totalPages,
+            totalCount,
+            items
+        });
     }
+
+    /// <summary>Maps a user row to the monitor DTO, hiding the restricted user's avatar for
+    /// everyone except the allowed super-admin viewer (mirrors <see cref="AvatarPrivacy"/>).</summary>
+    private static MonitorUserDto MaskUser(
+        int id, string fullName, string? username, string? avatarUrl, string? email, string? viewerEmail)
+        => new(id, fullName, username, AvatarPrivacy.Resolve(email?.ToLowerInvariant(), avatarUrl, viewerEmail));
+
+    /// <summary>Minimal participant shape returned to the monitor client.</summary>
+    private record MonitorUserDto(int Id, string FullName, string? Username, string? AvatarUrl);
 
     [HttpPost("users/{id:int}/role")]
     [ValidateAntiForgeryToken]
