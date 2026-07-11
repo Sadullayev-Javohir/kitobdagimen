@@ -110,7 +110,7 @@
     const state = {
         convId: null, page: 1, totalPages: 1, loading: false,
         userPage: 1, userTerm: "",
-        users: null, perspectiveId: null,
+        users: null, perspectiveId: null, combined: false,
         messages: []
     };
 
@@ -211,6 +211,7 @@
         state.page = d.page;
         state.totalPages = d.totalPages;
         state.perspectiveId = d.user2.id; // default: ikkinchi ishtirokchi "o'zim" tomonida
+        state.combined = false;
         state.messages = d.items.slice();
 
         renderHeader();
@@ -249,19 +250,35 @@
         const toggle = document.createElement("div");
         toggle.className = "cm-persp";
         toggle.innerHTML = `<span class="cm-persp-label muted">Ko‘rinish:</span>`;
+        const perspBtns = [];
         [u1, u2].forEach(u => {
             const b = document.createElement("button");
             b.type = "button";
-            b.className = "cm-persp-btn" + (state.perspectiveId === u.id ? " active" : "");
+            b.className = "cm-persp-btn" + (!state.combined && state.perspectiveId === u.id ? " active" : "");
             b.innerHTML = `${avatarHtml(u, "cm-persp-av")}<span>${esc(u.fullName.split(" ")[0])}</span>`;
             b.addEventListener("click", () => {
+                state.combined = false;
                 state.perspectiveId = u.id;
-                Array.prototype.forEach.call(toggle.querySelectorAll(".cm-persp-btn"), x => x.classList.remove("active"));
+                perspBtns.forEach(x => x.classList.remove("active"));
                 b.classList.add("active");
                 renderAll();
             });
             toggle.appendChild(b);
+            perspBtns.push(b);
         });
+
+        // 3-tugma: ikkala foydalanuvchining xabarlari vaqt bo'yicha ketma-ket (chronological)
+        const combBtn = document.createElement("button");
+        combBtn.type = "button";
+        combBtn.className = "cm-persp-btn" + (state.combined ? " active" : "");
+        combBtn.innerHTML = `<span class="material-symbols-outlined cm-persp-ico">forum</span><span>Ikkala foydalanuvchi</span>`;
+        combBtn.addEventListener("click", () => {
+            state.combined = true;
+            perspBtns.forEach(x => x.classList.remove("active"));
+            combBtn.classList.add("active");
+            renderAll();
+        });
+        toggle.appendChild(combBtn);
 
         headerEl.appendChild(avs);
         headerEl.appendChild(info);
@@ -277,7 +294,9 @@
     }
 
     function buildMsgInner(m) {
-        const mine = m.senderId === state.perspectiveId;
+        const mine = state.combined
+            ? (m.senderId === (state.users ? state.users.user2.id : -1))
+            : (m.senderId === state.perspectiveId);
         let content = "";
         if (m.replyToId) {
             content += `<button type="button" class="msg-reply-quote" data-reply-to="${m.replyToId}">` +
@@ -316,7 +335,9 @@
     }
 
     function renderMessage(m) {
-        const mine = m.senderId === state.perspectiveId;
+        const mine = state.combined
+            ? (m.senderId === (state.users ? state.users.user2.id : -1))
+            : (m.senderId === state.perspectiveId);
         const isSticker = !!(m.stickerKey && STICKERS[m.stickerKey]);
         const div = document.createElement("div");
         div.className = `msg ${mine ? "out" : "in"} ${isSticker ? "is-sticker" : ""} ${m.imageUrl ? "has-image" : ""} ${m.isDeleted ? "is-deleted" : ""}`;
@@ -482,6 +503,7 @@
     }
     .chat-monitor .cm-persp-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
     .chat-monitor .cm-persp-av { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: var(--primary-soft); color: var(--primary); }
+    .chat-monitor .cm-persp-ico { font-size: 18px; line-height: 1; }
 
     .chat-monitor .cm-notice {
         display: flex; align-items: center; gap: 8px; padding: 8px 20px;
