@@ -114,6 +114,7 @@
         messages: []
     };
 
+    const chatRoot = document.querySelector(".chat.chat-monitor");
     const listEl = document.getElementById("cmList");
     const moreWrap = document.getElementById("cmMoreWrap");
     const emptyEl = document.getElementById("cmEmpty");
@@ -121,6 +122,10 @@
     const headerEl = document.getElementById("cmHeader");
     const messagesEl = document.getElementById("messages");
     const searchEl = document.getElementById("cmSearch");
+
+    // Mobile: suhbat ochilganda ro'yxat yashirilib, xabarlar ko'rsatilishi uchun
+    // `.chat`ga `has-active` klassi qo'shilishi kerak (site.css mobil qoidasi).
+    function setActive(on) { if (chatRoot) chatRoot.classList.toggle("has-active", !!on); }
 
     // ── Suhbatlar ro'yxati ───────────────────────────────────────────────
     async function loadConversations(reset) {
@@ -193,6 +198,7 @@
 
         emptyEl.hidden = true;
         threadEl.hidden = false;
+        setActive(true);
         messagesEl.innerHTML = "";
         headerEl.innerHTML = `<div class="cm-loading">Yuklanmoqda…</div>`;
 
@@ -215,6 +221,21 @@
         if (!state.users) return;
         const u1 = state.users.user1, u2 = state.users.user2;
         headerEl.innerHTML = "";
+
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "chat-tool-btn";
+        back.dataset.back = "1";
+        back.setAttribute("aria-label", "Orqaga");
+        back.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
+        back.addEventListener("click", () => {
+            setActive(false);
+            threadEl.hidden = true;
+            emptyEl.hidden = false;
+            state.convId = null;
+            Array.prototype.forEach.call(listEl.querySelectorAll(".cm-conv"), el => el.classList.remove("active"));
+        });
+        headerEl.appendChild(back);
 
         const avs = document.createElement("span");
         avs.className = "cm-avatars cm-avatars-lg";
