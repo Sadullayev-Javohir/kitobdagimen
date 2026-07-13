@@ -506,15 +506,17 @@
     padding: 12px 22px;
     font-size: 15px; font-weight: 700;
     cursor: pointer;
-    transition: transform .12s, background .2s;
+    box-shadow: 0 5px 0 0 rgba(0, 0, 0, .4);
+    transition: transform .08s ease, box-shadow .08s ease, background .2s;
 }
-.yr-btn:hover { background: rgba(20, 30, 26, .85); transform: translateY(-1px); }
+.yr-btn:hover { background: rgba(20, 30, 26, .85); }
+.yr-btn:active { transform: translateY(5px); box-shadow: 0 0 0 0 rgba(0, 0, 0, .4); }
 .yr-btn .material-symbols-outlined { font-size: 19px; }
-.yr-btn-primary { background: #E8703A; border-color: #E8703A; }
+.yr-btn-primary { background: #E8703A; border-color: #E8703A; box-shadow: 0 5px 0 0 #b9501f; }
 .yr-btn-primary:hover { background: #d2602d; }
-.yr-btn-share { background: #1B4D3E; border-color: #2e6b57; }
+.yr-btn-share { background: #1B4D3E; border-color: #2e6b57; box-shadow: 0 5px 0 0 #143a2f; }
 .yr-btn-share:hover { background: #163f33; }
-.yr-btn[disabled] { opacity: .6; cursor: default; transform: none; }
+.yr-btn[disabled] { opacity: .6; cursor: default; transform: none; box-shadow: 0 5px 0 0 rgba(0, 0, 0, .4); }
 
 /* ── Ekran-effektlari (rasmga TUSHMAYDI): qor + Three.js Qorbobo ────────────── */
 .yr-fx {

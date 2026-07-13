@@ -86,6 +86,7 @@
     border: 1px solid var(--border, #e6ddcd); background: var(--surface, #fffdf8); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); cursor: pointer;
     font-weight: 600; color: var(--text, #2a2a2a); transition: all .15s ease; position: relative; z-index: 1;
 }
+.ch-like-btn:active { transform: scale(.94); }
 .ch-like-btn .material-symbols-outlined { font-size: 20px; color: #c7ccd1; transition: color .15s ease; }
 .ch-like-btn:hover { border-color: #e8703a; }
 .ch-like-btn.is-liked { background: rgba(232,112,58,.12); border-color: #e8703a; }
@@ -114,6 +115,7 @@
     background: var(--surface, #fffdf8); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
     color: var(--text, #2a2a2a); transition: all .15s ease;
 }
+.ch-year-nav button:active:not(:disabled) { transform: scale(.92); }
 .ch-year-nav button:hover:not(:disabled) { border-color: var(--accent, #e8703a); color: var(--accent, #e8703a); }
 .ch-year-nav button:disabled { opacity: .35; cursor: not-allowed; }
 .ch-year-label { font-weight: 700; font-size: 17px; min-width: 58px; text-align: center; }
