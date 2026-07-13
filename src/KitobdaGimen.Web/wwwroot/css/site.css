@@ -20,8 +20,9 @@
     --radius: 20px;
     --radius-sm: 12px;
     --radius-pill: 9999px;
-    --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+    /* Konvex (ko'tarilgan) soya tokenlari — bularni o'zgartirish barcha karta/tugmaga ta'sir qiladi */
+    --shadow: 0 5px 0 rgba(0, 0, 0, 0.38), 0 9px 22px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 7px 0 rgba(0, 0, 0, 0.42), 0 14px 34px rgba(0, 0, 0, 0.40);
     --navbar-h: 72px;
     --maxw: 1100px;
     --serif: "Lora", Georgia, "Times New Roman", serif;
@@ -34,6 +35,39 @@
     --accent-shadow: #d96b3c;
     --danger-shadow: #d94f43;
     --btn-depth: 5px;   /* tugma pastga siljish masofasi (press effekti) */
+
+    /* ═══ 3D / KONVEX DIZAYN TOKENLARI ═══ */
+    /* Ko'tarilgan (convex) karta effekti: yuqori yorug'lik + pastki qalin soya.
+       Qorong'i fon uchun yorug'lik pastdan-yuqoriga qaratilgan diffuz soya. */
+    --card-top-light: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    --card-shadow: 0 6px 0 rgba(0, 0, 0, 0.38), 0 10px 24px rgba(0, 0, 0, 0.30);
+    --card-shadow-hover: 0 8px 0 rgba(0, 0, 0, 0.40), 0 14px 32px rgba(0, 0, 0, 0.40);
+    --card-depth: 6px;   /* karta bosilganda pastga siljish masofasi */
+    /* Kichik relyefli elementlar (icon-box, pill) uchun engil ko'tarilish */
+    --relief-shadow: 0 3px 0 rgba(0, 0, 0, 0.30), 0 4px 10px rgba(0, 0, 0, 0.22);
+    --relief-top: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    /* Ikonka qutisi (relyefli yumaloq/to'rtburchak fon) */
+    --iconbox-bg: rgba(255, 255, 255, 0.06);
+    --iconbox-bg-hover: rgba(92, 194, 160, 0.16);
+    --iconbox-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 2px 6px rgba(0, 0, 0, 0.28);
+    /* Konvex relyef chegara (kartalar va tugmalar uchun yupqa yorug'lik chet) */
+    --relief-border: rgba(255, 255, 255, 0.14);
+    /* Matn ierarxiyasi — aniq o'lcham/og'irlik zanjiri (Source Sans 3) */
+    --fs-display: 34px;   /* asosiy sarlavha (landing hero) */
+    --fs-h1: 26px;
+    --fs-h2: 22px;
+    --fs-h3: 18px;
+    --fs-h4: 16px;
+    --fs-body: 16px;
+    --fs-small: 14px;
+    --fs-xs: 12.5px;
+    --fw-regular: 400;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+    --fw-extra: 800;
+    --lh-tight: 1.2;
+    --lh-snug: 1.35;
+    --lh-normal: 1.55;
 }
 
 * { box-sizing: border-box; }
@@ -74,12 +108,17 @@ body {
     font-family: var(--sans);
     background-color: var(--bg);
     color: var(--text);
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: var(--fs-body);
+    line-height: var(--lh-normal);
+    font-weight: var(--fw-regular);
     min-height: 100vh;
 }
 
-h1, h2, h3, h4 { font-family: var(--serif); color: var(--primary); margin: 0 0 .5rem; line-height: 1.25; }
+h1, h2, h3, h4 { font-family: var(--serif); color: var(--primary); margin: 0 0 .5rem; line-height: var(--lh-tight); letter-spacing: -0.01em; }
+h1 { font-size: var(--fs-h1); font-weight: var(--fw-bold); }
+h2 { font-size: var(--fs-h2); font-weight: var(--fw-bold); }
+h3 { font-size: var(--fs-h3); font-weight: var(--fw-semibold); }
+h4 { font-size: var(--fs-h4); font-weight: var(--fw-semibold); }
 
 a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -203,34 +242,91 @@ img { max-width: 100%; display: block; }
 .btn[disabled] { opacity: .6; cursor: not-allowed; }
 .btn[disabled]:active { transform: none; box-shadow: 0 var(--btn-depth) 0 0 rgba(0, 0, 0, 0.35); }
 
+/* ===== Relyefli ikonka qutisi (3D/konvex) ===== */
+/* Tugma ichidagi yoki sarlavha yonidagi ikonkalarni ko'tarilgan quti ichiga oladi. */
+.icon-box {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: var(--radius-sm);
+    background: var(--iconbox-bg); color: var(--primary);
+    box-shadow: var(--iconbox-shadow);
+    border: 1px solid var(--relief-border);
+}
+.icon-box .material-symbols-outlined { font-size: 22px; line-height: 1; }
+.icon-box.sm { width: 32px; height: 32px; border-radius: 9px; }
+.icon-box.sm .material-symbols-outlined { font-size: 18px; }
+.icon-box.lg { width: 52px; height: 52px; border-radius: 14px; }
+.icon-box.lg .material-symbols-outlined { font-size: 28px; }
+.icon-box.accent { color: var(--accent); background: rgba(240,130,78,.12); }
+.icon-box.accent:hover { background: rgba(240,130,78,.18); }
+.icon-box:hover { background: var(--iconbox-bg-hover); }
+
+/* ===== Matn yordamchilari ===== */
+/* Qayta ishlatiladigan ierarxiya: lead / muted / label / eyebrow */
+.lead { font-size: 18px; line-height: var(--lh-snug); color: var(--text-secondary); margin: 0 0 1rem; }
+.subtle { color: var(--text-secondary); font-size: var(--fs-small); }
+.label {
+    font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-secondary); margin: 0 0 6px;
+}
+.eyebrow {
+    display: inline-block; font-size: var(--fs-xs); font-weight: var(--fw-bold);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--primary);
+    margin: 0 0 8px;
+}
+.text-strong { font-weight: var(--fw-semibold); color: var(--text); }
+
+/* ===== Ikonka o'lcham yordamchilari (inline style o'rniga) ===== */
+/* material-symbols ikonkasining o'lchamini bir joydan boshqarish. */
+.ic-xs { font-size: 16px; line-height: 1; }
+.ic-sm { font-size: 18px; line-height: 1; }
+.ic-20 { font-size: 20px; line-height: 1; }
+.ic-mid { font-size: 22px; line-height: 1; }
+.ic-lg { font-size: 28px; line-height: 1; }
+.ic-xl { font-size: 36px; line-height: 1; }
+/* pastga tekislash kerak bo'lgan holatlar uchun */
+.ic-baseline { vertical-align: bottom; }
+.ic-midline { vertical-align: middle; }
+.ic-accent { color: var(--accent); }
+
 /* ===== Cards & forms ===== */
+/* Konvex (ko'tarilgan) karta: yuqori yorug'lik chet + pastki qalin soya.
+   Qorong'i fon ustida tugma ekrandan biroz ko'tarilib turadi. */
 .card {
     background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
-    border: 1px solid var(--border);
+    border: 1px solid var(--relief-border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    box-shadow: var(--card-top-light), var(--card-shadow);
     padding: 24px;
+    transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease;
 }
 .card + .card { margin-top: 20px; }
+/* Press effekti: karta bosilganda (yoki interaktiv kartalar) pastga cho'kadi */
+.card.is-pressable { cursor: pointer; }
+.card.is-pressable:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.20); }
+.card.is-pressable:active { transform: translateY(var(--card-depth)); box-shadow: var(--card-top-light), 0 0 0 rgba(0,0,0,.38), 0 2px 6px rgba(0,0,0,.25); }
 
 label { font-weight: 600; font-size: 14px; color: var(--text); display: block; margin-bottom: 6px; }
 .input, textarea.input, select.input {
     width: 100%; padding: 11px 14px; font-family: var(--sans); font-size: 15px;
-    background: var(--surface); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04); backdrop-filter: var(--gx-blur); -webkit-backdrop-filter: var(--gx-blur);
+    border: 1px solid var(--relief-border); border-radius: var(--radius-sm);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30), var(--relief-top);
     color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
 }
 .input:focus, textarea.input:focus, select.input:focus {
-    border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft);
+    border-color: var(--primary); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30), 0 0 0 3px var(--primary-soft);
 }
 textarea.input { resize: vertical; min-height: 90px; }
 .field + .field { margin-top: 16px; }
 .field-error { color: var(--danger); font-size: 13px; margin-top: 4px; }
-.form-error { background: rgba(186,26,26,.08); color: var(--danger); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; }
+.form-error { background: rgba(186,26,26,.08); color: var(--danger); border: 1px solid rgba(255,90,80,.25); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; box-shadow: var(--relief-top); }
 
 .badge {
     display: inline-flex; align-items: center; gap: 4px;
     background: var(--primary-soft); color: var(--primary);
-    border-radius: var(--radius-pill); padding: 3px 10px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--relief-border);
+    border-radius: var(--radius-pill); padding: 3px 10px; font-size: 13px; font-weight: var(--fw-semibold);
+    box-shadow: var(--relief-top);
 }
 .badge-accent { background: rgba(232,112,58,.12); color: var(--accent-dark); }
 

@@ -80,7 +80,7 @@
     -webkit-backdrop-filter: var(--gx-blur);
     backdrop-filter: var(--gx-blur);
     border: 1px solid var(--gx-line);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--card-top-light), var(--card-shadow);
 }
 .lp-feature:hover,
 .lp-show-card:hover,

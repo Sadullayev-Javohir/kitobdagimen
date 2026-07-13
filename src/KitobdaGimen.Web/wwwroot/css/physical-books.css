@@ -257,15 +257,17 @@
 /* Kitob kartochkasi */
 .pb-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--relief-border, var(--border));
     border-radius: 12px;
     overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: var(--card-top-light, inset 0 1px 0 rgba(255,255,255,.10)), var(--card-shadow, 0 6px 0 rgba(0,0,0,.38), 0 10px 24px rgba(0,0,0,.30));
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .pb-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px);
+    box-shadow: var(--card-top-light, inset 0 1px 0 rgba(255,255,255,.10)), var(--card-shadow-hover, 0 8px 0 rgba(0,0,0,.40), 0 14px 32px rgba(0,0,0,.40));
+    border-color: rgba(255,255,255,.20);
 }
 
 .pb-cover {
