@@ -4,7 +4,7 @@
     ViewData["FinishedBooksOwner"] = true;
 }
 
-<div class="container page">
+<div class="container page rb-page">
     <div class="rb-header">
         <h1 class="rb-header-title" style="margin:0">Kitob maqsadlarim</h1>
         <button class="btn btn-accent" id="newGoalToggle">Yangi kitob qo'shish</button>
@@ -67,7 +67,7 @@
         </form>
     </div>
 
-    <h2 class="section-title" style="margin-top:8px">Faol kitoblarim</h2>
+    <h2 class="section-title rb-section-title">Faol kitoblarim</h2>
 
     @if (Model.Active.Count == 0)
     {

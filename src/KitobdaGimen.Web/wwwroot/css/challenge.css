@@ -1374,8 +1374,16 @@ input[type="file"]::-webkit-file-upload-button:hover {
 }
 
 /* Responsive adjustments */
+@media (max-width: 768px) {
+    .ch-page { padding-top: 24px; }
+    .ch-hero { margin-bottom: 28px; }
+    .ch-section { margin: 28px 0; }
+}
+
 @media (max-width: 640px) {
-    .ch-hero { padding: 16px 14px; }
+    .ch-page { padding-top: 24px; }
+    .ch-hero { padding: 16px 14px; margin-bottom: 26px; }
+    .ch-section { margin: 26px 0; }
     .ch-hero-title { font-size: 16px; }
     .ch-h2 { font-size: 15px; }
     .ch-podium { gap: 6px; }
@@ -1394,6 +1402,8 @@ input[type="file"]::-webkit-file-upload-button:hover {
 }
 
 @media (max-width: 480px) {
+    .ch-page { padding-top: 22px; }
+    .ch-hero { margin-bottom: 24px; }
     .ch-hero-title { font-size: 15.5px; }
     .ch-h2 { font-size: 14px; }
 }

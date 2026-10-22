@@ -1735,7 +1735,10 @@ textarea.input { resize: vertical; min-height: 90px; }
 
 .rb-header {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+}
+.rb-section-title {
+    margin: 20px 0 14px;
 }
 .rb-header h1,
 .rb-header-title {
@@ -3501,7 +3504,10 @@ body.modal-open { overflow: hidden; }
         --fs-h3: 15.5px;
         --fs-h4: 14px;
     }
-    .page { padding-top: 20px; padding-bottom: 48px; }
+    .page { padding-top: 24px; padding-bottom: 48px; }
+    .rb-page { padding-top: 24px; }
+    .rb-header { margin-bottom: 24px; gap: 14px; }
+    .rb-section-title { margin: 22px 0 14px; }
     .rb-header h1, .rb-header-title { font-size: 16.5px; }
     .rb-title { font-size: 15.5px; }
     .book-hero-info h1 { font-size: 19px; }
@@ -3593,6 +3599,10 @@ body.modal-open { overflow: hidden; }
     .book-hero-cover-img { height: 138px; }
     .book-hero-info h1 { font-size: 17.5px; }
     .book-hero-author { font-size: 13px; }
+    .page { padding-top: 22px; }
+    .rb-page { padding-top: 22px; }
+    .rb-header { margin-bottom: 22px; gap: 12px; }
+    .rb-section-title { margin: 20px 0 12px; }
     .rb-header h1, .rb-header-title { font-size: 15.5px; }
     .rb-title { font-size: 15px; }
     .goal-book-title { font-size: 17px; }
