@@ -1,17 +1,12 @@
-@using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres
-@using MediatR
-@inject ISender Mediator
 @model ReadingBooksPageViewModel
 @{
     ViewData["Title"] = "Kutubxona";
     ViewData["FinishedBooksOwner"] = true;
-    var genres = await Mediator.Send(new GetGenresQuery());
-    var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 }
 
 <div class="container page">
     <div class="rb-header">
-        <h1 style="margin:0">Kitob maqsadlarim</h1>
+        <h1 class="rb-header-title" style="margin:0">Kitob maqsadlarim</h1>
         <button class="btn btn-accent" id="newGoalToggle">Yangi kitob qo'shish</button>
     </div>
 
@@ -47,13 +42,6 @@
                     <input class="input" id="goalNbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
                     <input class="input" id="goalNbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
                     <input class="input" id="goalNbPages" type="number" min="1" placeholder="Jami betlar soni" />
-                    <select class="input" id="goalNbGenre">
-                        <option value="">Kategoriyani tanlang</option>
-                        @foreach (var genre in genres)
-                        {
-                            <option value="@genre.Id">@genre.Name</option>
-                        }
-                    </select>
 
                     <div class="nb-cover">
                         <div class="nb-cover-preview" id="goalNbCoverPreview">
@@ -63,7 +51,7 @@
                             <label class="btn btn-outline btn-sm" for="goalNbCover">Muqova rasmi</label>
                             <input type="file" id="goalNbCover" accept="image/*" hidden />
                             <button type="button" class="btn btn-ghost btn-sm" id="goalNbCoverClear" hidden>O'chirish</button>
-                            <span class="muted" id="goalNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                            <span class="muted" id="goalNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 10 MB gacha.</span>
                         </div>
                     </div>
 
@@ -71,17 +59,10 @@
                 </div>
             </div>
 
-            <div class="rb-form-grid">
-                <div class="field">
-                    <label for="DailyPageGoal">Kunlik bet maqsadi</label>
-                    <input class="input" type="number" min="1" name="DailyPageGoal" id="DailyPageGoal" value="20" required />
-                </div>
-
-                <div class="field">
-                    <label for="goalStartDate">Boshlanish sanasi</label>
-                    <input class="input" type="date" name="StartDate" id="goalStartDate" value="@today" max="@today" required />
-                    <span class="muted" style="font-size:12px">Kelajakdagi sanani tanlab bo'lmaydi.</span>
-                </div>
+            <div class="field" style="margin-top:16px">
+                <label for="DailyPageGoal">Kunlik bet maqsadi</label>
+                <input class="input" type="number" min="1" max="1000" name="DailyPageGoal" id="DailyPageGoal" value="20" required placeholder="Masalan: 20" />
+                <span class="muted" style="font-size:12px">Har kuni o'qishni rejalashtirgan betlar soningiz.</span>
             </div>
 
             <div class="composer-actions" style="margin-top:16px">
@@ -262,7 +243,7 @@
         nbCover.value = "";
         nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
         nbCoverClear.hidden = true;
-        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 10 MB gacha.";
     }
 
     nbCover.addEventListener("change", () => {
@@ -285,33 +266,15 @@
     nbCoverClear.addEventListener("click", resetCover);
 
     async function uploadCover(file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/books/upload-cover", {
-            method: "POST",
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "RequestVerificationToken": kitob.antiforgeryToken()
-            },
-            body: fd
-        });
-        if (res.status === 401) { window.location.href = "/"; return null; }
-        if (!res.ok) {
-            let message = "Rasmni yuklab bo'lmadi.";
-            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
-            throw new Error(message);
-        }
-        const data = await res.json();
-        return data.url;
+        return await kitob.uploadBookCover(file);
     }
 
     nbSave.addEventListener("click", async () => {
-        const genreId = parseInt(document.getElementById("goalNbGenre").value, 10) || 0;
         const command = {
             title: document.getElementById("goalNbTitle").value.trim(),
             author: document.getElementById("goalNbAuthor").value.trim(),
             totalPages: parseInt(document.getElementById("goalNbPages").value, 10) || 0,
-            genreId: genreId || null
+            genreId: null
         };
         if (!command.title || !command.author || command.totalPages <= 0) {
             alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
@@ -323,10 +286,6 @@
         }
         if (command.author.length < 3 || command.author.length > 100) {
             alert("Muallif nomi 3 dan 100 tagacha belgidan iborat bo'lishi kerak.");
-            return;
-        }
-        if (!genreId) {
-            alert("Kitob kategoriyasini tanlang.");
             return;
         }
         nbSave.disabled = true;

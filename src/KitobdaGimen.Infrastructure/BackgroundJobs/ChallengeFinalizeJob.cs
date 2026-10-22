@@ -1,4 +1,5 @@
 using KitobdaGimen.Application.Common;
+using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Challenge.Commands.FinalizeChallengeMonth;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -18,11 +19,16 @@ public class ChallengeFinalizeJob
     public const string RecurringJobId = "challenge-finalize";
 
     private readonly ISender _mediator;
+    private readonly ITelegramBotService _telegramBot;
     private readonly ILogger<ChallengeFinalizeJob> _logger;
 
-    public ChallengeFinalizeJob(ISender mediator, ILogger<ChallengeFinalizeJob> logger)
+    public ChallengeFinalizeJob(
+        ISender mediator,
+        ITelegramBotService telegramBot,
+        ILogger<ChallengeFinalizeJob> logger)
     {
         _mediator = mediator;
+        _telegramBot = telegramBot;
         _logger = logger;
     }
 
@@ -49,6 +55,7 @@ public class ChallengeFinalizeJob
                 new FinalizeChallengeMonthCommand(year, month) { BypassAdminCheck = true }, ct);
             if (count > 0)
             {
+                await _telegramBot.BroadcastChallengeWinnersAsync(year, month, ct);
                 _logger.LogInformation(
                     "Challenge {Period}: {Count} ta g'olib avtomatik e'lon qilindi.",
                     ChallengeCalendar.PeriodLabel(year, month), count);

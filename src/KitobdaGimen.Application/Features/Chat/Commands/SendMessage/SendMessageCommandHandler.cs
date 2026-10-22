@@ -75,7 +75,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
             var postExists = await _db.Posts.AnyAsync(p => p.Id == sharedPostId, cancellationToken);
             if (!postExists)
             {
-                throw new NotFoundException("Post", sharedPostId);
+                throw new NotFoundException("Taqriz", sharedPostId);
             }
         }
 
@@ -129,7 +129,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
         {
             Title = string.IsNullOrWhiteSpace(dto.Sender.FullName) ? "Yangi xabar" : dto.Sender.FullName,
             Body = BuildMessagePreview(message),
-            Url = "/chat",
+            Url = "/",
             Icon = string.IsNullOrWhiteSpace(dto.Sender.AvatarUrl) ? "/img/icons/icon-192.png" : dto.Sender.AvatarUrl,
             // Per-conversation tag so successive messages from the same person collapse/re-notify
             // instead of stacking up in the tray.
@@ -150,7 +150,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Mes
         if (!string.IsNullOrWhiteSpace(message.ImageUrl)) return "📷 Rasm";
         if (!string.IsNullOrWhiteSpace(message.VoiceUrl)) return "🎤 Ovozli xabar";
         if (!string.IsNullOrWhiteSpace(message.StickerKey)) return "Stiker";
-        if (message.SharedPostId is not null) return "Post ulashdi";
+        if (message.SharedPostId is not null) return "Taqriz ulashdi";
         return "Yangi xabar";
     }
 }

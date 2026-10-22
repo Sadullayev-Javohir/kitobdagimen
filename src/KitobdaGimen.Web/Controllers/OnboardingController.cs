@@ -1,7 +1,5 @@
 using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser;
 using KitobdaGimen.Application.Features.Onboarding.Commands.CompleteProfile;
-using KitobdaGimen.Application.Features.Onboarding.Commands.SaveUserGenres;
-using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres;
 using KitobdaGimen.Application.Features.Onboarding.Queries.GetOnboardingStatus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -37,9 +35,9 @@ public class OnboardingController : AppController
         var status = await Mediator.Send(new GetOnboardingStatusQuery());
         if (status.HasUsername)
         {
-            return status.HasGenres
-                ? RedirectToAction("Index", "Feed")
-                : RedirectToAction(nameof(Index), new { returnUrl });
+            return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? Redirect(returnUrl)
+                : RedirectToAction("Index", "Feed");
         }
 
         var me = await Mediator.Send(new GetCurrentUserQuery());
@@ -52,7 +50,10 @@ public class OnboardingController : AppController
     public async Task<IActionResult> Profile([FromBody] CompleteProfileCommand command, string? returnUrl = null)
     {
         var user = await Mediator.Send(command);
-        return Json(new { user, nextUrl = Url.Action("Index", "Onboarding", new { returnUrl }) });
+        var targetUrl = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? returnUrl
+            : Url.Action("Index", "Feed");
+        return Json(new { user, nextUrl = targetUrl });
     }
 
     /// <summary>Uploads an optional profile picture during onboarding and returns its public URL (JSON).</summary>
@@ -118,33 +119,21 @@ public class OnboardingController : AppController
         }
     }
 
-    /// <summary>Genre interest picker shown after first login.</summary>
+    /// <summary>Eski /Onboarding havolalarini /Feed ga yo'naltirish.</summary>
     [HttpGet]
-    public async Task<IActionResult> Index(string? returnUrl = null)
+    public IActionResult Index(string? returnUrl = null)
     {
-        // /Onboarding is reachable only as the next step right after signup.
-        // Users who already finished onboarding (have genres) can't open it by URL,
-        // and users who haven't set a username yet are sent to the profile step first.
-        var status = await Mediator.Send(new GetOnboardingStatusQuery());
-        if (status.HasGenres)
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
-            return RedirectToAction("Index", "Feed");
+            return Redirect(returnUrl);
         }
-        if (!status.HasUsername)
-        {
-            return RedirectToAction(nameof(Profile), new { returnUrl });
-        }
-
-        var genres = await Mediator.Send(new GetGenresQuery());
-        ViewData["ReturnUrl"] = returnUrl;
-        return View(genres);
+        return RedirectToAction("Index", "Feed");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Save(int[] genreIds, string? returnUrl = null)
+    public IActionResult Save(string? returnUrl = null)
     {
-        await Mediator.Send(new SaveUserGenresCommand { GenreIds = genreIds ?? Array.Empty<int>() });
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
             return Redirect(returnUrl);

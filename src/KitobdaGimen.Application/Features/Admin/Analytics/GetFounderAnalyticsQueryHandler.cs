@@ -55,6 +55,37 @@ public class GetFounderAnalyticsQueryHandler : IRequestHandler<GetFounderAnalyti
         var totalPosts = await _db.Posts.CountAsync(ct);
         var totalQuotes = await _db.Quotes.CountAsync(ct);
         var totalMessages = await _db.Messages.CountAsync(ct);
+        var totalComments = await _db.Comments.CountAsync(ct) + await _db.QuoteComments.CountAsync(ct);
+        var totalLikes = await _db.Likes.CountAsync(ct) + await _db.QuoteLikes.CountAsync(ct);
+        var totalGoals = await _db.ReadingGoals.CountAsync(ct);
+        var activeGoals = await _db.ReadingGoals.CountAsync(g => g.IsActive, ct);
+        var totalBooks = await _db.Books.CountAsync(ct);
+        var telegramUsers = await _db.Users.CountAsync(u => u.GoogleId.StartsWith("tg:"), ct);
+        var webOnlyUsers = Math.Max(0, totalUsers - telegramUsers);
+
+        // ---- 30 days reading stats & top books -------------------------
+        var activeReaders30d = await _db.ReadingProgress
+            .Where(rp => rp.Date >= chartStart)
+            .Select(rp => rp.ReadingGoal.UserId)
+            .Distinct()
+            .CountAsync(ct);
+
+        var totalPagesRead30d = await _db.ReadingProgress
+            .Where(rp => rp.Date >= chartStart)
+            .SumAsync(rp => (int?)rp.PagesReadToday, ct) ?? 0;
+
+        var topBooks = await _db.Books
+            .Where(b => b.Posts.Count > 0 || b.Quotes.Count > 0)
+            .OrderByDescending(b => b.Posts.Count + b.Quotes.Count)
+            .Take(5)
+            .Select(b => new TopBookItemDto(
+                b.Id,
+                b.Title,
+                b.Author,
+                b.CoverUrl,
+                b.Posts.Count,
+                b.Quotes.Count))
+            .ToListAsync(ct);
 
         // ---- Signups inside the window ----------------------------------
         var signups = await _db.Users
@@ -91,7 +122,7 @@ public class GetFounderAnalyticsQueryHandler : IRequestHandler<GetFounderAnalyti
         // Reading progress already stores a local DateOnly; join to get the owner id.
         var readingRows = await _db.ReadingProgress
             .Where(rp => rp.Date >= earliestLocal)
-            .Select(rp => new { UserId = rp.ReadingGoal.UserId, rp.Date })
+            .Select(rp => new { UserId = rp.ReadingGoal.UserId, rp.Date, rp.PagesReadToday })
             .ToListAsync(ct);
         foreach (var r in readingRows)
         {
@@ -134,13 +165,32 @@ public class GetFounderAnalyticsQueryHandler : IRequestHandler<GetFounderAnalyti
             .GroupBy(a => a.Day)
             .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).Distinct().Count());
 
+        var postDates = await _db.Posts
+            .Where(p => p.CreatedAt >= earliestUtc)
+            .Select(p => p.CreatedAt)
+            .ToListAsync(ct);
+        var quoteDates = await _db.Quotes
+            .Where(q => q.CreatedAt >= earliestUtc)
+            .Select(q => q.CreatedAt)
+            .ToListAsync(ct);
+
+        var contentByDay = postDates.Concat(quoteDates)
+            .GroupBy(at => ToLocalDate(at))
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var pagesByDay = readingRows
+            .GroupBy(r => r.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.PagesReadToday));
+
         var daily = new List<DailyActivityPoint>();
         for (var day = chartStart; day <= today; day = day.AddDays(1))
         {
             daily.Add(new DailyActivityPoint(
                 day,
                 activeByDay.TryGetValue(day, out var au) ? au : 0,
-                newByDay.TryGetValue(day, out var nu) ? nu : 0));
+                newByDay.TryGetValue(day, out var nu) ? nu : 0,
+                contentByDay.TryGetValue(day, out var cu) ? cu : 0,
+                pagesByDay.TryGetValue(day, out var pu) ? pu : 0));
         }
 
         // ---- Conversion funnel ------------------------------------------
@@ -173,10 +223,20 @@ public class GetFounderAnalyticsQueryHandler : IRequestHandler<GetFounderAnalyti
             TotalPosts = totalPosts,
             TotalQuotes = totalQuotes,
             TotalMessages = totalMessages,
+            TotalComments = totalComments,
+            TotalLikes = totalLikes,
+            TotalReadingGoals = totalGoals,
+            ActiveReadingGoals = activeGoals,
+            TotalBooks = totalBooks,
+            ActiveReaders30d = activeReaders30d,
+            TelegramUsers = telegramUsers,
+            WebOnlyUsers = webOnlyUsers,
+            TotalPagesRead30d = totalPagesRead30d,
             DailyActivity = daily,
             Funnel = funnel,
             Retention = retention,
-            RetentionWeekCount = RetentionWeeks
+            RetentionWeekCount = RetentionWeeks,
+            TopBooks = topBooks
         };
     }
 

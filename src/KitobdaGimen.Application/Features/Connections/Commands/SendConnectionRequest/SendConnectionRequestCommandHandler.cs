@@ -125,7 +125,7 @@ public class SendConnectionRequestCommandHandler
             ActorName = actorName,
             ActorAvatarUrl = actorAvatar,
             Message = $"{actorName} sizni suhbatga taklif qildi",
-            Url = "/chat"
+            Url = null
         }, ct);
 
     private Task NotifyAcceptedAsync(int recipientId, int actorId, string actorName, string? actorAvatar, CancellationToken ct)
@@ -136,7 +136,7 @@ public class SendConnectionRequestCommandHandler
             ActorName = actorName,
             ActorAvatarUrl = actorAvatar,
             Message = $"{actorName} taklifingizni qabul qildi",
-            Url = "/chat"
+            Url = null
         }, ct);
 
     private static ConnectionDto ToDto(

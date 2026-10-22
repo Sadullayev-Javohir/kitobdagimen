@@ -16,4 +16,7 @@ public static class UzTime
 
     /// <summary>O'zbekiston bo'yicha bugungi sana.</summary>
     public static DateOnly Today => DateOnly.FromDateTime(Now);
+
+    /// <summary>UTC vaqtni O'zbekiston mahalliy vaqtiga aylantiradi.</summary>
+    public static DateTime FromUtc(DateTime utc) => utc.Kind == DateTimeKind.Utc ? utc.AddHours(OffsetHours) : DateTime.SpecifyKind(utc, DateTimeKind.Utc).AddHours(OffsetHours);
 }

@@ -9,11 +9,13 @@ public class DeleteQuoteCommandHandler : IRequestHandler<DeleteQuoteCommand, Uni
 {
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
+    private readonly ITelegramBotService _telegramBot;
 
-    public DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService currentUser)
+    public DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService currentUser, ITelegramBotService telegramBot)
     {
         _db = db;
         _currentUser = currentUser;
+        _telegramBot = telegramBot;
     }
 
     public async Task<Unit> Handle(DeleteQuoteCommand request, CancellationToken cancellationToken)
@@ -28,6 +30,11 @@ public class DeleteQuoteCommandHandler : IRequestHandler<DeleteQuoteCommand, Uni
         if (quote.UserId != userId)
         {
             throw new ForbiddenAccessException();
+        }
+
+        if (quote.TelegramChatId.HasValue && quote.TelegramMessageId.HasValue)
+        {
+            _ = _telegramBot.DeleteMessageAsync(quote.TelegramChatId.Value, quote.TelegramMessageId.Value, CancellationToken.None);
         }
 
         _db.Quotes.Remove(quote);

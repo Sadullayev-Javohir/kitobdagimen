@@ -77,6 +77,18 @@ public class GetChallengeBoardQueryHandler
         var (from, to) = ChallengeCalendar.Range(request.Year, request.Month);
         var elapsedDays = Math.Max(1, ChallengeCalendar.ElapsedDays(request.Year, request.Month));
 
+        var (cy, cm) = ChallengeCalendar.CurrentPeriod();
+        if (request.Year == cy && request.Month == cm)
+        {
+            var customCfg = await ChallengeConfigStore.GetStoredOrNullAsync(_db, cancellationToken);
+            if (customCfg is not null)
+            {
+                from = customCfg.StartDate;
+                to = customCfg.EndDate;
+                elapsedDays = Math.Max(1, customCfg.ElapsedDays);
+            }
+        }
+
         var progress = _db.ReadingProgress
             .Where(p => p.PagesReadToday > 0 && p.Date >= from && p.Date <= to);
 

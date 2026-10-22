@@ -11,9 +11,9 @@ public record LeaderboardUserDto
     /// <summary>Foydalanuvchining reytingdagi o'rni (1-birinchi, 2-ikkinchi...)</summary>
     public int Rank { get; init; }
     
-    /// <summary>Statistika - betlar soni, kitoblar soni yoki postlar/iqtiboslar soni.</summary>
+    /// <summary>Statistika - betlar soni, kitoblar soni yoki taqrizlar/iqtiboslar soni.</summary>
     public int Score { get; init; }
     
-    /// <summary>Qo'shimcha ma'lumot (masalan, "5 kitob" yoki "12 post").</summary>
+    /// <summary>Qo'shimcha ma'lumot (masalan, "5 kitob" yoki "12 taqriz").</summary>
     public string? Detail { get; init; }
 }

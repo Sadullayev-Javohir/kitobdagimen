@@ -132,3 +132,52 @@ public class SpyNotificationService : INotificationService
         return Task.CompletedTask;
     }
 }
+
+public class FakeTelegramBotService : ITelegramBotService
+{
+    public string BotUsername => "KitobdagiMenBot";
+    public string WebAppUrl => "https://kitobdagimen.uz";
+
+    public TelegramOtpEntry GenerateLoginOtp(int userId, long telegramId, string fullName, string? username)
+        => new("123456", userId, telegramId, fullName, username, DateTime.UtcNow.AddMinutes(2));
+
+    public TelegramOtpEntry? VerifyLoginOtp(string code) => null;
+    public TelegramWebAppUser? ValidateWebAppInitData(string? initData) => null;
+    public Task NotifyWebLoginSuccessAsync(long telegramId, CancellationToken ct = default) => Task.CompletedTask;
+    public List<(int PostId, int LikeCount)> SyncedPostLikes { get; } = new();
+    public List<(int QuoteId, int LikeCount)> SyncedQuoteLikes { get; } = new();
+
+    public Task BroadcastPostToGroupAsync(int postId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SyncPostLikesInGroupAsync(int postId, int likeCount, CancellationToken ct = default)
+    {
+        SyncedPostLikes.Add((postId, likeCount));
+        return Task.CompletedTask;
+    }
+    public Task DeletePostBroadcastAsync(int postId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task BroadcastQuoteToGroupAsync(int quoteId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task SyncQuoteLikesInGroupAsync(int quoteId, int likeCount, CancellationToken ct = default)
+    {
+        SyncedQuoteLikes.Add((quoteId, likeCount));
+        return Task.CompletedTask;
+    }
+    public Task DeleteQuoteBroadcastAsync(int quoteId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<System.Text.Json.Nodes.JsonNode?> EditReplyMarkupAsync(long chatId, int messageId, object replyMarkup, CancellationToken ct = default) => Task.FromResult<System.Text.Json.Nodes.JsonNode?>(null);
+    public Task<bool> DeleteMessageAsync(long chatId, int messageId, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<int> SendDailyReadingRemindersAsync(CancellationToken ct = default) => Task.FromResult(0);
+    public Task<bool> SendDailyGroupReportAsync(CancellationToken ct = default) => Task.FromResult(true);
+    public Task BroadcastChallengeUpdateAsync(string messageHtml, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<int> BroadcastChallengeWinnersAsync(int year, int month, CancellationToken ct = default) => Task.FromResult(0);
+    public Task<bool> IsUserInGroupAsync(long groupChatId, long telegramUserId, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<bool> IsUserMemberOfBookClubAsync(long telegramUserId, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<string> GetGroupInviteLinkAsync(CancellationToken ct = default) => Task.FromResult("https://t.me/+M2zWs1tYAKoxMjli");
+    public Task<System.Text.Json.Nodes.JsonNode?> SendPhotoAsync(long chatId, string photoUrlOrPath, string captionHtml, object? replyMarkup = null, int? messageThreadId = null, CancellationToken ct = default) => Task.FromResult<System.Text.Json.Nodes.JsonNode?>(null);
+    public Task NotifyPhysicalBookReservedAsync(int physicalBookId, int reserverUserId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task NotifyPhysicalBookHandoverConfirmedAsync(int physicalBookId, int ownerUserId, int reserverUserId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task NotifyUserFollowedAsync(int followerUserId, int followingUserId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<TelegramBotUserStatsDto> GetBotUserStatsAsync(CancellationToken ct = default)
+        => Task.FromResult(new TelegramBotUserStatsDto(0, 0, 0, 0, 0, 0, 0, 0, 0, Array.Empty<BotBlockedUserItemDto>()));
+    public Task<BotSyncResultDto> SyncBotBlockedStatusAsync(CancellationToken ct = default)
+        => Task.FromResult(new BotSyncResultDto(0, 0, 0, 0));
+    public Task MarkUserBlockedAsync(long telegramId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task MarkUserUnblockedAsync(long telegramId, CancellationToken ct = default) => Task.CompletedTask;
+}

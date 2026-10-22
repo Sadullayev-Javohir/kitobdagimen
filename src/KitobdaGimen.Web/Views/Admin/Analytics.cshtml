@@ -7,155 +7,368 @@
     string Pct(double v) => v.ToString("0.#") + "%";
     string Signed(double v) => (v >= 0 ? "+" : "") + v.ToString("0.#") + "%";
 
-    // Heatmap cell colour for a retention percentage (green scale).
+    // Heatmap cell colour for retention percentage (green scale).
     string CellStyle(double? v)
     {
-        if (v is null) return "background:transparent; color:var(--text-secondary)";
+        if (v is null) return "background:transparent; color:var(--text-muted); opacity:0.4;";
         var t = Math.Clamp(v.Value / 100.0, 0, 1);
-        // Alpha ramps with retention; text flips to white on darker cells.
         var alpha = (0.12 + 0.78 * t).ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var color = t > 0.5 ? "#fff" : "var(--text)";
-        return $"background:rgba(27,77,62,{alpha}); color:{color}";
+        var color = t > 0.5 ? "#ffffff" : "var(--text)";
+        return $"background:rgba(22, 163, 74, {alpha}); color:{color}; font-weight:700;";
     }
 
-    // ---- Activity chart geometry (server-rendered SVG) ----
+    // ---- Activity chart geometry (server-rendered SVG with client hover interactivity) ----
     var pts = Model.DailyActivity;
-    var chartW = 720.0; var chartH = 220.0;
-    var padL = 34.0; var padR = 12.0; var padT = 14.0; var padB = 26.0;
+    var chartW = 860.0; 
+    var chartH = 260.0;
+    var padL = 40.0; 
+    var padR = 20.0; 
+    var padT = 20.0; 
+    var padB = 34.0;
     var innerW = chartW - padL - padR;
     var innerH = chartH - padT - padB;
     var n = Math.Max(pts.Count, 1);
     var maxActive = Math.Max(1, pts.Count > 0 ? pts.Max(p => p.ActiveUsers) : 1);
     var maxNew = Math.Max(1, pts.Count > 0 ? pts.Max(p => p.NewUsers) : 1);
-    var barW = innerW / n * 0.62;
+    var barW = Math.Max(6.0, innerW / n * 0.58);
+
     double XForBar(int i) => padL + innerW * (i + 0.5) / n;
     double YNew(int v) => padT + innerH * (1 - (double)v / maxNew);
+
     var newLine = string.Join(" ", pts.Select((p, i) =>
         XForBar(i).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "," +
         YNew(p.NewUsers).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)));
+
+    var peakPoint = pts.Count > 0 ? pts.OrderByDescending(p => p.ActiveUsers).FirstOrDefault() : null;
+    var stickinessScore = Model.StickinessPercent >= 20 ? "A'lo darajada" : (Model.StickinessPercent >= 10 ? "Barqaror" : "Pastroq");
+    var stickinessColor = Model.StickinessPercent >= 20 ? "var(--success)" : (Model.StickinessPercent >= 10 ? "var(--primary)" : "var(--warning)");
 }
 
 <div class="container page">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px">
+    @* ==================== Header ==================== *@
+    <div class="adm-analytics-head">
         <div>
-            <h1 style="margin:0; display:flex; align-items:center; gap:10px">
-                <span class="material-symbols-outlined ic-lg" style="color:var(--accent)">insights</span>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px">
+                <a href="/admin" class="muted" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; text-decoration:none">
+                    <span class="material-symbols-outlined ic-16">arrow_back</span>
+                    Admin panel
+                </a>
+                <span class="muted">/</span>
+                <span style="font-size:13px; font-weight:600; color:var(--text-secondary)">Mahsulot analitikasi</span>
+            </div>
+            <h1>
+                <span class="material-symbols-outlined ic-28" style="color:var(--accent)">insights</span>
                 Founder analitika
             </h1>
-            <p class="muted" style="margin:6px 0 0">Foydalanuvchi o'sishi, faollik, konversiya va retention. Oxirgi yangilanish: @Model.GeneratedAtUtc.AddHours(5).ToString("dd.MM.yyyy HH:mm") (UZB)</p>
+            <p class="muted" style="margin:4px 0 0; font-size:13.5px">
+                Platforma o'sishi, faollik (DAU/WAU/MAU), konversiya va haftalik retention.
+            </p>
         </div>
-        <a href="/admin" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:6px">
-            <span class="material-symbols-outlined ic-sm">arrow_back</span>
-            Admin panel
-        </a>
-    </div>
 
-    @* ---------------- KPI cards ---------------- *@
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:14px; margin:18px 0">
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">Jami foydalanuvchi</div>
-            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.TotalUsers</div>
-            <div class="muted" style="font-size:12px">Bugun +@Model.NewUsersToday · 7 kun +@Model.NewUsers7d · 30 kun +@Model.NewUsers30d</div>
-        </div>
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">DAU (bugun faol)</div>
-            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.Dau</div>
-            <div class="muted" style="font-size:12px">Kunlik faol foydalanuvchilar</div>
-        </div>
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">WAU / MAU</div>
-            <div style="font-size:30px; font-weight:700; color:var(--primary)">@Model.Wau <span style="font-size:16px; color:var(--text-secondary)">/ @Model.Mau</span></div>
-            <div class="muted" style="font-size:12px">Haftalik / oylik faol</div>
-        </div>
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">Stickiness (DAU/MAU)</div>
-            <div style="font-size:30px; font-weight:700; color:var(--accent)">@Pct(Model.StickinessPercent)</div>
-            <div class="muted" style="font-size:12px">Qaytib kelish darajasi</div>
-        </div>
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">Signup o'sishi (WoW)</div>
-            <div style="font-size:30px; font-weight:700; color:@(Model.SignupGrowthPercent >= 0 ? "var(--primary)" : "var(--danger)")">@Signed(Model.SignupGrowthPercent)</div>
-            <div class="muted" style="font-size:12px">Bu hafta vs o'tgan hafta</div>
-        </div>
-        <div class="card" style="padding:16px">
-            <div class="muted" style="font-size:13px">Kontent hajmi</div>
-            <div style="font-size:22px; font-weight:700; color:var(--primary)">@Model.TotalPosts <span style="font-size:13px; color:var(--text-secondary)">post</span></div>
-            <div class="muted" style="font-size:12px">@Model.TotalQuotes iqtibos · @Model.TotalMessages xabar</div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap">
+            <div class="adm-live-badge" style="padding:6px 12px; font-size:13px">
+                <span class="adm-pulse"></span>
+                Yangilangan: @Model.GeneratedAtUtc.AddHours(5).ToString("dd.MM.yyyy HH:mm") (UZB)
+            </div>
+            <a href="/admin/analytics" class="btn btn-outline btn-sm" title="Yangilash">
+                <span class="material-symbols-outlined ic-18">refresh</span>
+            </a>
         </div>
     </div>
 
-    @* ---------------- Activity chart ---------------- *@
-    <div class="card" style="padding:20px; margin-bottom:18px">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:12px">
-            <h2 style="margin:0; font-size:18px">So'nggi 30 kun faollik</h2>
-            <div class="muted" style="font-size:13px; display:flex; gap:16px">
-                <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:12px; border-radius:3px; background:var(--primary); display:inline-block"></span>Faol (DAU)</span>
-                <span style="display:inline-flex; align-items:center; gap:6px"><span style="width:12px; height:3px; border-radius:2px; background:var(--accent); display:inline-block"></span>Yangi ro'yxat</span>
+    @* ==================== Tier 1: Growth & Engagement KPI Cards ==================== *@
+    <div class="adm-metrics-grid">
+        @* Card 1: Total Users *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Jami Foydalanuvchilar</span>
+                <div class="adm-metric-icon adm-icon-primary">
+                    <span class="material-symbols-outlined">group</span>
+                </div>
+            </div>
+            <div class="adm-metric-num">@Model.TotalUsers.ToString("N0")</div>
+            <div class="adm-metric-footer">
+                <span class="adm-trend-pill adm-trend-up">
+                    <span class="material-symbols-outlined ic-14">trending_up</span>
+                    +@Model.NewUsersToday bugun
+                </span>
+                <span class="muted">· +@Model.NewUsers7d (7k) · +@Model.NewUsers30d (30k)</span>
             </div>
         </div>
-        <svg viewBox="0 0 @chartW.ToString("0", System.Globalization.CultureInfo.InvariantCulture) @chartH.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" width="100%" style="max-width:100%; height:auto" role="img" aria-label="Kunlik faollik grafigi">
-            @* baseline *@
-            <line x1="@padL" y1="@(padT + innerH)" x2="@(chartW - padR)" y2="@(padT + innerH)" stroke="var(--border)" stroke-width="1" />
-            @* y-axis max label *@
-            <text x="4" y="@(padT + 8)" font-size="11" fill="var(--text-secondary)">@maxActive</text>
-            <text x="4" y="@(padT + innerH)" font-size="11" fill="var(--text-secondary)">0</text>
-            @for (var i = 0; i < pts.Count; i++)
-            {
-                var p = pts[i];
-                var bh = innerH * (double)p.ActiveUsers / maxActive;
-                var x = XForBar(i) - barW / 2;
-                var y = padT + innerH - bh;
-                <rect x="@x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" y="@y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" width="@barW.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" height="@bh.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" rx="2" fill="var(--primary)" opacity="0.85">
-                    <title>@p.Date.ToString("dd.MM"): @p.ActiveUsers faol, @p.NewUsers yangi</title>
-                </rect>
-            }
-            @if (pts.Count > 1)
-            {
-                <polyline points="@newLine" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-            }
-            @* x labels: first and last *@
-            @if (pts.Count > 0)
-            {
-                <g>
-                    <text x="@padL" y="@(chartH - 6)" font-size="10" fill="var(--text-secondary)">@pts[0].Date.ToString("dd.MM")</text>
-                    <text x="@(chartW - padR)" y="@(chartH - 6)" font-size="10" fill="var(--text-secondary)" text-anchor="end">@pts[pts.Count - 1].Date.ToString("dd.MM")</text>
-                </g>
-            }
-        </svg>
+
+        @* Card 2: DAU *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">DAU (Bugun Faol)</span>
+                <div class="adm-metric-icon adm-icon-green">
+                    <span class="material-symbols-outlined">bolt</span>
+                </div>
+            </div>
+            <div class="adm-metric-num" style="color:var(--success)">@Model.Dau.ToString("N0")</div>
+            <div class="adm-metric-footer">
+                <span>Kunlik faol foydalanuvchilar</span>
+                <span class="muted">· @((Model.TotalUsers > 0 ? (double)Model.Dau / Model.TotalUsers * 100 : 0).ToString("0.#"))% auditoriyadan</span>
+            </div>
+        </div>
+
+        @* Card 3: WAU & MAU *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">WAU / MAU</span>
+                <div class="adm-metric-icon adm-icon-blue">
+                    <span class="material-symbols-outlined">query_stats</span>
+                </div>
+            </div>
+            <div class="adm-metric-num">
+                @Model.Wau.ToString("N0") <span style="font-size:16px; font-weight:600; color:var(--text-secondary)">/ @Model.Mau.ToString("N0")</span>
+            </div>
+            <div class="adm-metric-footer">
+                <span>Haftalik (@Model.Wau)</span>
+                <span class="muted">va oylik (@Model.Mau) faol kitobxonlar</span>
+            </div>
+        </div>
+
+        @* Card 4: Stickiness *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Stickiness (DAU / MAU)</span>
+                <div class="adm-metric-icon adm-icon-accent">
+                    <span class="material-symbols-outlined">repeat</span>
+                </div>
+            </div>
+            <div class="adm-metric-num" style="color:var(--accent)">
+                @Pct(Model.StickinessPercent)
+            </div>
+            <div class="adm-meter-bar">
+                <div class="adm-meter-fill" style="width: @Math.Min(100.0, Model.StickinessPercent * 2.5).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%; background: var(--accent);"></div>
+            </div>
+            <div class="adm-metric-footer" style="margin-top:6px">
+                <span style="color:@stickinessColor; font-weight:600;">@stickinessScore</span>
+                <span class="muted">· Mahsulotga bog'lanish ko'rsatkichi</span>
+            </div>
+        </div>
+
+        @* Card 5: Signup Growth *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Ro'yxatdan O'tish O'sishi (WoW)</span>
+                <div class="adm-metric-icon @(Model.SignupGrowthPercent >= 0 ? "adm-icon-primary" : "adm-icon-danger")">
+                    <span class="material-symbols-outlined">@(Model.SignupGrowthPercent >= 0 ? "show_chart" : "trending_down")</span>
+                </div>
+            </div>
+            <div class="adm-metric-num" style="color:@(Model.SignupGrowthPercent >= 0 ? "var(--primary)" : "var(--danger)")">
+                @Signed(Model.SignupGrowthPercent)
+            </div>
+            <div class="adm-metric-footer">
+                @if (Model.SignupGrowthPercent >= 0)
+                {
+                    <span class="adm-trend-pill adm-trend-up">
+                        <span class="material-symbols-outlined ic-14">north_east</span>
+                        O'sish dinamikasida
+                    </span>
+                }
+                else
+                {
+                    <span class="adm-trend-pill adm-trend-down">
+                        <span class="material-symbols-outlined ic-14">south_east</span>
+                        Pasayish kuzatilmoqda
+                    </span>
+                }
+                <span class="muted">· Oxirgi 7 kun vs avvalgi 7 kun</span>
+            </div>
+        </div>
+
+        @* Card 6: Reading Stats *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Mutolaa Ko'rsatkichi (30 kun)</span>
+                <div class="adm-metric-icon adm-icon-warn">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                </div>
+            </div>
+            <div class="adm-metric-num">
+                @Model.TotalPagesRead30d.ToString("N0") <span style="font-size:15px; font-weight:600; color:var(--text-secondary)">bet</span>
+            </div>
+            <div class="adm-metric-footer">
+                <span><strong>@Model.ActiveReaders30d</strong> faol kitobxon</span>
+                <span class="muted">· <strong>@Model.ActiveReadingGoals</strong> faol maqsad</span>
+            </div>
+        </div>
     </div>
 
-    @* ---------------- Conversion funnel ---------------- *@
-    <div class="card" style="padding:20px; margin-bottom:18px">
-        <h2 style="margin:0 0 14px; font-size:18px">Konversiya (funnel)</h2>
-        <div style="display:flex; flex-direction:column; gap:10px">
-            @foreach (var step in Model.Funnel)
+    @* ==================== Tier 2: 30-Day Activity Chart ==================== *@
+    <div class="adm-chart-card" style="position:relative;">
+        <div class="adm-chart-top">
+            <div>
+                <h2>So'nggi 30 kunlik faollik va o'sish</h2>
+                @if (peakPoint != null)
+                {
+                    <span class="muted" style="font-size:12.5px">
+                        Eng faol kun: <strong>@peakPoint.Date.ToString("dd.MM.yyyy")</strong> (@peakPoint.ActiveUsers ta faol foydalanuvchi)
+                    </span>
+                }
+            </div>
+            <div class="adm-chart-legend">
+                <span style="display:inline-flex; align-items:center; gap:6px">
+                    <span style="width:12px; height:12px; border-radius:3px; background:var(--primary); display:inline-block"></span>
+                    Faol kitobxonlar (DAU)
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:6px">
+                    <span style="width:14px; height:3px; border-radius:2px; background:var(--accent); display:inline-block"></span>
+                    Yangi ro'yxatdan o'tganlar
+                </span>
+            </div>
+        </div>
+
+        @* Hover Tooltip Element *@
+        <div id="admChartTooltip" class="adm-tooltip"></div>
+
+        <div style="overflow-x:auto;">
+            <svg class="adm-chart-svg" viewBox="0 0 @chartW.ToString("0", System.Globalization.CultureInfo.InvariantCulture) @chartH.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" role="img" aria-label="Kunlik faollik grafigi">
+                <defs>
+                    <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.95" />
+                        <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.65" />
+                    </linearGradient>
+                </defs>
+
+                @* Background gridlines *@
+                @for (var g = 0; g <= 4; g++)
+                {
+                    var yGrid = padT + innerH * g / 4.0;
+                    var valLabel = (int)Math.Round(maxActive * (4 - g) / 4.0);
+                    <line x1="@padL" y1="@yGrid.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" x2="@((chartW - padR).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" y2="@yGrid.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)" stroke="var(--border)" stroke-width="1" stroke-dasharray="@(g == 4 ? "0" : "3,3")" opacity="0.6" />
+                    <g>
+                        <text x="@(padL - 8)" y="@((yGrid + 4).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" font-size="10" fill="var(--text-muted)" text-anchor="end">@valLabel</text>
+                    </g>
+                }
+
+                @* Bars for Daily Active Users *@
+                @for (var i = 0; i < pts.Count; i++)
+                {
+                    var p = pts[i];
+                    var bh = Math.Max(2.0, innerH * (double)p.ActiveUsers / maxActive);
+                    var x = XForBar(i) - barW / 2;
+                    var y = padT + innerH - bh;
+                    <rect class="adm-chart-bar"
+                          x="@x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                          y="@y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                          width="@barW.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                          height="@bh.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                          rx="3"
+                          fill="url(#barGrad)"
+                          data-date="@p.Date.ToString("dd-MM-yyyy")"
+                          data-active="@p.ActiveUsers"
+                          data-new="@p.NewUsers"
+                          data-content="@p.PostsAndQuotes"
+                          data-pages="@p.PagesRead">
+                    </rect>
+                }
+
+                @* Polyline for New Registrations *@
+                @if (pts.Count > 1)
+                {
+                    <polyline points="@newLine" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+                    @for (var i = 0; i < pts.Count; i++)
+                    {
+                        var p = pts[i];
+                        var cx = XForBar(i);
+                        var cy = YNew(p.NewUsers);
+                        <circle cx="@cx.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                                cy="@cy.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)"
+                                r="3"
+                                fill="var(--surface)"
+                                stroke="var(--accent)"
+                                stroke-width="2">
+                        </circle>
+                    }
+                }
+
+                @* X-axis labels *@
+                @if (pts.Count > 0)
+                {
+                    <g font-size="11" font-weight="600" fill="var(--text-secondary)">
+                        <g><text x="@padL" y="@((chartH - 8).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))">@pts[0].Date.ToString("dd-MMM")</text></g>
+                        @if (pts.Count > 15)
+                        {
+                            var midIdx = pts.Count / 2;
+                            <g><text x="@(XForBar(midIdx).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" y="@((chartH - 8).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" text-anchor="middle">@pts[midIdx].Date.ToString("dd-MMM")</text></g>
+                        }
+                        <g><text x="@((chartW - padR).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" y="@((chartH - 8).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))" text-anchor="end">@pts[pts.Count - 1].Date.ToString("dd-MMM")</text></g>
+                    </g>
+                }
+            </svg>
+        </div>
+    </div>
+
+    @* ==================== Tier 3: Conversion Funnel ==================== *@
+    <div class="adm-funnel-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px">
+            <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--text)">
+                Mahsulot konversiya voronkasi (Funnel)
+            </h2>
+            <span class="muted" style="font-size:13px">Ro'yxatdan o'tishdan faol kitobxongacha bo'lgan yo'l</span>
+        </div>
+
+        <div class="adm-funnel-list">
+            @for (var idx = 0; idx < Model.Funnel.Count; idx++)
             {
-                <div>
-                    <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px">
-                        <span>@step.Label</span>
-                        <span class="muted"><strong style="color:var(--text)">@step.Count</strong> · @Pct(step.PercentOfTop) jamidan · @Pct(step.PercentOfPrevious) oldingidan</span>
+                var step = Model.Funnel[idx];
+                var stepIcon = step.Key switch
+                {
+                    "registered" => "person_add",
+                    "onboarded" => "checklist",
+                    "activated" => "rate_review",
+                    _ => "verified"
+                };
+
+                <div class="adm-funnel-item">
+                    <div class="adm-funnel-header">
+                        <div class="adm-funnel-name">
+                            <span class="material-symbols-outlined ic-20" style="color:var(--primary)">@stepIcon</span>
+                            <span>@(idx + 1). @step.Label</span>
+                        </div>
+                        <div class="adm-funnel-stats">
+                            <strong style="color:var(--text); font-size:15px">@step.Count.ToString("N0")</strong>
+                            <span class="muted">(@Pct(step.PercentOfTop) jamidan)</span>
+                            @if (idx > 0)
+                            {
+                                var dropoff = Math.Round(100.0 - step.PercentOfPrevious, 1);
+                                <span class="adm-trend-pill @(dropoff <= 40 ? "adm-trend-up" : "adm-trend-down")">
+                                    @(step.PercentOfPrevious.ToString("0.#"))% o'tdi
+                                </span>
+                            }
+                        </div>
                     </div>
-                    <div style="height:22px; background:var(--bg); border-radius:8px; overflow:hidden; border:1px solid var(--border)">
-                        <div style="height:100%; width:@step.PercentOfTop.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%; background:linear-gradient(90deg, var(--primary), var(--accent)); border-radius:8px"></div>
+                    <div class="adm-funnel-track">
+                        <div class="adm-funnel-bar" style="width: @Math.Max(3.0, step.PercentOfTop).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%;"></div>
                     </div>
                 </div>
             }
         </div>
     </div>
 
-    @* ---------------- Retention cohorts ---------------- *@
-    <div class="card" style="padding:20px; margin-bottom:18px">
-        <h2 style="margin:0 0 4px; font-size:18px">Retention (haftalik kogortalar)</h2>
-        <p class="muted" style="margin:0 0 14px; font-size:13px">Har qatordagi foydalanuvchilar ro'yxatdan o'tgandan keyingi haftalarda qancha % qaytib kelgani. W0 — ro'yxatdan o'tgan hafta.</p>
-        <div style="overflow-x:auto">
-            <table style="border-collapse:separate; border-spacing:4px; font-size:13px; min-width:520px">
+    @* ==================== Tier 4: Retention Cohorts ==================== *@
+    <div class="adm-cohort-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:8px">
+            <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--text)">
+                Haftalik kohorta retention (Return Rate)
+            </h2>
+            <span class="muted" style="font-size:13px">W0 — ro'yxatdan o'tgan hafta, W1..W7 — keyingi haftalardagi faollik</span>
+        </div>
+        <p class="muted" style="margin:0 0 14px; font-size:13px">
+            Har bir qator ma'lum haftada qo'shilgan foydalanuvchilarning keyingi haftalarda platformaga qaytish ulushini ko'rsatadi.
+        </p>
+
+        <div class="adm-cohort-table-wrap">
+            <table class="adm-cohort-table">
                 <thead>
                     <tr>
-                        <th style="text-align:left; padding:6px 10px; color:var(--text-secondary); font-weight:600">Kogorta</th>
-                        <th style="text-align:right; padding:6px 8px; color:var(--text-secondary); font-weight:600">Hajm</th>
+                        <th>Kohorta (Hafta)</th>
+                        <th>Hajm</th>
                         @for (var w = 0; w < Model.RetentionWeekCount; w++)
                         {
-                            <th style="text-align:center; padding:6px 8px; color:var(--text-secondary); font-weight:600; min-width:44px">W@(w)</th>
+                            <th>W@(w)</th>
                         }
                     </tr>
                 </thead>
@@ -163,12 +376,14 @@
                     @foreach (var cohort in Model.Retention)
                     {
                         <tr>
-                            <td style="padding:6px 10px; white-space:nowrap"><strong>@cohort.Label</strong></td>
-                            <td style="padding:6px 8px; text-align:right">@cohort.CohortSize</td>
+                            <td><strong>@cohort.Label</strong></td>
+                            <td>@cohort.CohortSize nafar</td>
                             @foreach (var cell in cohort.WeeklyRetention)
                             {
-                                <td style="text-align:center; padding:8px 6px; border-radius:6px; @CellStyle(cell)">
-                                    @(cell is null ? "" : cell.Value.ToString("0") + "%")
+                                <td style="padding:4px 6px;">
+                                    <div class="adm-cohort-cell" style="padding:8px 4px; @CellStyle(cell)">
+                                        @(cell is null ? "—" : cell.Value.ToString("0") + "%")
+                                    </div>
                                 </td>
                             }
                         </tr>
@@ -177,4 +392,98 @@
             </table>
         </div>
     </div>
+
+    @* ==================== Tier 5: Content Ecosystem & Top Books ==================== *@
+    <div class="adm-chart-card">
+        <div class="adm-chart-top">
+            <div>
+                <h2>Kitobxonlik ekotizimi va eng faol kitoblar</h2>
+                <span class="muted" style="font-size:13px">Eng ko'p taqriz va iqtibos yozilgan asarlar</span>
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary); display:flex; gap:12px; flex-wrap:wrap;">
+                <span>📚 <strong>@Model.TotalBooks</strong> kitob</span>
+                <span>·</span>
+                <span>✍️ <strong>@Model.TotalPosts</strong> taqriz</span>
+                <span>·</span>
+                <span>💬 <strong>@Model.TotalComments</strong> izoh</span>
+                <span>·</span>
+                <span>❤️ <strong>@Model.TotalLikes</strong> like</span>
+            </div>
+        </div>
+
+        @if (Model.TopBooks.Count > 0)
+        {
+            <div class="adm-books-grid">
+                @foreach (var book in Model.TopBooks)
+                {
+                    <div class="adm-book-card">
+                        @if (!string.IsNullOrEmpty(book.CoverUrl))
+                        {
+                            <img src="@book.CoverUrl" alt="@book.Title" class="adm-book-cover" />
+                        }
+                        else
+                        {
+                            <div class="adm-book-cover" style="display:flex; align-items:center; justify-content:center; color:var(--text-muted);">
+                                <span class="material-symbols-outlined ic-20">menu_book</span>
+                            </div>
+                        }
+                        <div class="adm-book-info">
+                            <div class="adm-book-title" title="@book.Title">@book.Title</div>
+                            <div class="adm-book-author" title="@book.Author">@book.Author</div>
+                            <div class="adm-book-badges">
+                                <span class="adm-book-badge">@book.ReviewCount taqriz</span>
+                                <span class="adm-book-badge">@book.QuoteCount iqtibos</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="muted" style="font-size:13px; margin:10px 0 0">Hozircha kitoblar faolligi yetarli emas.</p>
+        }
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const tooltip = document.getElementById("admChartTooltip");
+        const bars = document.querySelectorAll(".adm-chart-bar");
+        const chartWrap = tooltip?.parentElement;
+
+        if (!tooltip || !chartWrap) return;
+
+        bars.forEach(bar => {
+            bar.addEventListener("mouseenter", (e) => {
+                const date = bar.getAttribute("data-date");
+                const active = bar.getAttribute("data-active");
+                const newUsers = bar.getAttribute("data-new");
+                const content = bar.getAttribute("data-content");
+                const pages = bar.getAttribute("data-pages");
+
+                let html = `<strong>${date}</strong><br/>`;
+                html += `Faol: <b>${active}</b> nafar<br/>`;
+                html += `Yangi: <b>+${newUsers}</b> nafar`;
+                if (content && content !== "0") {
+                    html += `<br/>Kontent: <b>+${content}</b> ta`;
+                }
+                if (pages && pages !== "0") {
+                    html += `<br/>Mutolaa: <b>${pages}</b> bet`;
+                }
+
+                tooltip.innerHTML = html;
+                tooltip.style.opacity = "1";
+
+                const rect = bar.getBoundingClientRect();
+                const wrapRect = chartWrap.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + rect.width / 2 - wrapRect.left}px`;
+                tooltip.style.top = `${rect.top - wrapRect.top - 6}px`;
+            });
+
+            bar.addEventListener("mouseleave", () => {
+                tooltip.style.opacity = "0";
+            });
+        });
+    });
+</script>

@@ -41,9 +41,19 @@ public static class SeoJsonLd
                 ["@id"] = baseUrl + "/#website",
                 ["url"] = baseUrl + "/",
                 ["name"] = "kitobdagimen.uz",
-                ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma — kitob haqida post yozish, iqtiboslar saqlash, oylik kitobxonlik musobaqasida (Challenge) qatnashib kitob yutish, o'qish maqsadlari va real vaqt suhbat.",
+                ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma — kitob haqida taqriz yozish, iqtiboslar saqlash, oylik kitobxonlik musobaqasida (Challenge) qatnashib kitob yutish, o'qish maqsadlari va real vaqt suhbat.",
                 ["inLanguage"] = "uz",
-                ["publisher"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#organization" }
+                ["publisher"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#organization" },
+                ["potentialAction"] = new Dictionary<string, object?>
+                {
+                    ["@type"] = "SearchAction",
+                    ["target"] = new Dictionary<string, object?>
+                    {
+                        ["@type"] = "EntryPoint",
+                        ["urlTemplate"] = baseUrl + "/kitoblar?q={search_term_string}"
+                    },
+                    ["query-input"] = "required name=search_term_string"
+                }
             },
             new Dictionary<string, object?>
             {
@@ -53,7 +63,12 @@ public static class SeoJsonLd
                 ["url"] = baseUrl + "/",
                 ["logo"] = baseUrl + "/img/logo.png",
                 ["description"] = "O'zbek kitobxonlari uchun bepul ijtimoiy platforma.",
-                ["founder"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#founder" }
+                ["founder"] = new Dictionary<string, object?> { ["@id"] = baseUrl + "/#founder" },
+                ["sameAs"] = new[]
+                {
+                    "https://t.me/KitobdagiMenBot",
+                    "https://t.me/+M2zWs1tYAKoxMjli"
+                }
             },
             new Dictionary<string, object?>
             {
@@ -222,6 +237,50 @@ public static class SeoJsonLd
         {
             ["@type"] = "Organization",
             ["name"] = "kitobdagimen.uz"
+        }
+    });
+
+    /// <summary>BreadcrumbList for Google SERP snippet navigation path.</summary>
+    public static string Breadcrumb(string baseUrl, params (string Name, string Path)[] crumbs)
+    {
+        var items = new List<object>();
+        for (var i = 0; i < crumbs.Length; i++)
+        {
+            var (name, path) = crumbs[i];
+            var itemUrl = path.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? path
+                : $"{baseUrl.TrimEnd('/')}/{path.TrimStart('/')}";
+            items.Add(new Dictionary<string, object?>
+            {
+                ["@type"] = "ListItem",
+                ["position"] = i + 1,
+                ["name"] = name,
+                ["item"] = itemUrl
+            });
+        }
+
+        return Serialize(new Dictionary<string, object?>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "BreadcrumbList",
+            ["itemListElement"] = items
+        });
+    }
+
+    /// <summary>CollectionPage schema for /quotes.</summary>
+    public static string QuotesPage(string url, int totalQuotes) => Serialize(new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "CollectionPage",
+        ["url"] = url,
+        ["name"] = "Sara iqtiboslar — Kitoblar va adabiyot durdonalari",
+        ["description"] = "Kitobxonlar tomonidan mutolaa davomida ajratib olingan eng ta'sirli satrlar va hikmatli fikrlar xazinasi.",
+        ["inLanguage"] = "uz",
+        ["publisher"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "Organization",
+            ["name"] = "kitobdagimen.uz",
+            ["url"] = "https://kitobdagimen.uz/"
         }
     });
 }

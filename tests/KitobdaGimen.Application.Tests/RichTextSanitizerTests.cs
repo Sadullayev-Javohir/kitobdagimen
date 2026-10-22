@@ -12,24 +12,39 @@ public class RichTextSanitizerTests
     }
 
     [Fact]
-    public void Strips_script_and_other_tags()
+    public void Strips_paragraphs_and_containers_without_leaving_p_tags()
+    {
+        var result = RichTextSanitizer.Sanitize("<p>Birinchi paragraf</p><p>Ikkinchi paragraf</p>");
+        Assert.DoesNotContain("<p", result);
+        Assert.DoesNotContain("&lt;p", result);
+        Assert.Contains("Birinchi paragraf\n\nIkkinchi paragraf", result);
+    }
+
+    [Fact]
+    public void Strips_p_with_attributes_and_keeps_clean_formatting()
+    {
+        var result = RichTextSanitizer.Sanitize("<p dir=\"ltr\"><strong>Baho: ⭐⭐⭐⭐⭐ (5/5)</strong></p><p>Ajoyib kitob!</p>");
+        Assert.DoesNotContain("<p", result);
+        Assert.DoesNotContain("&lt;p", result);
+        Assert.Contains("<b>Baho: ⭐⭐⭐⭐⭐ (5/5)</b>\n\nAjoyib kitob!", result);
+    }
+
+    [Fact]
+    public void Strips_script_and_style_blocks()
     {
         var result = RichTextSanitizer.Sanitize("<b>ok</b><script>alert(1)</script><a href=\"x\">link</a>");
         Assert.DoesNotContain("<script", result);
+        Assert.DoesNotContain("alert(1)", result);
         Assert.DoesNotContain("<a", result);
-        Assert.Contains("<b>ok</b>", result);
-        // Tegishsiz teglar matn sifatida ko'rsatiladi (encode qilingan).
-        Assert.Contains("&lt;script&gt;", result);
+        Assert.Equal("<b>ok</b>link", result);
     }
 
     [Fact]
     public void Drops_attributes_from_allowed_tags()
     {
-        // Atributli ruxsat etilgan teg REAL teg sifatida tiklanmaydi — u encode
-        // bo'lib matn sifatida ko'rsatiladi, shuning uchun onclick ishlamaydi.
-        var result = RichTextSanitizer.Sanitize("<b onclick=\"x\">hi</b>");
-        Assert.DoesNotContain("<b onclick", result);
-        Assert.Contains("&lt;b onclick", result);
+        var result = RichTextSanitizer.Sanitize("<b onclick=\"alert('hack')\">hi</b>");
+        Assert.DoesNotContain("onclick", result);
+        Assert.Equal("<b>hi</b>", result);
     }
 
     [Fact]
@@ -50,7 +65,6 @@ public class RichTextSanitizerTests
     [Fact]
     public void Is_idempotent_safe_for_already_sanitized_text()
     {
-        // Render paytida qayta chaqirilganda ikki marta kodlanmasligi kerak.
         var once = RichTextSanitizer.Sanitize("<b>Tom & Jerry</b> 5 < 10");
         var twice = RichTextSanitizer.Sanitize(once);
         Assert.Equal(once, twice);
@@ -72,5 +86,25 @@ public class RichTextSanitizerTests
     {
         Assert.Equal(string.Empty, RichTextSanitizer.Sanitize(null));
         Assert.Equal(string.Empty, RichTextSanitizer.Sanitize("   "));
+    }
+
+    [Fact]
+    public void StripHtml_removes_all_tags_and_preserves_multiline_paragraphs()
+    {
+        var html = "<p><strong>Baho: ⭐⭐⭐⭐⭐ (5/5)</strong></p><p>Kdkdd f f.<br>Yangi qator.</p>";
+        var plain = RichTextSanitizer.StripHtml(html);
+        Assert.DoesNotContain("<p", plain);
+        Assert.DoesNotContain("<strong>", plain);
+        Assert.Contains("Baho: ⭐⭐⭐⭐⭐ (5/5)\n\nKdkdd f f.\nYangi qator.", plain);
+    }
+
+    [Fact]
+    public void StripHtml_cleans_already_encoded_p_entities()
+    {
+        var encoded = "&lt;p&gt;&lt;strong&gt;Baho: ⭐⭐⭐⭐⭐ (5/5)&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;Matn&lt;/p&gt;";
+        var plain = RichTextSanitizer.StripHtml(encoded);
+        Assert.DoesNotContain("<p", plain);
+        Assert.DoesNotContain("&lt;p", plain);
+        Assert.Contains("Baho: ⭐⭐⭐⭐⭐ (5/5)\n\nMatn", plain);
     }
 }

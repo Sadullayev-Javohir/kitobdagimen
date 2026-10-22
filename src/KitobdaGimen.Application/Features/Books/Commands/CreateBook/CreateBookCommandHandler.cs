@@ -30,13 +30,26 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
         var existing = await _db.Books
             .FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower && b.Author.ToLower() == authorLower, cancellationToken);
 
+        var cover = !string.IsNullOrWhiteSpace(request.CoverUrl) ? request.CoverUrl : "/img/default-book-cover.webp";
+
         if (existing is not null)
         {
+            var updated = false;
+            if (string.IsNullOrWhiteSpace(existing.CoverUrl))
+            {
+                existing.CoverUrl = cover;
+                updated = true;
+            }
             // Avval qo'lda kiritilgan kitob endi tashqi manbadan import qilinsa,
             // manbani (attribution) to'ldiramiz — mavjud yozuvni qaytadan yaratmaymiz.
             if (existing.Source is null && request.Source is not null)
             {
                 existing.Source = request.Source;
+                updated = true;
+            }
+
+            if (updated)
+            {
                 await _db.SaveChangesAsync(cancellationToken);
             }
 
@@ -48,7 +61,7 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
             Title = title,
             Author = author,
             TotalPages = request.TotalPages,
-            CoverUrl = request.CoverUrl,
+            CoverUrl = cover,
             GenreId = request.GenreId,
             Source = request.Source
         };

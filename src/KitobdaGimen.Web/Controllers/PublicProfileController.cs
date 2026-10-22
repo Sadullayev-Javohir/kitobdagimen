@@ -4,7 +4,6 @@ using KitobdaGimen.Application.Features.Profile.Queries.GetUserProfile;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetUserQuotes;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetActiveReadingGoals;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetFinishedReadingGoals;
-using KitobdaGimen.Application.Features.Stories.Queries.GetUserStoryHistory;
 using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +41,6 @@ public class PublicProfileController : AppController
         var posts = await Mediator.Send(new GetUserPostsQuery { UserId = id, Page = page });
         var finishedBooks = await Mediator.Send(new GetFinishedReadingGoalsQuery(id));
         var activeBooks = await Mediator.Send(new GetActiveReadingGoalsQuery(id));
-        var stories = await Mediator.Send(new GetUserStoryHistoryQuery(id));
         var quotes = (await Mediator.Send(new GetUserQuotesQuery(id) { PageSize = 50 })).Items;
         var challengeWins = await Mediator.Send(
             new KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins.GetUserChallengeWinsQuery(id));
@@ -53,7 +51,6 @@ public class PublicProfileController : AppController
             Posts = posts,
             FinishedBooks = finishedBooks,
             CurrentBooks = activeBooks,
-            Stories = stories,
             MyQuotes = quotes,
             ChallengeWins = challengeWins
         });

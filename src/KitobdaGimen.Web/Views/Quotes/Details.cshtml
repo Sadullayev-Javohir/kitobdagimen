@@ -104,6 +104,13 @@
                 </div>
             </div>
 
+            @if (!string.IsNullOrEmpty(q.ImageUrl))
+            {
+                <div class="pd-quote-image" style="margin-top:14px;border-radius:12px;overflow:hidden">
+                    <img src="@q.ImageUrl" alt="Iqtibos rasmi" style="width:100%;max-height:500px;object-fit:cover;border-radius:12px" />
+                </div>
+            }
+
             <div class="pd-stats">
                 <span><span class="material-symbols-outlined">favorite</span> <span class="like-count">@q.LikeCount</span> yoqtirish</span>
                 <span><span class="material-symbols-outlined">chat_bubble</span> <span id="commentCount">@q.CommentCount</span> izoh</span>
@@ -124,13 +131,10 @@
                 </button>
                 @if (meId != null && q.Author.Id == meId)
                 {
-                    <form method="post" action="/quotes/@q.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="pd-action-btn">
-                            <span class="material-symbols-outlined">delete</span>
-                            <span>O'chirish</span>
-                        </button>
-                    </form>
+                    <button type="button" class="pd-action-btn danger" data-delete-quote="@q.Id">
+                        <span class="material-symbols-outlined">delete</span>
+                        <span>O'chirish</span>
+                    </button>
                 }
             </div>
         </article>

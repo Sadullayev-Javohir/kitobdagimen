@@ -23,6 +23,10 @@ public class Post : BaseEntity
     public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>KitobdagiMen Telegram guruhiga yuborilgan xabar IDsi (o'chirilganda guruhdan ham o'chirish uchun).</summary>
+    public long? TelegramChatId { get; set; }
+    public int? TelegramMessageId { get; set; }
+
     // Navigation
     public ICollection<Like> Likes { get; set; } = new List<Like>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();

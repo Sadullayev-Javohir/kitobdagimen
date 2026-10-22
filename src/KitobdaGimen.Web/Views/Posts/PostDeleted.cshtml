@@ -1,16 +1,150 @@
+@inject KitobdaGimen.Application.Common.Interfaces.ICurrentUserService CurrentUser
 @{
-    ViewData["Title"] = "Post topilmadi";
+    var isAuth = CurrentUser.IsAuthenticated;
+    ViewData["Title"] = "Taqriz topilmadi";
     ViewData["Robots"] = "noindex, nofollow";
 }
 
-<div class="container page">
-    <div class="card empty-state">
-        <span class="material-symbols-outlined">delete_sweep</span>
-        <h2 style="margin:8px 0 6px">Bu post o'chirilgan</h2>
-        <p>Siz ochmoqchi bo'lgan post muallifi yoki administrator tomonidan o'chirib tashlangan.</p>
-        <a class="btn btn-primary" href="/feed" style="margin-top:8px">
-            <span class="material-symbols-outlined ic-sm ic-baseline">dynamic_feed</span>
-            Tasmaga qaytish
-        </a>
+<div class="container page notfound-page">
+    <div class="notfound-shell">
+        <!-- Hero Card -->
+        <div class="notfound-card">
+            <div class="notfound-glow" aria-hidden="true"></div>
+
+            <div class="notfound-badge">
+                <span class="notfound-badge-dot"></span>
+                <span>404 &bull; Mavjud emas</span>
+            </div>
+
+            <div class="notfound-illu">
+                <div class="notfound-icon-ring">
+                    <span class="material-symbols-outlined notfound-icon">auto_stories</span>
+                </div>
+                <div class="notfound-icon-chip" title="Taqriz topilmadi">
+                    <span class="material-symbols-outlined">search_off</span>
+                </div>
+            </div>
+
+            <h1 class="notfound-title">Bu taqriz o'chirilgan yoki mavjud emas</h1>
+            <p class="notfound-desc">
+                Siz ochmoqchi bo'lgan taqriz muallif tomonidan o'chirilgan, yashirilgan yoki havola manzili eskirgan bo'lishi mumkin.
+                Xavotir olmang — platformamizda sizni kutayotgan minglab ajoyib kitoblar, taqrizlar va sevimli iqtiboslar bor!
+            </p>
+
+            <!-- Qidiruv maydoni -->
+            <form action="/kitoblar" method="get" class="notfound-search" role="search">
+                <span class="material-symbols-outlined notfound-search-icon">search</span>
+                <input type="text" name="q" class="notfound-search-input" placeholder="Kitob nomi yoki muallifni qidiring..." autocomplete="off" />
+                <button type="submit" class="btn btn-primary btn-sm notfound-search-btn">
+                    <span>Qidirish</span>
+                </button>
+            </form>
+
+            <!-- Harakat tugmalari -->
+            <div class="notfound-actions">
+                @if (isAuth)
+                {
+                    <a class="btn btn-primary" href="/feed">
+                        <span class="material-symbols-outlined ic-sm">dynamic_feed</span>
+                        <span>Tasmaga qaytish</span>
+                    </a>
+                    <a class="btn btn-secondary" href="/reading-books">
+                        <span class="material-symbols-outlined ic-sm">menu_book</span>
+                        <span>Mening kutubxonam</span>
+                    </a>
+                    <button type="button" class="btn btn-ghost" onclick="if(window.history.length>1){window.history.back();}else{window.location.href='/feed';}">
+                        <span class="material-symbols-outlined ic-sm">arrow_back</span>
+                        <span>Orqaga</span>
+                    </button>
+                }
+                else
+                {
+                    <a class="btn btn-primary" href="/">
+                        <span class="material-symbols-outlined ic-sm">home</span>
+                        <span>Bosh sahifa</span>
+                    </a>
+                    <a class="btn btn-accent" href="/login">
+                        <span class="material-symbols-outlined ic-sm">login</span>
+                        <span>Kirish / Ro'yxatdan o'tish</span>
+                    </a>
+                    <a class="btn btn-secondary" href="/kitoblar">
+                        <span class="material-symbols-outlined ic-sm">library_books</span>
+                        <span>Kitoblar</span>
+                    </a>
+                    <button type="button" class="btn btn-ghost" onclick="if(window.history.length>1){window.history.back();}else{window.location.href='/';}">
+                        <span class="material-symbols-outlined ic-sm">arrow_back</span>
+                        <span>Orqaga</span>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Foydali bo'limlar -->
+        <div class="notfound-discover">
+            <div class="notfound-discover-head">
+                <span class="material-symbols-outlined">explore</span>
+                <h3>Platformamizni kashf eting</h3>
+            </div>
+            <div class="notfound-grid">
+                <a href="/kitoblar" class="notfound-tile">
+                    <div class="notfound-tile-icon icon-emerald">
+                        <span class="material-symbols-outlined">menu_book</span>
+                    </div>
+                    <div class="notfound-tile-info">
+                        <h4>Kitoblar katalogi</h4>
+                        <p>O'zbek va jahon adabiyoti durdonalari, kitobxonlar sharhlari va baholari.</p>
+                    </div>
+                    <span class="material-symbols-outlined notfound-tile-arr">arrow_forward</span>
+                </a>
+
+                <a href="/challenge" class="notfound-tile">
+                    <div class="notfound-tile-icon icon-amber">
+                        <span class="material-symbols-outlined">military_tech</span>
+                    </div>
+                    <div class="notfound-tile-info">
+                        <h4>Kitobxonlik Challenge</h4>
+                        <p>Har oy ko'proq kitob o'qing, yetakchi bo'ling va sovg'a kitob yuting.</p>
+                    </div>
+                    <span class="material-symbols-outlined notfound-tile-arr">arrow_forward</span>
+                </a>
+
+                <a href="/quotes" class="notfound-tile">
+                    <div class="notfound-tile-icon icon-purple">
+                        <span class="material-symbols-outlined">format_quote</span>
+                    </div>
+                    <div class="notfound-tile-info">
+                        <h4>Sara iqtiboslar</h4>
+                        <p>Minglab kitoblardan eng ta'sirli, hikmatli va esda qolarli satrlar to'plami.</p>
+                    </div>
+                    <span class="material-symbols-outlined notfound-tile-arr">arrow_forward</span>
+                </a>
+
+                <a href="/qollanma" class="notfound-tile">
+                    <div class="notfound-tile-icon icon-blue">
+                        <span class="material-symbols-outlined">help_center</span>
+                    </div>
+                    <div class="notfound-tile-info">
+                        <h4>Qo'llanma va yordam</h4>
+                        <p>Platforma imkoniyatlari, taqriz yozish qoidalari va qulayliklar bo'yicha yo'riqnoma.</p>
+                    </div>
+                    <span class="material-symbols-outlined notfound-tile-arr">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Telegram bot yo'riqnomasi -->
+        <div class="notfound-support">
+            <div class="notfound-support-icon">
+                <span class="material-symbols-outlined">smart_toy</span>
+            </div>
+            <div class="notfound-support-text">
+                <strong>Savollaringiz yoki taklifingiz bormi?</strong>
+                <p>Bizning rasmiy Telegram botimiz orqali bildirishnomalarni boshqarishingiz va savollaringizga javob olishingiz mumkin.</p>
+            </div>
+            <a href="https://t.me/KitobdagiMenBot" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+                <span>Botga o'tish</span>
+                <span class="material-symbols-outlined ic-sm">open_in_new</span>
+            </a>
+        </div>
     </div>
 </div>

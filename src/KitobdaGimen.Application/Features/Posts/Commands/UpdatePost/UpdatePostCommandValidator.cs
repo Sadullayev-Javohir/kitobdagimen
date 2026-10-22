@@ -7,7 +7,7 @@ public class UpdatePostCommandValidator : AbstractValidator<UpdatePostCommand>
     public UpdatePostCommandValidator()
     {
         RuleFor(x => x.PostId)
-            .GreaterThan(0).WithMessage("Post aniqlanmadi.");
+            .GreaterThan(0).WithMessage("Taqriz aniqlanmadi.");
 
         RuleFor(x => x.ReviewText)
             .NotEmpty().WithMessage("Fikr matnini kiriting.")

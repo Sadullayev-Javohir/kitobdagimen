@@ -1,37 +1,65 @@
+@inject KitobdaGimen.Application.Common.Interfaces.ITelegramBotService TelegramBot
 @{
     ViewData["Title"] = "Kirish";
     ViewData["HideChrome"] = true;
     ViewData["Robots"] = "noindex, follow";
+    var botUsername = TelegramBot.BotUsername;
+    var returnUrl = Context.Request.Query["returnUrl"].ToString();
+    var loginError = TempData["LoginError"] as string;
 }
 
 <div class="login-page">
     <div class="login-card">
-        <img class="login-logo" src="~/img/logo.png" alt="kitobdagimen.uz" />
-        <h1 class="login-title">kitobdagimen<span style="color:var(--accent)">.uz</span></h1>
-        <p class="login-sub">O'zbek kitobxonlari uchun ijtimoiy platforma. Davom etish uchun kiring.</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+            <a href="/" class="btn btn-ghost btn-sm" style="padding:6px 10px">
+                <span class="material-symbols-outlined ic-18">arrow_back</span> Asosiy sahifa
+            </a>
+            <button type="button" class="nav-icon-btn" data-theme-toggle title="Kun / Tun rejimi" aria-label="Kun / Tun rejimi">
+                <span class="material-symbols-outlined theme-icon">dark_mode</span>
+            </button>
+        </div>
 
-        @if (Context.Request.Query.ContainsKey("xato"))
+        <img class="login-logo" src="~/img/logo.png" alt="kitobdagimen.uz" />
+        <h1 class="login-title">kitobdagimen<span class="brand-dot">.uz</span></h1>
+        <p class="login-sub" style="margin-bottom:20px">Telegram orqali kirish</p>
+
+        @if (!string.IsNullOrWhiteSpace(loginError))
         {
-            <div class="lp-alert" style="margin-bottom:16px">Kirishda xatolik yuz berdi. Qaytadan urinib ko'ring.</div>
+            <div class="lp-alert" style="margin-bottom:16px; text-align:left">
+                <span class="material-symbols-outlined ic-18" style="vertical-align:-4px">error</span>
+                @loginError
+            </div>
         }
 
-        <a class="google-btn login-google" href="/auth/google-login">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+        <a class="btn btn-block" href="https://t.me/@(botUsername)?start=web" target="_blank" rel="noopener noreferrer" style="background:#0284c7; border-color:#0284c7; color:#fff; padding:11px 16px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:600; margin-bottom:16px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
             </svg>
-            Google orqali kirish
+            Telegramdan kod olish
         </a>
 
-        <a class="login-switch" href="/auth/switch-account">Boshqa akkaunt bilan kirish</a>
+        <form method="post" action="/auth/telegram-login" style="margin-bottom:14px">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
 
-        <a class="btn btn-outline btn-block login-download" href="/download/kitobdagimen.apk">
-            <span class="material-symbols-outlined ic-20 ic-baseline">android</span>
-            Android ilovasini yuklab olish
-        </a>
+            <input type="text"
+                   name="code"
+                   class="login-code-input"
+                   inputmode="numeric"
+                   pattern="[0-9\s]{6,8}"
+                   maxlength="8"
+                   autocomplete="one-time-code"
+                   placeholder="Kirish kodi"
+                   required
+                   autofocus />
 
-        <p class="login-terms muted">Kirish orqali siz <a href="/qollanma">qoidalar</a>ga rozilik bildirasiz.</p>
+            <button type="submit" class="btn btn-primary btn-block" style="padding:12px 18px; font-size:0.98rem">
+                Kirish
+            </button>
+        </form>
+
+        <p class="login-terms muted" style="margin-top:12px">
+            <a href="/qollanma">Foydalanish qoidalari</a>
+        </p>
     </div>
 </div>

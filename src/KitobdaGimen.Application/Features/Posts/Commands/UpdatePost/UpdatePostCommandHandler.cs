@@ -24,11 +24,11 @@ public class UpdatePostCommandHandler : IRequestHandler<UpdatePostCommand, PostD
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
         var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == request.PostId, cancellationToken)
-            ?? throw new NotFoundException("Post", request.PostId);
+            ?? throw new NotFoundException("Taqriz", request.PostId);
 
         if (post.UserId != userId)
         {
-            throw new ForbiddenAccessException("Faqat o'z postingizni tahrirlay olasiz.");
+            throw new ForbiddenAccessException("Faqat o'z taqrizingizni tahrirlay olasiz.");
         }
 
         post.ReviewText = RichTextSanitizer.Sanitize(request.ReviewText);

@@ -105,24 +105,7 @@
     if (coverClear) coverClear.addEventListener("click", resetCover);
 
     async function uploadCover(file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/books/upload-cover", {
-            method: "POST",
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "RequestVerificationToken": kitob.antiforgeryToken()
-            },
-            body: fd
-        });
-        if (res.status === 401) { window.location.href = "/"; return null; }
-        if (!res.ok) {
-            let message = "Rasmni yuklab bo'lmadi.";
-            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
-            throw new Error(message);
-        }
-        const data = await res.json();
-        return data.url;
+        return await kitob.uploadBookCover(file);
     }
 
     // Kitob qidirish (katalog + asaxiy) — Feed pikeri bilan bir xil.
@@ -170,11 +153,11 @@
 
         addSave.disabled = true;
         try {
-            // Qo'lda kitob uchun muqova tanlangan bo'lsa — avval yuklaymiz.
-            if (!selectedBookId && coverFile && !coverUrl) {
+            // Kitob uchun muqova/fotosurat tanlangan bo'lsa — avval yuklaymiz.
+            if (coverFile && !coverUrl) {
                 coverUrl = await uploadCover(coverFile);
             }
-            if (!selectedBookId && coverUrl) command.manualCoverUrl = coverUrl;
+            if (coverUrl) command.manualCoverUrl = coverUrl;
 
             await kitob.apiPost("/almashish/add", command);
             kitob.showToast("Kitob qo'shildi ✓");
@@ -255,8 +238,14 @@
         let actions = "";
         if (!b.isMine && b.status === 0) {
             actions = `<div class="pb-actions"><button class="btn btn-accent btn-sm" data-pb-action="reserve" data-pb-id="${b.id}">O'qimoqchiman</button></div>`;
-        } else if (!b.isMine && b.reservedByMe && b.status === 1) {
-            actions = `<div class="pb-actions"><button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="${b.id}">Bandni bekor qilish</button></div>`;
+        } else if (!b.isMine && b.reservedByMe && (b.status === 1 || b.status === 2)) {
+            let writeBtn = "";
+            if (b.ownerUsername) {
+                const handle = b.ownerUsername.replace(/^@/, "");
+                writeBtn = `<a class="btn btn-accent btn-sm" href="https://t.me/${esc(handle)}" target="_blank" rel="noopener"><span class="material-symbols-outlined ic-sm ic-baseline">send</span> Egasiga yozish</a>`;
+            }
+            let cancelBtn = b.status === 1 ? `<button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="${b.id}">Bandni bekor qilish</button>` : "";
+            actions = `<div class="pb-actions">${writeBtn}${cancelBtn}</div>`;
         }
 
         return `<article class="pb-card" data-pb-card="${b.id}" data-status="${b.status}">

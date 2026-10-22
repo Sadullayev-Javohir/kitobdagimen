@@ -14,6 +14,7 @@ public class QuoteConfiguration : IEntityTypeConfiguration<Quote>
         builder.HasIndex(q => q.Slug).IsUnique();
 
         builder.Property(q => q.Text).IsRequired().HasMaxLength(2000);
+        builder.Property(q => q.ImageUrl).HasMaxLength(500).IsRequired(false);
 
         builder.HasOne(q => q.User)
             .WithMany(u => u.Quotes)

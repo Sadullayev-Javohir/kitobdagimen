@@ -73,7 +73,7 @@ public class RespondToConnectionCommandHandler
                 ActorName = me.FullName,
                 ActorAvatarUrl = AvatarPrivacy.ForActor(viewerEmail, me.AvatarUrl),
                 Message = $"{me.FullName} taklifingizni qabul qildi",
-                Url = "/chat"
+                Url = null
             }, cancellationToken);
         }
 

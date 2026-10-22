@@ -16,6 +16,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.FullName).IsRequired().HasMaxLength(150);
         builder.Property(u => u.AvatarUrl).HasMaxLength(2048);
         builder.Property(u => u.Bio).HasMaxLength(500);
+        builder.Property(u => u.IsBotBlocked).HasDefaultValue(false);
 
         builder.HasIndex(u => u.GoogleId).IsUnique();
         builder.HasIndex(u => u.Email).IsUnique();

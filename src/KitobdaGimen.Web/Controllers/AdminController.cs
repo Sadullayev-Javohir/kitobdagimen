@@ -42,28 +42,47 @@ public class AdminController : AppController
     private readonly IAppDbContext _db;
     private readonly IAsaxiyBookService _asaxiy;
     private readonly ICacheService _cache;
+    private readonly ITelegramBotService _telegramBot;
 
-    public AdminController(IAppDbContext db, IAsaxiyBookService asaxiy, ICacheService cache)
+    public AdminController(IAppDbContext db, IAsaxiyBookService asaxiy, ICacheService cache, ITelegramBotService telegramBot)
     {
         _db = db;
         _asaxiy = asaxiy;
         _cache = cache;
+        _telegramBot = telegramBot;
     }
-    /// <summary>Admin hub — faqat navigatsiya kartochkalari (icon/tugma orqali sahifalarga o'tish).</summary>
+    /// <summary>Admin hub — asosiy boshqaruv paneli, tizim metrikalari va tezkor havolalar.</summary>
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
-        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
-        if (role < UserRole.Admin)
+        var user = await _db.Users
+            .Where(u => u.Id == CurrentUserId)
+            .Select(u => new { u.Role, u.FullName, u.AvatarUrl, u.Email })
+            .FirstOrDefaultAsync();
+
+        if (user == null || user.Role < UserRole.Admin)
         {
             // Hide the panel from non-admins.
             return RedirectToAction("Index", "Feed");
         }
 
-        ViewData["MyRole"] = role;
-        ViewData["UserCount"] = await _db.Users.CountAsync();
+        ViewData["MyRole"] = user.Role;
+        ViewData["AdminName"] = user.FullName;
+        ViewData["AdminAvatar"] = user.AvatarUrl;
+        ViewData["AdminEmail"] = user.Email;
 
-        if (role == UserRole.SuperAdmin)
+        ViewData["UserCount"] = await _db.Users.CountAsync();
+        ViewData["BotStats"] = await _telegramBot.GetBotUserStatsAsync();
+        ViewData["TotalPosts"] = await _db.Posts.CountAsync();
+        ViewData["TotalQuotes"] = await _db.Quotes.CountAsync();
+        ViewData["TotalGoals"] = await _db.ReadingGoals.CountAsync();
+        ViewData["TotalComments"] = await _db.Comments.CountAsync() + await _db.QuoteComments.CountAsync();
+        ViewData["TotalBooks"] = await _db.Books.CountAsync();
+
+        var serverSnapshot = await Mediator.Send(new GetServerSnapshotQuery());
+        ViewData["ServerSnapshot"] = serverSnapshot;
+
+        if (user.Role == UserRole.SuperAdmin)
         {
             ViewData["BackgroundVideoUrl"] = await _db.AppSettings
                 .Where(s => s.Key == AppSettingKeys.BackgroundVideoUrl)
@@ -76,19 +95,46 @@ public class AdminController : AppController
 
     /// <summary>Foydalanuvchilar ro'yxati — aniq ro'yxatdan o'tgan/oxirgi kirgan vaqtlari bilan.</summary>
     [HttpGet("allusers")]
-    public async Task<IActionResult> AllUsers()
+    public async Task<IActionResult> AllUsers(string? filter = null)
     {
         try
         {
             var users = await Mediator.Send(new GetAdminUsersQuery());
             var myRole = users.FirstOrDefault(u => u.Id == CurrentUserId)?.Role ?? UserRole.User;
             ViewData["MyRole"] = myRole;
-            return View(users);
+            ViewData["BotStats"] = await _telegramBot.GetBotUserStatsAsync();
+            ViewData["Filter"] = filter ?? "all";
+
+            var filteredUsers = (filter?.ToLowerInvariant()) switch
+            {
+                "active-bot" => users.Where(u => u.IsTelegramUser && !u.IsBotBlocked).ToList(),
+                "blocked-bot" => users.Where(u => u.IsTelegramUser && u.IsBotBlocked).ToList(),
+                "web-only" => users.Where(u => !u.IsTelegramUser).ToList(),
+                _ => users
+            };
+
+            return View(filteredUsers);
         }
         catch (Exception ex) when (ex is ForbiddenAccessException or UnauthorizedAccessException)
         {
             return RedirectToAction("Index", "Feed");
         }
+    }
+
+    /// <summary>Telegram bot bloklanganlik holatini yangilash/tekshirish.</summary>
+    [HttpPost("sync-bot-blocked")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SyncBotBlocked()
+    {
+        var role = await _db.Users.Where(u => u.Id == CurrentUserId).Select(u => u.Role).FirstOrDefaultAsync();
+        if (role < UserRole.Admin)
+        {
+            return RedirectToAction("Index", "Feed");
+        }
+
+        var result = await _telegramBot.SyncBotBlockedStatusAsync();
+        TempData["SuccessMessage"] = $"Bot blok holati tekshirildi: {result.TotalChecked} ta tekshirildi, {result.NewlyBlocked} ta yangi blok aniqlandi, {result.NewlyUnblocked} ta qayta ochildi. Hozirda jami bloklaganlar: {result.CurrentlyBlocked} nafar.";
+        return RedirectToAction("AllUsers");
     }
 
     /// <summary>Yillik kitob yakunini yuborish/to'xtatish — faqat super admin.</summary>
@@ -165,215 +211,6 @@ public class AdminController : AppController
             return RedirectToAction("Index", "Feed");
         }
     }
-
-    /// <summary>
-    /// SuperAdmin: chat monitoring hub. Shows every private conversation (both participants) as a
-    /// Telegram-style list; opening one renders the full thread exactly like the public /chat page,
-    /// but read-only — the admin only watches. Data is served by the JSON endpoints below; this
-    /// renders the shell (optionally pre-opening a conversation via ?conversationId=).
-    /// </summary>
-    [HttpGet("chat-monitor")]
-    public async Task<IActionResult> ChatMonitor(int? conversationId)
-    {
-        if (!await IsSuperAdminAsync())
-        {
-            return RedirectToAction("Index", "Feed");
-        }
-
-        ViewData["PreselectedConversationId"] = conversationId;
-        return View();
-    }
-
-    /// <summary>JSON: searchable conversation list for the monitor. Each row carries BOTH participants
-    /// and the last message preview, so the admin sees exactly who chatted with whom.</summary>
-    [HttpGet("chat-monitor/conversations")]
-    public async Task<IActionResult> ChatMonitorConversations(string? q, int page = 1)
-    {
-        if (!await IsSuperAdminAsync()) return Forbid();
-
-        var viewerEmail = (await _db.Users
-            .Where(u => u.Id == CurrentUserId)
-            .Select(u => u.Email)
-            .FirstOrDefaultAsync())?.ToLowerInvariant();
-
-        var term = (q ?? "").Trim().ToLowerInvariant();
-        var pageSize = 30;
-        var p = Math.Max(1, page);
-
-        var query = _db.Conversations.AsQueryable();
-        if (!string.IsNullOrWhiteSpace(term))
-        {
-            query = query.Where(c =>
-                c.User1.FullName.ToLower().Contains(term) ||
-                c.User2.FullName.ToLower().Contains(term) ||
-                (c.User1.Username != null && c.User1.Username.ToLower().Contains(term)) ||
-                (c.User2.Username != null && c.User2.Username.ToLower().Contains(term)));
-        }
-
-        var total = await query.CountAsync();
-
-        var rows = await query
-            .Select(c => new
-            {
-                c.Id,
-                c.CreatedAt,
-                User1 = new { c.User1.Id, c.User1.FullName, c.User1.Username, c.User1.AvatarUrl, c.User1.Email },
-                User2 = new { c.User2.Id, c.User2.FullName, c.User2.Username, c.User2.AvatarUrl, c.User2.Email },
-                LastMessageAt = c.Messages.OrderByDescending(m => m.SentAt).Select(m => (DateTime?)m.SentAt).FirstOrDefault(),
-                LastMessageText = c.Messages.OrderByDescending(m => m.SentAt).Select(m => m.Text
-                    ?? (m.ImageUrl != null ? "📷 Rasm"
-                        : (m.VoiceUrl != null ? "🎤 Ovozli xabar"
-                            : (m.StickerKey != null ? "Stiker"
-                                : (m.SharedPostId != null ? "📚 Post" : ""))))).FirstOrDefault()
-            })
-            .OrderByDescending(x => x.LastMessageAt ?? x.CreatedAt)
-            .Skip((p - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        var items = rows.Select(x => new
-        {
-            id = x.Id,
-            user1 = MaskUser(x.User1.Id, x.User1.FullName, x.User1.Username, x.User1.AvatarUrl, x.User1.Email, viewerEmail),
-            user2 = MaskUser(x.User2.Id, x.User2.FullName, x.User2.Username, x.User2.AvatarUrl, x.User2.Email, viewerEmail),
-            lastMessageText = x.LastMessageText,
-            lastMessageAt = x.LastMessageAt
-        }).ToList();
-
-        return Json(new { total, page = p, pageSize, items });
-    }
-
-    /// <summary>JSON: full read-only thread for one conversation (soft-deleted included, flagged).
-    /// Rendered by the client exactly like /chat, so the admin watches a real Telegram-style thread.</summary>
-    [HttpGet("chat-monitor/conversation/{conversationId:int}/messages")]
-    public async Task<IActionResult> ChatMonitorMessages(int conversationId, int page = 1)
-    {
-        if (!await IsSuperAdminAsync()) return Forbid();
-
-        var viewerEmail = (await _db.Users
-            .Where(u => u.Id == CurrentUserId)
-            .Select(u => u.Email)
-            .FirstOrDefaultAsync())?.ToLowerInvariant();
-
-        var conv = await _db.Conversations
-            .Where(c => c.Id == conversationId)
-            .Select(c => new
-            {
-                User1 = new { c.User1.Id, c.User1.FullName, c.User1.Username, c.User1.AvatarUrl, c.User1.Email },
-                User2 = new { c.User2.Id, c.User2.FullName, c.User2.Username, c.User2.AvatarUrl, c.User2.Email }
-            })
-            .FirstOrDefaultAsync();
-        if (conv == null) return NotFound();
-
-        var pageSize = 50;
-        var p = Math.Max(1, page);
-
-        // Monitoring shows everything, including soft-deleted messages (flagged on the client).
-        var source = _db.Messages.Where(m => m.ConversationId == conversationId);
-        var totalCount = await source.CountAsync();
-
-        var raw = await source
-            .OrderByDescending(m => m.SentAt)
-            .Skip((p - 1) * pageSize)
-            .Take(pageSize)
-            .Select(m => new
-            {
-                Id = m.Id,
-                SenderId = m.Sender.Id,
-                SenderName = m.Sender.FullName,
-                SenderEmail = m.Sender.Email,
-                SenderAvatar = m.Sender.AvatarUrl,
-                m.Text,
-                m.ImageUrl,
-                m.StickerKey,
-                m.VoiceUrl,
-                m.VoiceDurationSeconds,
-                m.IsRead,
-                m.ReplyToMessageId,
-                ReplyToSenderName = m.ReplyToMessage == null ? null : m.ReplyToMessage.Sender.FullName,
-                ReplyToText = m.ReplyToMessage == null ? null : m.ReplyToMessage.Text,
-                ReplyToImageUrl = m.ReplyToMessage == null ? null : m.ReplyToMessage.ImageUrl,
-                ReplyToVoiceUrl = m.ReplyToMessage == null ? null : m.ReplyToMessage.VoiceUrl,
-                ReplyToStickerKey = m.ReplyToMessage == null ? null : m.ReplyToMessage.StickerKey,
-                ReplyToSharedPostId = m.ReplyToMessage == null ? null : m.ReplyToMessage.SharedPostId,
-                m.EditedAt,
-                m.IsDeleted,
-                m.SentAt,
-                SharedPost = m.SharedPost == null
-                    ? null
-                    : new { PostId = m.SharedPost.Id, BookTitle = m.SharedPost.Book.Title, BookAuthor = m.SharedPost.Book.Author }
-            })
-            .ToListAsync();
-
-        raw.Reverse();
-
-        var ids = raw.Select(r => r.Id).ToList();
-        var reactionRows = await _db.MessageReactions
-            .Where(r => ids.Contains(r.MessageId))
-            .Select(r => new { r.MessageId, r.Emoji })
-            .ToListAsync();
-        var reactionsByMsg = reactionRows
-            .GroupBy(r => r.MessageId)
-            .ToDictionary(g => g.Key, g => (object)g
-                .GroupBy(x => x.Emoji)
-                .Select(e => new { emoji = e.Key, count = e.Count() })
-                .OrderByDescending(e => e.count)
-                .ToList());
-
-        var items = raw.Select(r =>
-        {
-            var replyPreview = r.ReplyToText != null ? r.ReplyToText
-                : r.ReplyToImageUrl != null ? "📷 Rasm"
-                : r.ReplyToVoiceUrl != null ? "🎤 Ovozli xabar"
-                : r.ReplyToStickerKey != null ? "Stiker"
-                : r.ReplyToSharedPostId != null ? "📚 Post"
-                : "";
-            reactionsByMsg.TryGetValue(r.Id, out var reactions);
-            return new
-            {
-                id = r.Id,
-                senderId = r.SenderId,
-                senderName = r.SenderName,
-                senderAvatar = AvatarPrivacy.Resolve(r.SenderEmail?.ToLowerInvariant(), r.SenderAvatar, viewerEmail),
-                text = r.Text,
-                imageUrl = r.ImageUrl,
-                stickerKey = r.StickerKey,
-                voiceUrl = r.VoiceUrl,
-                voiceDurationSeconds = r.VoiceDurationSeconds,
-                isRead = r.IsRead,
-                replyToId = r.ReplyToMessageId,
-                replyToSenderName = r.ReplyToSenderName,
-                replyToPreview = replyPreview,
-                editedAt = r.EditedAt,
-                isDeleted = r.IsDeleted,
-                sentAt = r.SentAt,
-                sharedPost = r.SharedPost,
-                reactions = (object)(reactions ?? new List<object>())
-            };
-        }).ToList();
-
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-        return Json(new
-        {
-            conversationId,
-            user1 = MaskUser(conv.User1.Id, conv.User1.FullName, conv.User1.Username, conv.User1.AvatarUrl, conv.User1.Email, viewerEmail),
-            user2 = MaskUser(conv.User2.Id, conv.User2.FullName, conv.User2.Username, conv.User2.AvatarUrl, conv.User2.Email, viewerEmail),
-            page = p,
-            totalPages,
-            totalCount,
-            items
-        });
-    }
-
-    /// <summary>Maps a user row to the monitor DTO, hiding the restricted user's avatar for
-    /// everyone except the allowed super-admin viewer (mirrors <see cref="AvatarPrivacy"/>).</summary>
-    private static MonitorUserDto MaskUser(
-        int id, string fullName, string? username, string? avatarUrl, string? email, string? viewerEmail)
-        => new(id, fullName, username, AvatarPrivacy.Resolve(email?.ToLowerInvariant(), avatarUrl, viewerEmail));
-
-    /// <summary>Minimal participant shape returned to the monitor client.</summary>
-    private record MonitorUserDto(int Id, string FullName, string? Username, string? AvatarUrl);
 
     [HttpPost("users/{id:int}/role")]
     [ValidateAntiForgeryToken]

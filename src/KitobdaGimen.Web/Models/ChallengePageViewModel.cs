@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Features.Challenge.Dtos;
 using KitobdaGimen.Domain.Enums;
 
@@ -10,6 +11,7 @@ namespace KitobdaGimen.Web.Models;
 /// </summary>
 public class ChallengePageViewModel
 {
+    public ChallengeConfig Config { get; init; } = ChallengeConfigStore.CreateDefault();
     /// <summary>Joriy davr — yil.</summary>
     public int CurrentYear { get; init; }
 

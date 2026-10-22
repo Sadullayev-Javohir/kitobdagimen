@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using KitobdaGimen.Application.Common.Interfaces;
@@ -30,20 +31,25 @@ public class AsaxiyBookService : IAsaxiyBookService
     // `/uz/...` ni 301 bilan `/product/...` ga yo'naltiradi.
     private const string SearchUrl = "https://asaxiy.uz/product/knigi?key=";
 
-    // JSON-LD ItemList elementi: url + name ("Muallif: Sarlavha") + image (muqova).
+    // HTML ichidagi barcha JSON-LD script bloklarini ajratib olish.
+    private static readonly Regex JsonLdRegex = new(
+        @"<script[^>]*type=[""']application/ld\+json[""'][^>]*>(?<json>[\s\S]*?)</script>",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // Zaxira regex: agar JSON-LD script'i parse bo'lmasa, escaped qo'shtirnoqlar bilan ham ishlaydi.
     private static readonly Regex ItemRegex = new(
-        "\"position\":\\s*\\d+,\\s*\"url\":\\s*\"(?<url>[^\"]+)\",\\s*\"name\":\\s*\"(?<name>[^\"]+)\",\\s*\"image\":\\s*\"(?<image>[^\"]+)\"",
+        @"""position"":\s*\d+,\s*""url"":\s*""(?<url>[^""]+)"",\s*""name"":\s*""(?<name>(?:\\.|[^""\\])*)"",\s*""image"":\s*""(?<image>[^""]+)""",
         RegexOptions.Compiled);
 
-    // Product sahifasidagi JSON-LD: name + image.
+    // Product sahifasidagi zaxira JSON-LD regex.
     private static readonly Regex ProductRegex = new(
-        "\"@type\":\\s*\"Product\".*?\"name\":\\s*\"(?<name>[^\"]+)\".*?\"image\":\\s*\"(?<image>[^\"]+)\"",
+        @"""@type"":\s*""Product"".*?""name"":\s*""(?<name>(?:\\.|[^""\\])*)"".*?""image"":\s*""(?<image>[^""]+)""",
         RegexOptions.Compiled | RegexOptions.Singleline);
 
-    // Xususiyatlar jadvalidagi "Betlar soni" qatori.
+    // Xususiyatlar jadvalidagi "Betlar soni" qatori (ixtiyoriy <br> va probellarni qo'llab-quvvatlaydi).
     private static readonly Regex PagesRegex = new(
-        "Betlar soni\\s*</td>\\s*<td[^>]*>\\s*(?<pages>[\\d ]+)",
-        RegexOptions.Compiled);
+        @"Betlar soni\s*</td>\s*<td[^>]*>\s*(?<pages>\d+)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     // Kesh: muvaffaqiyatli (bo'sh bo'lmagan) qidiruv natijalari 24 soat saqlanadi.
     private static readonly TimeSpan SearchCacheTtl = TimeSpan.FromHours(24);
@@ -170,7 +176,7 @@ public class AsaxiyBookService : IAsaxiyBookService
     /// <summary>Keshdan foydalanmasdan, jonli qidiruv (transportlarni navbat bilan sinaydi).</summary>
     private async Task<IReadOnlyList<AsaxiyBookResult>> SearchLiveAsync(string query, CancellationToken ct)
     {
-        var html = await FetchHtmlAsync(SearchUrl + Uri.EscapeDataString(query), ItemRegex.IsMatch, ct);
+        var html = await FetchHtmlAsync(SearchUrl + Uri.EscapeDataString(query), IsValidAsaxiyHtml, ct);
         if (html is null)
         {
             _logger.LogWarning("asaxiy qidiruvi barcha transportlarda muvaffaqiyatsiz: {Query}", query);
@@ -183,32 +189,92 @@ public class AsaxiyBookService : IAsaxiyBookService
     private static IReadOnlyList<AsaxiyBookResult> ParseSearch(string html)
     {
         var results = new List<AsaxiyBookResult>();
-        var seen = new HashSet<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (Match m in ItemRegex.Matches(html))
+        // 1) Asosiy yo'l: JSON-LD script bloklaridan "ItemList" ni JsonDocument bilan xavfsiz o'qish
+        foreach (Match match in JsonLdRegex.Matches(html))
         {
-            var name = Decode(m.Groups["name"].Value);
-            var (author, title) = SplitName(name);
-
-            // Muallifsiz yozuvlar — odatda aksiya/to'plamlar; kitob katalogiga to'g'ri kelmaydi.
-            if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(title))
+            var json = match.Groups["json"].Value;
+            if (!json.Contains("ItemList", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            var url = NormalizeProductUrl(Decode(m.Groups["url"].Value));
-            if (!seen.Add(url))
+            try
             {
-                continue;
-            }
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (!root.TryGetProperty("itemListElement", out var items) || items.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
 
-            results.Add(new AsaxiyBookResult
+                foreach (var item in items.EnumerateArray())
+                {
+                    var rawUrl = item.TryGetProperty("url", out var u) ? u.GetString() : null;
+                    var rawName = item.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    var rawImage = item.TryGetProperty("image", out var img) ? img.GetString() : null;
+
+                    if (string.IsNullOrWhiteSpace(rawUrl) || string.IsNullOrWhiteSpace(rawName))
+                    {
+                        continue;
+                    }
+
+                    var name = Decode(rawName);
+                    var (author, title) = SplitName(name);
+                    if (string.IsNullOrWhiteSpace(title))
+                    {
+                        continue;
+                    }
+
+                    var url = NormalizeProductUrl(Decode(rawUrl));
+                    if (!seen.Add(url))
+                    {
+                        continue;
+                    }
+
+                    results.Add(new AsaxiyBookResult
+                    {
+                        Title = Truncate(title, 100),
+                        Author = Truncate(author, 100),
+                        CoverUrl = !string.IsNullOrWhiteSpace(rawImage) ? Decode(rawImage) : string.Empty,
+                        Url = url
+                    });
+                }
+            }
+            catch
             {
-                Title = Truncate(title, 100),
-                Author = Truncate(author, 100),
-                CoverUrl = Decode(m.Groups["image"].Value),
-                Url = url
-            });
+                // Boshqa JSON-LD bloklarni tekshirishda davom etamiz
+            }
+        }
+
+        // 2) Zaxira yo'l: agar birorta ham kitob topilmagan bo'lsa, regex orqali urinib ko'ramiz
+        if (results.Count == 0)
+        {
+            foreach (Match m in ItemRegex.Matches(html))
+            {
+                var name = Decode(m.Groups["name"].Value);
+                var (author, title) = SplitName(name);
+
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    continue;
+                }
+
+                var url = NormalizeProductUrl(Decode(m.Groups["url"].Value));
+                if (!seen.Add(url))
+                {
+                    continue;
+                }
+
+                results.Add(new AsaxiyBookResult
+                {
+                    Title = Truncate(title, 100),
+                    Author = Truncate(author, 100),
+                    CoverUrl = Decode(m.Groups["image"].Value),
+                    Url = url
+                });
+            }
         }
 
         return results;
@@ -224,22 +290,62 @@ public class AsaxiyBookService : IAsaxiyBookService
         // 301 redirectni oldini olish uchun kanonik `/product/...` URL'ni so'raymiz.
         productUrl = NormalizeProductUrl(productUrl);
 
-        var html = await FetchHtmlAsync(productUrl, ProductRegex.IsMatch, ct);
+        var html = await FetchHtmlAsync(productUrl, IsValidAsaxiyHtml, ct);
         if (html is null)
         {
             _logger.LogWarning("asaxiy kitob sahifasi barcha transportlarda olinmadi: {Url}", productUrl);
             return null;
         }
 
-        var product = ProductRegex.Match(html);
-        if (!product.Success)
+        string? rawName = null;
+        string? rawImage = null;
+
+        // 1) JSON-LD orqali Product ma'lumotlarini olish
+        foreach (Match match in JsonLdRegex.Matches(html))
+        {
+            var json = match.Groups["json"].Value;
+            if (!json.Contains("Product", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("@type", out var typeEl) &&
+                    string.Equals(typeEl.GetString(), "Product", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (root.TryGetProperty("name", out var n)) rawName = n.GetString();
+                    if (root.TryGetProperty("image", out var img)) rawImage = img.GetString();
+                    if (!string.IsNullOrWhiteSpace(rawName)) break;
+                }
+            }
+            catch
+            {
+                // Continue
+            }
+        }
+
+        // 2) Zaxira regex
+        if (string.IsNullOrWhiteSpace(rawName))
+        {
+            var product = ProductRegex.Match(html);
+            if (product.Success)
+            {
+                rawName = product.Groups["name"].Value;
+                rawImage = product.Groups["image"].Value;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(rawName))
         {
             return null;
         }
 
-        var name = Decode(product.Groups["name"].Value);
+        var name = Decode(rawName);
         var (author, title) = SplitName(name);
-        if (string.IsNullOrEmpty(author) || string.IsNullOrEmpty(title))
+        if (string.IsNullOrWhiteSpace(title))
         {
             return null;
         }
@@ -254,7 +360,7 @@ public class AsaxiyBookService : IAsaxiyBookService
             Title = Truncate(title, 100),
             Author = Truncate(author, 100),
             TotalPages = totalPages,
-            CoverUrl = Decode(product.Groups["image"].Value)
+            CoverUrl = !string.IsNullOrWhiteSpace(rawImage) ? Decode(rawImage) : string.Empty
         };
     }
 
@@ -275,7 +381,7 @@ public class AsaxiyBookService : IAsaxiyBookService
 
         // Jonli, keshsiz sinov qidiruvi. "roman" — asaxiy katalogida ko'p natija beradigan so'z.
         const string probe = "roman";
-        var html = await FetchHtmlAsync(SearchUrl + Uri.EscapeDataString(probe), ItemRegex.IsMatch, ct);
+        var html = await FetchHtmlAsync(SearchUrl + Uri.EscapeDataString(probe), IsValidAsaxiyHtml, ct);
 
         if (html is null)
         {
@@ -466,18 +572,78 @@ public class AsaxiyBookService : IAsaxiyBookService
             RegexOptions.IgnoreCase);
     }
 
+    /// <summary>
+    /// HTML javobi haqiqiy asaxiy sahifasi ekanini (Cloudflare challenge/blok sahifasi emasligini) tekshiradi.
+    /// </summary>
+    private static bool IsValidAsaxiyHtml(string html)
+    {
+        if (string.IsNullOrWhiteSpace(html) || html.Length < 30)
+        {
+            return false;
+        }
+
+        // Cloudflare blok/challenge sahifasini aniqlash
+        if (html.Contains("<title>Just a moment...</title>", StringComparison.OrdinalIgnoreCase) ||
+            html.Contains("cf-mitigated", StringComparison.OrdinalIgnoreCase) ||
+            html.Contains("Enable JavaScript and cookies to continue", StringComparison.OrdinalIgnoreCase) ||
+            html.Contains("Attention Required! | Cloudflare", StringComparison.OrdinalIgnoreCase) ||
+            html.Contains("challenge-platform", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     /// <summary>"Muallif: Sarlavha" ko'rinishidagi nomni muallif va sarlavhaga ajratadi.</summary>
     private static (string Author, string Title) SplitName(string name)
     {
-        var idx = name.IndexOf(':');
-        if (idx <= 0 || idx >= name.Length - 1)
+        if (string.IsNullOrWhiteSpace(name))
         {
             return (string.Empty, string.Empty);
         }
 
-        var author = name[..idx].Trim();
-        var title = name[(idx + 1)..].Trim();
-        return (author, title);
+        name = name.Trim();
+
+        var idx = name.IndexOf(':');
+        if (idx > 0 && idx < name.Length - 1)
+        {
+            var author = UnwrapQuotes(name[..idx]);
+            var title = UnwrapQuotes(name[(idx + 1)..]);
+            if (!string.IsNullOrEmpty(author) && !string.IsNullOrEmpty(title))
+            {
+                return (author, title);
+            }
+        }
+
+        // Chiziqcha orqali ajratilgan bo'lsa (masalan: "Muallif - Sarlavha")
+        var dashIdx = name.IndexOf(" - ", StringComparison.Ordinal);
+        if (dashIdx > 0 && dashIdx < name.Length - 3)
+        {
+            var p1 = UnwrapQuotes(name[..dashIdx]);
+            var p2 = UnwrapQuotes(name[(dashIdx + 3)..]);
+            if (!string.IsNullOrEmpty(p1) && !string.IsNullOrEmpty(p2))
+            {
+                return (p1, p2);
+            }
+        }
+
+        // Agar ikki nuqta yoki chiziqcha bo'lmasa, butun nomni sarlavha deb olamiz
+        return ("Noma'lum muallif", UnwrapQuotes(name));
+    }
+
+    /// <summary>Matn butunligicha qo'shtirnoqqa olingan bo'lsa, ularni olib tashlaydi.</summary>
+    private static string UnwrapQuotes(string s)
+    {
+        s = s.Trim();
+        if (s.Length >= 2 &&
+            ((s[0] == '"' && s[^1] == '"') ||
+             (s[0] == '«' && s[^1] == '»') ||
+             (s[0] == '“' && s[^1] == '”')))
+        {
+            return s[1..^1].Trim();
+        }
+        return s;
     }
 
     /// <summary>JSON ichidagi \/ va HTML entity'larni (&rsquo;, &amp; ...) tozalaydi.</summary>

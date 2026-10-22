@@ -21,6 +21,7 @@ public record PhysicalBookDto
     public int OwnerId { get; init; }
     public string OwnerName { get; init; } = null!;
     public string? OwnerUsername { get; init; }
+    public string? OwnerTelegramUsername { get; init; }
     public string? OwnerAvatarUrl { get; init; }
     /// <summary>Egasi profiliga havola: /profile/{username|id}.</summary>
     public string OwnerProfileUrl { get; init; } = null!;
@@ -33,6 +34,7 @@ public record PhysicalBookDto
     public int? ReserverId { get; init; }
     public string? ReserverName { get; init; }
     public string? ReserverUsername { get; init; }
+    public string? ReserverTelegramUsername { get; init; }
     public string? ReserverAvatarUrl { get; init; }
     /// <summary>Band qilgan/o'qiyotgan foydalanuvchi profiliga havola (agar mavjud bo'lsa).</summary>
     public string? ReserverProfileUrl { get; init; }

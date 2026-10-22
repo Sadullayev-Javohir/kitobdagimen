@@ -8,6 +8,7 @@ public record QuoteDto
     public int Id { get; init; }
     public string Slug { get; init; } = null!;
     public string Text { get; init; } = null!;
+    public string? ImageUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public UserSummaryDto Author { get; init; } = null!;
     public BookSummaryDto Book { get; init; } = null!;

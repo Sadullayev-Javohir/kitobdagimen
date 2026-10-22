@@ -1,91 +1,247 @@
 @using KitobdaGimen.Application.Common.Interfaces
 @using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser
-@using KitobdaGimen.Application.Features.Onboarding.Queries.GetGenres
+@using KitobdaGimen.Web.Models
 @using MediatR
 @inject ISender Mediator
-@model PagedResult<FeedItemDto>
+@model FeedPageViewModel
 @{
     ViewData["Title"] = "Asosiy";
-    var me = await Mediator.Send(new GetCurrentUserQuery());
+    var me = Model.CurrentUser;
     var meInitial = KitobdaGimen.Web.ViewHelpers.Initial(me?.FullName);
-    var genres = await Mediator.Send(new GetGenresQuery());
     ViewData["ShowAuthorActions"] = true;
-    var search = ViewData["Search"] as string ?? "";
+    var search = Model.Search ?? "";
 }
 
-<div class="container page">
-    <div class="feed">
-        <!-- Qidiruv -->
-        <div class="feed-search-bar">
-            <button class="action-btn" id="feedSearchToggle" title="Qidirish" aria-label="Qidirish">
-                <span class="material-symbols-outlined">search</span>
-            </button>
-            <form method="get" action="/Feed" id="feedSearchForm" class="feed-search-form" style="@(string.IsNullOrEmpty(search) ? "display:none;" : "")">
-                <div class="search-box">
-                    <span class="search-ico material-symbols-outlined">search</span>
-                    <input class="input" type="search" name="q" id="feedSearchInput"
-                           placeholder="Taqriz matni, kitob, muallif yoki muallif ismi bo'yicha qidiring..."
-                           value="@search" autocomplete="off" />
+<div class="feed-page-wrap">
+    <div class="feed-layout">
+        <!-- Chap panel / Left Sidebar: Yangilangan profil kartochkasi va Shaxsiy bo'limlar -->
+        <aside class="feed-sidebar feed-sidebar-left">
+            <div class="feed-profile-card">
+                <div class="feed-profile-head">
+                    <a class="feed-profile-avatar-wrap" href="/profile">
+                        @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                        {
+                            <img class="feed-profile-avatar" src="@me.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+                        }
+                        else
+                        {
+                            <span class="feed-profile-avatar">@meInitial</span>
+                        }
+                        <span class="feed-profile-status-dot" title="Faol kitobxon"></span>
+                    </a>
+                    <div class="feed-profile-identity">
+                        <a class="feed-profile-name" href="/profile">
+                            @(me?.FullName ?? "Kitobxon")
+                            @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(me?.Username))
+                        </a>
+                        @if (!string.IsNullOrEmpty(me?.Username))
+                        {
+                            <span class="feed-profile-handle">@@@me.Username</span>
+                        }
+                        else
+                        {
+                            <span class="feed-profile-handle">Kitobxon</span>
+                        }
+                    </div>
+                    <a href="/profile/edit" class="feed-profile-edit-btn" title="Profilni tahrirlash" aria-label="Profilni tahrirlash">
+                        <span class="material-symbols-outlined">edit_square</span>
+                    </a>
                 </div>
-            </form>
-            @if (!string.IsNullOrEmpty(search))
-            {
-                <a class="btn btn-outline btn-sm" href="/Feed" id="feedSearchClear" title="Qidiruvni tozalash">
-                    <span class="material-symbols-outlined ic-sm ic-baseline">close</span>
-                    Tozalash
-                </a>
-            }
-        </div>
 
-        @if (!string.IsNullOrEmpty(search))
-        {
-            <div class="muted" style="margin-bottom:16px; font-size:14px">
-                <strong>"@search"</strong> bo'yicha qidiruv natijalari —
-                <a href="/Feed">barcha taqrizlarga qaytish</a>
+                @if (!string.IsNullOrWhiteSpace(Model.UserProfile?.Bio))
+                {
+                    <p class="feed-profile-bio">@Model.UserProfile.Bio</p>
+                }
+
+                <div class="feed-profile-stats">
+                    <a href="/profile" class="feed-profile-stat">
+                        <span class="feed-profile-stat-val">@(Model.UserProfile?.PostCount ?? 0)</span>
+                        <span class="feed-profile-stat-lbl">Taqrizlar</span>
+                    </a>
+                    <a href="@(me != null ? $"/profile/{me.Id}/followers" : "/profile/followers")" class="feed-profile-stat">
+                        <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowerCount ?? 0)</span>
+                        <span class="feed-profile-stat-lbl">Kuzatuvchilar</span>
+                    </a>
+                    <a href="@(me != null ? $"/profile/{me.Id}/following" : "/profile/following")" class="feed-profile-stat">
+                        <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowingCount ?? 0)</span>
+                        <span class="feed-profile-stat-lbl">Kuzatilayotganlar</span>
+                    </a>
+                </div>
+
+                @if (Model.ActiveGoal != null)
+                {
+                    var goalCover = !string.IsNullOrEmpty(Model.ActiveGoal.Book.CoverUrl)
+                        ? Model.ActiveGoal.Book.CoverUrl
+                        : "/img/default-book-cover.webp";
+                    <a href="/reading-books/@Model.ActiveGoal.Id" class="feed-profile-goal">
+                        <div class="feed-profile-goal-top">
+                            <span class="feed-profile-goal-badge">
+                                <span class="material-symbols-outlined">local_fire_department</span>
+                                Mutolaada
+                            </span>
+                            <span class="feed-profile-goal-pct">@(Model.ActiveGoal.ProgressPercent)%</span>
+                        </div>
+                        <div class="feed-profile-goal-book-row">
+                            <img class="feed-profile-goal-cover" src="@goalCover" alt="@Model.ActiveGoal.Book.Title" />
+                            <div class="feed-profile-goal-info">
+                                <span class="feed-profile-goal-title" title="@Model.ActiveGoal.Book.Title">@Model.ActiveGoal.Book.Title</span>
+                                <span class="feed-profile-goal-pages">@Model.ActiveGoal.CurrentPage / @Model.ActiveGoal.TotalPages bet · Bugun: <strong>@Model.ActiveGoal.PagesReadToday</strong></span>
+                            </div>
+                        </div>
+                        <div class="feed-profile-goal-track">
+                            <div class="feed-profile-goal-fill" style="width: @(Model.ActiveGoal.ProgressPercent)%"></div>
+                        </div>
+                    </a>
+                }
+                else
+                {
+                    <a href="/reading-books" class="feed-profile-goal-empty">
+                        <span class="material-symbols-outlined">add_circle</span>
+                        <span>Mutolaa uchun kitob tanlash</span>
+                    </a>
+                }
             </div>
-        }
 
-        <!-- Post yaratish — qidiruvda yashiriladi, qidiruv tugagach qaytadi -->
-        @if (string.IsNullOrEmpty(search))
-        {
-        <!-- Yopiq holatdagi tugma (bosilganda modal ochiladi) -->
-        <button type="button" class="card composer-trigger" id="composerTrigger">
-            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
-            {
-                <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
-            }
-            else
-            {
-                <span class="avatar">@meInitial</span>
-            }
-            <span class="composer-trigger-text">Qaysi kitob haqida fikr bildirasiz?</span>
-            <span class="material-symbols-outlined composer-trigger-ico">edit_square</span>
-        </button>
+            <!-- Shaxsiy bo'limlar va tezkor amallar (o'ng panelni takrorlamaydi) -->
+            <div class="feed-quick-card">
+                <div class="feed-quick-actions">
+                    <button type="button" class="feed-quick-compose-btn is-primary" onclick="document.getElementById('chooseTaqriz')?.click()">
+                        <span class="material-symbols-outlined">edit_note</span>
+                        <span>Taqriz yozish</span>
+                    </button>
+                    <button type="button" class="feed-quick-compose-btn is-accent" onclick="document.getElementById('chooseIqtibos')?.click()">
+                        <span class="material-symbols-outlined">format_quote</span>
+                        <span>Iqtibos</span>
+                    </button>
+                </div>
+
+                <div class="feed-quick-divider"></div>
+
+                <nav class="feed-quick-nav" aria-label="Shaxsiy bo'limlar">
+                    <a href="/reading-books" class="feed-quick-item">
+                        <span class="feed-quick-icon is-emerald">
+                            <span class="material-symbols-outlined">bookmarks</span>
+                        </span>
+                        <span class="feed-quick-text">
+                            <strong>Shaxsiy kutubxona</strong>
+                            <small>Faol va tugatilgan kitoblar</small>
+                        </span>
+                    </a>
+                    <a href="/Quotes" class="feed-quick-item">
+                        <span class="feed-quick-icon is-amber">
+                            <span class="material-symbols-outlined">format_quote</span>
+                        </span>
+                        <span class="feed-quick-text">
+                            <strong>Sara iqtiboslar</strong>
+                            <small>Kitobxonlar osti chizgan satrlar</small>
+                        </span>
+                    </a>
+                    <a href="/kitoblar" class="feed-quick-item">
+                        <span class="feed-quick-icon is-blue">
+                            <span class="material-symbols-outlined">library_books</span>
+                        </span>
+                        <span class="feed-quick-text">
+                            <strong>Kitoblar katalogi</strong>
+                            <small>Asarlar va taqrizlar bazasi</small>
+                        </span>
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Asosiy o'rta ustun / Main Feed -->
+        <main class="feed-main">
+            <div class="feed">
+                <!-- Qidiruv paneli -->
+                <div class="feed-search-card">
+                    <form method="get" action="/Feed" id="feedSearchForm" class="feed-search-form">
+                        <div class="search-box">
+                            <span class="search-ico material-symbols-outlined">search</span>
+                            <input class="input" type="search" name="q" id="feedSearchInput"
+                                   placeholder="Taqriz matni, kitob, muallif yoki iqtibos bo'yicha qidiring..."
+                                   value="@search" autocomplete="off" />
+                        </div>
+                    </form>
+                    @if (!string.IsNullOrEmpty(search))
+                    {
+                        <a class="btn btn-outline btn-sm" href="/Feed" id="feedSearchClear" title="Qidiruvni tozalash">
+                            <span class="material-symbols-outlined ic-sm ic-baseline">close</span>
+                            Tozalash
+                        </a>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(search))
+                {
+                    <div class="muted" style="margin-bottom:8px; font-size:14px">
+                        <strong>"@search"</strong> bo'yicha qidiruv natijalari —
+                        <a href="/Feed">barcha taqrizlarga qaytish</a>
+                    </div>
+                }
+
+                <!-- Taqriz yaratish — qidiruvda yashiriladi, qidiruv tugagach qaytadi -->
+                @if (string.IsNullOrEmpty(search))
+                {
+                <!-- Yopiq holatdagi tugma (bosilganda modal ochiladi) -->
+                <button type="button" class="card composer-trigger" id="composerTrigger">
+                    @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                    {
+                        <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+                    }
+                    else
+                    {
+                        <span class="avatar">@meInitial</span>
+                    }
+                    <span class="composer-trigger-text">Qaysi kitob haqida fikr bildirasiz?</span>
+                    <div class="composer-trigger-actions">
+                        <span class="composer-trigger-pill">
+                            <span class="material-symbols-outlined">article</span>
+                            Taqriz
+                        </span>
+                        <span class="composer-trigger-pill">
+                            <span class="material-symbols-outlined">format_quote</span>
+                            Iqtibos
+                        </span>
+                    </div>
+                    <span class="material-symbols-outlined composer-trigger-mobile-ico">edit_square</span>
+                </button>
 
         <!-- Taqriz yoki iqtibos tanlash modali — kompozer tugmasi bosilganda birinchi shu ochiladi -->
         <div class="composer-modal" id="typeChoiceModal" hidden>
             <div class="composer-modal-backdrop" data-type-choice-close></div>
-            <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Taqriz yoki iqtibos" style="max-width:340px">
+            <div class="composer-modal-box composer-choice-box card" role="dialog" aria-modal="true" aria-label="Taqriz yoki iqtibos">
                 <div class="composer-modal-head">
                     <h3>Qaysi kitob haqida fikr bildirasiz?</h3>
                     <button type="button" class="composer-close" data-type-choice-close aria-label="Yopish">
                         <span class="material-symbols-outlined">close</span>
                     </button>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:12px; padding:4px 0 8px">
-                    <button type="button" class="btn btn-primary btn-block" id="chooseTaqriz">
-                        <span class="material-symbols-outlined ic-sm ic-baseline">article</span>
-                        Taqriz
+                <div class="composer-choice-grid">
+                    <button type="button" class="composer-choice-item is-primary" id="chooseTaqriz">
+                        <span class="composer-choice-icon">
+                            <span class="material-symbols-outlined">article</span>
+                        </span>
+                        <span class="composer-choice-text">
+                            <strong>Taqriz yozish</strong>
+                            <small>Asar haqida batafsil fikr va tahlil</small>
+                        </span>
+                        <span class="material-symbols-outlined composer-choice-arrow">chevron_right</span>
                     </button>
-                    <button type="button" class="btn btn-outline btn-block" id="chooseIqtibos">
-                        <span class="material-symbols-outlined ic-sm ic-baseline">format_quote</span>
-                        Iqtibos
+                    <button type="button" class="composer-choice-item is-accent" id="chooseIqtibos">
+                        <span class="composer-choice-icon">
+                            <span class="material-symbols-outlined">format_quote</span>
+                        </span>
+                        <span class="composer-choice-text">
+                            <strong>Iqtibos ulashish</strong>
+                            <small>Kitobdan ta'sirli jumla yoki satr</small>
+                        </span>
+                        <span class="material-symbols-outlined composer-choice-arrow">chevron_right</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Taqriz (post) modali -->
+        <!-- Taqriz modali -->
         <div class="composer-modal" id="composerModal" hidden>
             <div class="composer-modal-backdrop" data-composer-close></div>
             <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi taqriz">
@@ -102,7 +258,7 @@
 
                 <!-- Tanlangan kitob (tanlangach ko'rinadi) -->
                 <div id="selectedBook" class="composer-selected" hidden>
-                    <span class="material-symbols-outlined">menu_book</span>
+                    <img id="selectedBookCover" src="/img/default-book-cover.webp" alt="Muqova" style="width:34px;height:48px;object-fit:cover;border-radius:4px;flex-shrink:0" />
                     <span id="selectedBookLabel"></span>
                     <button type="button" class="composer-clear" id="clearBook" aria-label="Bekor qilish">
                         <span class="material-symbols-outlined">close</span>
@@ -126,13 +282,6 @@
                         <input class="input" id="nbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
                         <input class="input" id="nbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
                         <input class="input" id="nbPages" type="number" min="1" max="100000" placeholder="Sahifalar soni" />
-                        <select class="input" id="nbGenre">
-                            <option value="">Kategoriyani tanlang</option>
-                            @foreach (var genre in genres)
-                            {
-                                <option value="@genre.Id">@genre.Name</option>
-                            }
-                        </select>
 
                         <div class="nb-cover">
                             <div class="nb-cover-preview" id="nbCoverPreview">
@@ -142,7 +291,7 @@
                                 <label class="btn btn-outline btn-sm" for="nbCover">Muqova rasmi</label>
                                 <input type="file" id="nbCover" accept="image/*" hidden />
                                 <button type="button" class="btn btn-ghost btn-sm" id="nbCoverClear" hidden>O'chirish</button>
-                                <span class="muted" id="nbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                                <span class="muted" id="nbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 10 MB gacha.</span>
                             </div>
                         </div>
 
@@ -217,13 +366,6 @@
                         <input class="input" id="qNbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
                         <input class="input" id="qNbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
                         <input class="input" id="qNbPages" type="number" min="1" max="100000" placeholder="Sahifalar soni" />
-                        <select class="input" id="qNbGenre">
-                            <option value="">Kategoriyani tanlang</option>
-                            @foreach (var genre in genres)
-                            {
-                                <option value="@genre.Id">@genre.Name</option>
-                            }
-                        </select>
 
                         <div class="nb-cover">
                             <div class="nb-cover-preview" id="qNbCoverPreview">
@@ -233,7 +375,7 @@
                                 <label class="btn btn-outline btn-sm" for="qNbCover">Muqova rasmi</label>
                                 <input type="file" id="qNbCover" accept="image/*" hidden />
                                 <button type="button" class="btn btn-ghost btn-sm" id="qNbCoverClear" hidden>O'chirish</button>
-                                <span class="muted" id="qNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
+                                <span class="muted" id="qNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 10 MB gacha.</span>
                             </div>
                         </div>
 
@@ -242,6 +384,21 @@
                 </div>
 
                 <textarea class="input" name="Text" id="quoteText" placeholder="Iqtibos matni..." minlength="3" maxlength="400" required></textarea>
+
+                <div class="composer-image-picker" style="margin-top:10px">
+                    <input type="hidden" name="ImageUrl" id="quoteImageUrl" />
+                    <div id="quoteImagePreview" class="composer-image-preview" hidden>
+                        <img id="quoteImagePreviewImg" src="" alt="Tanlangan rasm" />
+                        <button type="button" class="composer-image-remove" id="quoteImageClear" aria-label="Rasmni o'chirish">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <label class="btn btn-outline btn-sm" for="quoteImage">
+                        <span class="material-symbols-outlined ic-sm ic-baseline">image</span>
+                        Rasm qo'shish
+                    </label>
+                    <input type="file" id="quoteImage" accept="image/*" hidden />
+                </div>
 
                 <div class="composer-actions">
                     <span class="muted" id="quoteComposerHint" style="font-size:13px">Avval kitobni tanlang yoki qo'shing.</span>
@@ -252,8 +409,8 @@
         </div>
         }
 
-        <!-- Postlar -->
-        @if (Model.Items.Count == 0)
+        <!-- Taqrizlar -->
+        @if (Model.Feed.Items.Count == 0)
         {
             <div class="card empty-state">
                 <span class="material-symbols-outlined">@(string.IsNullOrEmpty(search) ? "auto_stories" : "search_off")</span>
@@ -266,7 +423,7 @@
         }
         else
         {
-            @foreach (var item in Model.Items)
+            @foreach (var item in Model.Feed.Items)
             {
                 if (item.Kind == "quote" && item.Quote is not null)
                 {
@@ -279,12 +436,95 @@
             }
         }
 
-        <!-- Pastga tushganda keyingi postlar shu yerga animatsiya bilan qo'shiladi -->
+        <!-- Pastga tushganda keyingi taqrizlar shu yerga animatsiya bilan qo'shiladi -->
         <div class="infinite-loader" id="feedLoader" hidden>
             <span class="spinner"></span>
         </div>
         <div id="feedSentinel" aria-hidden="true"
-             data-page="@Model.Page" data-total-pages="@Model.TotalPages" data-search="@search"></div>
+             data-page="@Model.Feed.Page" data-total-pages="@Model.Feed.TotalPages" data-search="@search"></div>
+    </div>
+    </main>
+
+    <!-- O'ng panel / Right Sidebar: Challenge reytingi, Kitob almashish, Tavsiya va Mini footer -->
+    <aside class="feed-sidebar feed-sidebar-right">
+        <!-- Challenge oylik reyting vidjeti -->
+        <div class="card feed-widget">
+            <div class="feed-widget-head">
+                <span class="feed-widget-title">
+                    <span class="material-symbols-outlined" style="color:#f59e0b">military_tech</span>
+                    Oylik reyting
+                </span>
+                <a href="/challenge" class="feed-widget-link">Barchasi →</a>
+            </div>
+            @if (Model.TopReaders.Count > 0)
+            {
+                <div style="display:flex; flex-direction:column; gap:8px">
+                    @foreach (var reader in Model.TopReaders)
+                    {
+                        var rankIco = reader.Rank == 1 ? "🥇" : (reader.Rank == 2 ? "🥈" : (reader.Rank == 3 ? "🥉" : $"{reader.Rank}."));
+                        var readerInitial = KitobdaGimen.Web.ViewHelpers.Initial(reader.FullName);
+                        <a href="@ViewHelpers.ProfileUrl(reader.Username, reader.UserId)" class="feed-reader-item">
+                            <span class="feed-reader-rank">@rankIco</span>
+                            @if (!string.IsNullOrEmpty(reader.AvatarUrl))
+                            {
+                                <img class="feed-reader-avatar" src="@reader.AvatarUrl" alt="@reader.FullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="feed-reader-avatar">@readerInitial</span>
+                            }
+                            <div class="feed-reader-info">
+                                <span class="feed-reader-name">@reader.FullName</span>
+                                <span class="feed-reader-pages"><strong>@reader.PagesRead</strong> bet o'qildi</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted" style="font-size:13px; margin:0">Ushbu oyda birinchi bo'lib kitob o'qing va peshqadamlar safiga qo'shiling!</p>
+            }
+            <a href="/challenge" class="btn btn-outline btn-sm btn-block" style="margin-top:2px">
+                Chellenjda qatnashish
+            </a>
+        </div>
+
+        <!-- Kitob almashish vidjeti -->
+        <div class="card feed-widget">
+            <div class="feed-widget-head">
+                <span class="feed-widget-title">
+                    <span class="material-symbols-outlined" style="color:var(--primary)">swap_horiz</span>
+                    Kitob almashish
+                </span>
+                <a href="/almashish" class="feed-widget-link">Kutubxona →</a>
+            </div>
+            @if (Model.ExchangeBooks.Count > 0)
+            {
+                <div style="display:flex; flex-direction:column; gap:10px">
+                    @foreach (var b in Model.ExchangeBooks)
+                    {
+                        var coverImg = !string.IsNullOrEmpty(b.CoverUrl) ? b.CoverUrl : "/img/default-book-cover.webp";
+                        <a href="/almashish" class="feed-exchange-item">
+                            <img class="feed-exchange-cover" src="@coverImg" alt="@b.Title" loading="lazy" />
+                            <div class="feed-exchange-info">
+                                <span class="feed-exchange-title" title="@b.Title">@b.Title</span>
+                                <span class="feed-exchange-author" title="@b.Author">@b.Author</span>
+                                <span class="feed-exchange-owner">Egasi: @b.OwnerName</span>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="muted" style="font-size:13px; margin:0">O'qib bo'lgan kitoblaringizni boshqa kitobxonlarga bepul bering yoki almashtiring.</p>
+            }
+            <a href="/almashish" class="btn btn-outline btn-sm btn-block" style="margin-top:2px">
+                Kitob olish yoki berish
+            </a>
+        </div>
+    </aside>
     </div>
 </div>
 
@@ -339,11 +579,14 @@
 (function () {
     const searchForm = document.getElementById("feedSearchForm");
     const searchInput = document.getElementById("feedSearchInput");
-    document.getElementById("feedSearchToggle").addEventListener("click", () => {
-        const open = searchForm.style.display !== "none";
-        searchForm.style.display = open ? "none" : "block";
-        if (!open) searchInput.focus();
-    });
+    const searchToggle = document.getElementById("feedSearchToggle");
+    if (searchToggle && searchForm) {
+        searchToggle.addEventListener("click", () => {
+            const open = searchForm.style.display !== "none";
+            searchForm.style.display = open ? "none" : "block";
+            if (!open && searchInput) searchInput.focus();
+        });
+    }
 
     // --- Topilgan so'zlarni yashil rang bilan belgilash (highlight) ---
     const term = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(search));
@@ -374,14 +617,14 @@
             }
         };
 
-        // Post/iqtibos matni, kitob nomi/muallifi va muallif ismi bo'yicha
+        // Taqriz/iqtibos matni, kitob nomi/muallifi va muallif ismi bo'yicha
         cards.forEach((card) => {
             card.querySelectorAll(".post-text, .post-book-title, .post-book-author, .quote-feed-text, .qfb-title, .qfb-author, .name").forEach(highlightNode);
         });
     }
     highlightCards(Array.from(document.querySelectorAll(".post-card")));
 
-    // --- Cheksiz skroll: pastga tushganda keyingi postlarni yuklash ---
+    // --- Cheksiz skroll: pastga tushganda keyingi taqrizlarni yuklash ---
     const sentinel = document.getElementById("feedSentinel");
     if (sentinel && window.kitob && kitob.infiniteScroll) {
         const loader = document.getElementById("feedLoader");
@@ -438,7 +681,7 @@
         nbCover.value = "";
         nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
         nbCoverClear.hidden = true;
-        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 10 MB gacha.";
     }
 
     nbCover.addEventListener("change", () => {
@@ -461,24 +704,7 @@
     nbCoverClear.addEventListener("click", resetCover);
 
     async function uploadCover(file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/books/upload-cover", {
-            method: "POST",
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "RequestVerificationToken": kitob.antiforgeryToken()
-            },
-            body: fd
-        });
-        if (res.status === 401) { window.location.href = "/"; return null; }
-        if (!res.ok) {
-            let message = "Rasmni yuklab bo'lmadi.";
-            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
-            throw new Error(message);
-        }
-        const data = await res.json();
-        return data.url;
+        return await kitob.uploadBookCover(file);
     }
 
     function refreshState() {
@@ -548,6 +774,8 @@
     function pickBook(book) {
         bookIdInput.value = book.id;
         selectedLabel.textContent = `${book.title} — ${book.author}`;
+        const coverEl = document.getElementById("selectedBookCover");
+        if (coverEl) coverEl.src = book.coverUrl || "/img/default-book-cover.webp";
         selectedBook.hidden = false;
         bookPicker.hidden = true;
         suggestions.hidden = true;
@@ -596,12 +824,11 @@
 
     const nbSave = document.getElementById("nbSave");
     nbSave.addEventListener("click", async () => {
-        const genreId = parseInt(document.getElementById("nbGenre").value, 10) || 0;
         const command = {
             title: document.getElementById("nbTitle").value.trim(),
             author: document.getElementById("nbAuthor").value.trim(),
             totalPages: parseInt(document.getElementById("nbPages").value, 10) || 0,
-            genreId: genreId || null
+            genreId: null
         };
         if (!command.title || !command.author || command.totalPages <= 0) {
             alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
@@ -619,17 +846,13 @@
             alert("Sahifalar soni juda katta.");
             return;
         }
-        if (!genreId) {
-            alert("Kitob kategoriyasini tanlang.");
-            return;
-        }
         nbSave.disabled = true;
         try {
             // Upload the cover first (if chosen) so the book is created with its URL.
             if (coverFile && !coverUrl) {
                 coverUrl = await uploadCover(coverFile);
             }
-            if (coverUrl) command.coverUrl = coverUrl;
+            command.coverUrl = coverUrl || "/img/default-book-cover.webp";
 
             const book = await kitob.apiPost("/books/create", command);
             if (book) pickBook(book);
@@ -690,7 +913,7 @@
         nbCover.value = "";
         nbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
         nbCoverClear.hidden = true;
-        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 5 MB gacha.";
+        nbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 10 MB gacha.";
     }
 
     nbCover.addEventListener("change", () => {
@@ -713,24 +936,7 @@
     nbCoverClear.addEventListener("click", resetCover);
 
     async function uploadCover(file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/books/upload-cover", {
-            method: "POST",
-            headers: {
-                "X-Requested-With": "XMLHttpRequest",
-                "RequestVerificationToken": kitob.antiforgeryToken()
-            },
-            body: fd
-        });
-        if (res.status === 401) { window.location.href = "/"; return null; }
-        if (!res.ok) {
-            let message = "Rasmni yuklab bo'lmadi.";
-            try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
-            throw new Error(message);
-        }
-        const data = await res.json();
-        return data.url;
+        return await kitob.uploadBookCover(file);
     }
 
     function refreshState() {
@@ -745,6 +951,8 @@
     function pickBook(book) {
         bookIdInput.value = book.id;
         selectedLabel.textContent = `${book.title} — ${book.author}`;
+        const coverEl = document.getElementById("selectedBookCover");
+        if (coverEl) coverEl.src = book.coverUrl || "/img/default-book-cover.webp";
         selectedBook.hidden = false;
         bookPicker.hidden = true;
         suggestions.hidden = true;
@@ -793,12 +1001,11 @@
 
     const nbSave = document.getElementById("qNbSave");
     nbSave.addEventListener("click", async () => {
-        const genreId = parseInt(document.getElementById("qNbGenre").value, 10) || 0;
         const command = {
             title: document.getElementById("qNbTitle").value.trim(),
             author: document.getElementById("qNbAuthor").value.trim(),
             totalPages: parseInt(document.getElementById("qNbPages").value, 10) || 0,
-            genreId: genreId || null
+            genreId: null
         };
         if (!command.title || !command.author || command.totalPages <= 0) {
             alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
@@ -816,17 +1023,13 @@
             alert("Sahifalar soni juda katta.");
             return;
         }
-        if (!genreId) {
-            alert("Kitob kategoriyasini tanlang.");
-            return;
-        }
         nbSave.disabled = true;
         try {
             // Upload the cover first (if chosen) so the book is created with its URL.
             if (coverFile && !coverUrl) {
                 coverUrl = await uploadCover(coverFile);
             }
-            if (coverUrl) command.coverUrl = coverUrl;
+            command.coverUrl = coverUrl || "/img/default-book-cover.webp";
 
             const book = await kitob.apiPost("/books/create", command);
             if (book) pickBook(book);
@@ -836,6 +1039,69 @@
         finally { nbSave.disabled = false; }
     });
 
+    const quoteImage = document.getElementById("quoteImage");
+    const quoteImagePreview = document.getElementById("quoteImagePreview");
+    const quoteImagePreviewImg = document.getElementById("quoteImagePreviewImg");
+    const quoteImageClear = document.getElementById("quoteImageClear");
+    const quoteImageUrl = document.getElementById("quoteImageUrl");
+    let quoteImageUploading = false;
+
+    function resetQuoteImage() {
+        if (quoteImage) quoteImage.value = "";
+        if (quoteImageUrl) quoteImageUrl.value = "";
+        if (quoteImagePreviewImg && quoteImagePreviewImg.src) URL.revokeObjectURL(quoteImagePreviewImg.src);
+        if (quoteImagePreviewImg) quoteImagePreviewImg.src = "";
+        if (quoteImagePreview) quoteImagePreview.hidden = true;
+        quoteImageUploading = false;
+        refreshState();
+    }
+
+    if (quoteImage) {
+        quoteImage.addEventListener("change", async () => {
+            const f = quoteImage.files && quoteImage.files[0];
+            if (!f) return;
+
+            if (quoteImagePreviewImg.src) URL.revokeObjectURL(quoteImagePreviewImg.src);
+            quoteImagePreviewImg.src = URL.createObjectURL(f);
+            quoteImagePreview.hidden = false;
+
+            quoteImageUrl.value = "";
+            quoteImageUploading = true;
+            refreshState();
+            try {
+                const fd = new FormData();
+                fd.append("file", f);
+                const res = await fetch("/posts/upload-image", {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "RequestVerificationToken": kitob.antiforgeryToken()
+                    },
+                    body: fd
+                });
+                if (res.status === 401) { window.location.href = "/"; return; }
+                if (!res.ok) {
+                    let message = "Rasmni yuklab bo'lmadi.";
+                    try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
+                    throw new Error(message);
+                }
+                const data = await res.json();
+                quoteImageUrl.value = data.url;
+            } catch (err) {
+                alert(err.message);
+                resetQuoteImage();
+                return;
+            } finally {
+                quoteImageUploading = false;
+                refreshState();
+            }
+        });
+    }
+
+    if (quoteImageClear) {
+        quoteImageClear.addEventListener("click", resetQuoteImage);
+    }
+
     form.addEventListener("submit", (e) => {
         if (!bookIdInput.value) {
             e.preventDefault();
@@ -843,6 +1109,9 @@
         } else if (!(quoteText.value || "").trim()) {
             e.preventDefault();
             alert("Iqtibos matnini yozing.");
+        } else if (quoteImageUploading) {
+            e.preventDefault();
+            alert("Rasm hali yuklanmoqda, biroz kuting.");
         }
     });
 

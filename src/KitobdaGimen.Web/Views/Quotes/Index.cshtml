@@ -1,0 +1,605 @@
+@using KitobdaGimen.Web.Models
+@using KitobdaGimen.Web.Seo
+@model QuotesPageViewModel
+@{
+    var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    ViewData["Title"] = "Sara iqtiboslar — Kitoblar va adabiyot durdonalari";
+    ViewData["Description"] = "O'zbek va jahon adabiyotidan eng sara iqtiboslar, qanotli so'zlar va hikmatli fikrlar to'plami. Kitobxonlar osti chizgan satrlar — kitobdagimen.uz da.";
+    ViewData["Canonical"] = $"{seoBase}/quotes";
+    ViewData["OgType"] = "website";
+    ViewData["JsonLd"] = SeoJsonLd.QuotesPage($"{seoBase}/quotes", Model.Quotes?.TotalCount ?? 0);
+    ViewData["JsonLdBreadcrumbs"] = SeoJsonLd.Breadcrumb(seoBase, ("Bosh sahifa", "/"), ("Sara iqtiboslar", "/quotes"));
+
+    var search = Model.Search ?? "";
+    var sort = (Model.Sort ?? "latest").ToLowerInvariant();
+}
+
+<div class="container page quotes-page">
+    <!-- Hero / Header -->
+    <div class="quotes-hero card">
+        <div class="quotes-hero-main">
+            <span class="quotes-hero-badge">
+                <span class="material-symbols-outlined">format_quote</span>
+                Iqtiboslar xazinasi
+            </span>
+            <h1 class="quotes-hero-title">Sara iqtiboslar</h1>
+            <p class="quotes-hero-sub">
+                Kitobxonlar tomonidan mutolaa davomida ajratib olingan eng ta'sirli satrlar va hikmatli fikrlar.
+            </p>
+        </div>
+        <div class="quotes-hero-actions">
+            <button type="button" class="btn btn-primary" id="openNewQuoteBtn">
+                <span class="material-symbols-outlined">add_circle</span>
+                Iqtibos qo'shish
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter tabs + Search bar -->
+    <div class="quotes-toolbar card">
+        <div class="quotes-tabs" role="tablist" aria-label="Iqtiboslarni saralash" id="quotesTabs">
+            <a href="/Quotes?sort=latest@(string.IsNullOrEmpty(search) ? "" : $"&q={Uri.EscapeDataString(search)}")"
+               class="quotes-tab @(sort == "latest" ? "active is-active" : "")"
+               data-sort="latest">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>Yangilari</span>
+            </a>
+            <a href="/Quotes?sort=popular@(string.IsNullOrEmpty(search) ? "" : $"&q={Uri.EscapeDataString(search)}")"
+               class="quotes-tab @(sort == "popular" ? "active is-active" : "")"
+               data-sort="popular">
+                <span class="material-symbols-outlined">local_fire_department</span>
+                <span>Eng sara</span>
+            </a>
+            <a href="/Quotes?sort=mine@(string.IsNullOrEmpty(search) ? "" : $"&q={Uri.EscapeDataString(search)}")"
+               class="quotes-tab @(sort == "mine" ? "active is-active" : "")"
+               data-sort="mine">
+                <span class="material-symbols-outlined">person</span>
+                <span>Mening iqtiboslarim</span>
+            </a>
+        </div>
+
+        <form method="get" action="/Quotes" class="quotes-search-form" id="quotesSearchForm">
+            <input type="hidden" name="sort" id="quotesSortInput" value="@sort" />
+            <div class="quotes-search-box">
+                <button type="submit" class="search-btn" title="Qidirish" aria-label="Qidirish">
+                    <span class="material-symbols-outlined">search</span>
+                </button>
+                <input class="input" type="search" name="q" id="quotesSearchInput"
+                       placeholder="Iqtibos matni, kitob yoki muallif..."
+                       value="@search" autocomplete="off" />
+                <button type="button" class="quotes-search-clear" id="quotesSearchClear"
+                        style="@(string.IsNullOrEmpty(search) ? "display:none;" : "")"
+                        title="Qidiruvni tozalash" aria-label="Tozalash">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Quotes list / grid -->
+    <div id="quotesFeedContainer" class="quotes-feed-wrap" data-is-auth="@(User.Identity?.IsAuthenticated == true ? "true" : "false")">
+        <partial name="_QuotesFeedSection" model="Model" />
+    </div>
+</div>
+
+<!-- Iqtibos qo'shish modali -->
+<div class="composer-modal" id="quoteComposerModal" hidden>
+    <div class="composer-modal-backdrop" data-quote-composer-close></div>
+    <div class="composer-modal-box card" role="dialog" aria-modal="true" aria-label="Yangi iqtibos">
+        <div class="composer-modal-head">
+            <h3>Qaysi kitobdan iqtibos qo'shasiz?</h3>
+            <button type="button" class="composer-close" data-quote-composer-close aria-label="Yopish">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form id="quoteComposerForm" method="post" action="/quotes/create">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="/Quotes" />
+            <input type="hidden" name="BookId" id="quoteBookId" />
+
+            <!-- Tanlangan kitob -->
+            <div id="quoteSelectedBook" class="composer-selected" hidden>
+                <span class="material-symbols-outlined">menu_book</span>
+                <span id="quoteSelectedBookLabel"></span>
+                <button type="button" class="composer-clear" id="quoteClearBook" aria-label="Bekor qilish">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Kitob qidirish / qo'shish -->
+            <div id="quoteBookPicker">
+                <div class="composer-book">
+                    <input class="input" id="quoteBookSearch" placeholder="Kitobni qidiring..." autocomplete="off" />
+                    <button type="button" class="btn btn-outline btn-sm" id="quoteNewBookToggle">Yangi kitob</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-asaxiy-refresh="#quoteBookSearch"
+                            title="Kitob qidiruvi ishlamayaptimi? Bosing — qayta ishga tushadi.">
+                        <span class="material-symbols-outlined ic-sm ic-baseline">refresh</span>
+                        Kitoblarni yangilash
+                    </button>
+                </div>
+                <div class="book-suggestions" id="quoteBookSuggestions" hidden></div>
+
+                <div id="quoteNewBookForm" class="composer-newbook stack" hidden>
+                    <input class="input" id="qNbTitle" placeholder="Kitob nomi" minlength="3" maxlength="100" />
+                    <input class="input" id="qNbAuthor" placeholder="Muallif" minlength="3" maxlength="100" />
+                    <input class="input" id="qNbPages" type="number" min="1" max="100000" placeholder="Sahifalar soni" />
+
+                    <div class="nb-cover">
+                        <div class="nb-cover-preview" id="qNbCoverPreview">
+                            <span class="material-symbols-outlined">image</span>
+                        </div>
+                        <div class="nb-cover-actions">
+                            <label class="btn btn-outline btn-sm" for="qNbCover">Muqova rasmi</label>
+                            <input type="file" id="qNbCover" accept="image/*" hidden />
+                            <button type="button" class="btn btn-ghost btn-sm" id="qNbCoverClear" hidden>O'chirish</button>
+                            <span class="muted" id="qNbCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 10 MB gacha.</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-outline btn-sm" id="qNbSave">Kitobni qo'shish</button>
+                </div>
+            </div>
+
+            <textarea class="input" name="Text" id="quoteText" placeholder="Iqtibos matni..." minlength="3" maxlength="400" style="margin-top:12px;min-height:100px" required></textarea>
+
+            <div class="composer-image-picker" style="margin-top:10px">
+                <input type="hidden" name="ImageUrl" id="quoteImageUrl" />
+                <div id="quoteImagePreview" class="composer-image-preview" hidden>
+                    <img id="quoteImagePreviewImg" src="" alt="Tanlangan rasm" />
+                    <button type="button" class="composer-image-remove" id="quoteImageClear" aria-label="Rasmni o'chirish">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <label class="btn btn-outline btn-sm" for="quoteImage">
+                    <span class="material-symbols-outlined ic-sm ic-baseline">image</span>
+                    Rasm qo'shish
+                </label>
+                <input type="file" id="quoteImage" accept="image/*" hidden />
+            </div>
+
+            <div class="composer-actions">
+                <span class="muted" id="quoteComposerHint" style="font-size:13px">Avval kitobni tanlang yoki qo'shing.</span>
+                <button type="submit" class="btn btn-primary" id="quoteSubmit" disabled>Saqlash</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const openBtn = document.getElementById("openNewQuoteBtn");
+    const quoteModal = document.getElementById("quoteComposerModal");
+    if (!openBtn || !quoteModal) return;
+
+    function openModal() {
+        quoteModal.hidden = false;
+        document.body.classList.add("modal-open");
+        setTimeout(() => document.getElementById("quoteBookSearch")?.focus(), 50);
+    }
+    function closeModal() {
+        quoteModal.hidden = true;
+        document.body.classList.remove("modal-open");
+    }
+
+    openBtn.addEventListener("click", openModal);
+    quoteModal.querySelectorAll("[data-quote-composer-close]").forEach(el => el.addEventListener("click", closeModal));
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape" && !quoteModal.hidden) closeModal();
+    });
+
+    const search = document.getElementById("quoteBookSearch");
+    const suggestions = document.getElementById("quoteBookSuggestions");
+    const bookId = document.getElementById("quoteBookId");
+    const bookPicker = document.getElementById("quoteBookPicker");
+    const selectedBook = document.getElementById("quoteSelectedBook");
+    const selectedBookLabel = document.getElementById("quoteSelectedBookLabel");
+    const newBookForm = document.getElementById("quoteNewBookForm");
+    const quoteText = document.getElementById("quoteText");
+    const quoteSubmit = document.getElementById("quoteSubmit");
+    const hint = document.getElementById("quoteComposerHint");
+    let timer;
+
+    function refreshSubmitState() {
+        const hasBook = !!bookId.value;
+        const len = quoteText.value.trim().length;
+        const validLen = len >= 3 && len <= 400;
+        quoteSubmit.disabled = !(hasBook && validLen);
+        hint.textContent = !hasBook
+            ? "Avval kitobni tanlang yoki qo'shing."
+            : (!validLen ? `Iqtibos matni 3–400 ta belgidan iborat bo'lsin (hozir: ${len}).` : "Tayyor — saqlashingiz mumkin.");
+    }
+
+    function pickBook(b) {
+        bookId.value = b.id;
+        selectedBookLabel.textContent = `${b.title} — ${b.author}`;
+        selectedBook.hidden = false;
+        bookPicker.hidden = true;
+        suggestions.hidden = true;
+        suggestions.innerHTML = "";
+        search.value = "";
+        refreshSubmitState();
+        quoteText.focus();
+    }
+
+    document.getElementById("quoteClearBook").addEventListener("click", () => {
+        bookId.value = "";
+        selectedBook.hidden = true;
+        bookPicker.hidden = false;
+        refreshSubmitState();
+    });
+
+    quoteText.addEventListener("input", refreshSubmitState);
+
+    search.addEventListener("input", () => {
+        clearTimeout(timer);
+        const q = search.value.trim();
+        if (q.length < 2) { suggestions.hidden = true; return; }
+        suggestions.dataset.q = q;
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+                if (!res.ok) return;
+                const books = await res.json();
+                suggestions.innerHTML = "";
+                books.forEach(b => {
+                    const div = document.createElement("div");
+                    div.textContent = `${b.title} — ${b.author}`;
+                    div.addEventListener("click", () => pickBook(b));
+                    suggestions.appendChild(div);
+                });
+                suggestions.hidden = books.length === 0;
+                if (window.kitob && window.kitob.renderAsaxiyBooks) {
+                    window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
+                }
+            } catch { }
+        }, 250);
+    });
+
+    document.getElementById("quoteNewBookToggle").addEventListener("click", () => {
+        newBookForm.hidden = !newBookForm.hidden;
+    });
+
+    const qNbCover = document.getElementById("qNbCover");
+    const qNbCoverPreview = document.getElementById("qNbCoverPreview");
+    const qNbCoverClear = document.getElementById("qNbCoverClear");
+    const qNbCoverHint = document.getElementById("qNbCoverHint");
+    let qCoverFile = null;
+    let qCoverUrl = null;
+
+    function resetQCover() {
+        qCoverFile = null;
+        qCoverUrl = null;
+        if (qNbCover) qNbCover.value = "";
+        if (qNbCoverPreview) qNbCoverPreview.innerHTML = '<span class="material-symbols-outlined">image</span>';
+        if (qNbCoverClear) qNbCoverClear.hidden = true;
+        if (qNbCoverHint) qNbCoverHint.textContent = "Ixtiyoriy — JPG/PNG, 10 MB gacha.";
+    }
+
+    if (qNbCover) {
+        qNbCover.addEventListener("change", () => {
+            const f = qNbCover.files && qNbCover.files[0];
+            if (!f) { resetQCover(); return; }
+            qCoverFile = f;
+            qCoverUrl = null;
+            if (qNbCoverClear) qNbCoverClear.hidden = false;
+            if (qNbCoverHint) qNbCoverHint.textContent = f.name;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (!qNbCoverPreview) return;
+                qNbCoverPreview.innerHTML = "";
+                const img = document.createElement("img");
+                img.src = ev.target.result;
+                qNbCoverPreview.appendChild(img);
+            };
+            reader.readAsDataURL(f);
+        });
+    }
+
+    if (qNbCoverClear) qNbCoverClear.addEventListener("click", resetQCover);
+
+    const qNbSaveBtn = document.getElementById("qNbSave");
+    if (qNbSaveBtn) qNbSaveBtn.addEventListener("click", async () => {
+        const command = {
+            title: document.getElementById("qNbTitle").value.trim(),
+            author: document.getElementById("qNbAuthor").value.trim(),
+            totalPages: parseInt(document.getElementById("qNbPages").value, 10) || 0,
+            genreId: null
+        };
+        if (!command.title || !command.author || command.totalPages <= 0) {
+            alert("Kitob nomi, muallif va sahifalar sonini kiriting.");
+            return;
+        }
+        qNbSaveBtn.disabled = true;
+        try {
+            if (qCoverFile && !qCoverUrl) {
+                qCoverUrl = await window.kitob.uploadBookCover(qCoverFile);
+            }
+            if (qCoverUrl) command.coverUrl = qCoverUrl;
+
+            const book = await window.kitob.apiPost("/books/create", command);
+            if (book) pickBook(book);
+            newBookForm.hidden = true;
+            resetQCover();
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            qNbSaveBtn.disabled = false;
+        }
+    });
+
+    // Rasm yuklash
+    const qImgInput = document.getElementById("quoteImage");
+    const qImgUrl = document.getElementById("quoteImageUrl");
+    const qImgPreview = document.getElementById("quoteImagePreview");
+    const qImgPreviewImg = document.getElementById("quoteImagePreviewImg");
+    const qImgClear = document.getElementById("quoteImageClear");
+
+    qImgInput.addEventListener("change", async () => {
+        const f = qImgInput.files && qImgInput.files[0];
+        if (!f) return;
+        const fd = new FormData();
+        fd.append("file", f);
+        try {
+            const res = await fetch("/posts/upload-image", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": window.kitob.antiforgeryToken()
+                },
+                body: fd
+            });
+            if (!res.ok) throw new Error("Rasmni yuklab bo'lmadi.");
+            const data = await res.json();
+            qImgUrl.value = data.url;
+            qImgPreviewImg.src = data.url;
+            qImgPreview.hidden = false;
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+
+    qImgClear.addEventListener("click", () => {
+        qImgUrl.value = "";
+        qImgInput.value = "";
+        qImgPreview.hidden = true;
+        qImgPreviewImg.src = "";
+    });
+})();
+
+// Quotes sahifasi: saralash tablari, qidiruv va dinamik yangilanish
+(function () {
+    const tabsContainer = document.getElementById("quotesTabs");
+    const feedContainer = document.getElementById("quotesFeedContainer");
+    const searchForm = document.getElementById("quotesSearchForm");
+    const searchInput = document.getElementById("quotesSearchInput");
+    const searchClearBtn = document.getElementById("quotesSearchClear");
+    const sortInput = document.getElementById("quotesSortInput");
+    if (!tabsContainer || !feedContainer) return;
+
+    let currentSort = (sortInput ? sortInput.value : "") || "latest";
+    let searchDebounceTimer = null;
+    let abortController = null;
+
+    function updateClearBtnVisibility() {
+        if (!searchClearBtn || !searchInput) return;
+        searchClearBtn.style.display = searchInput.value.trim().length > 0 ? "inline-flex" : "none";
+    }
+
+    function highlightCards(cards, query) {
+        if (!query || !query.trim()) return;
+        const needle = query.trim().toLowerCase();
+        const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const rx = new RegExp("(" + escaped + ")", "gi");
+
+        const highlightNode = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (!node.nodeValue.toLowerCase().includes(needle)) return;
+                const frag = document.createDocumentFragment();
+                let last = 0;
+                node.nodeValue.replace(rx, (match, _g, offset) => {
+                    if (offset > last) frag.appendChild(document.createTextNode(node.nodeValue.slice(last, offset)));
+                    const mark = document.createElement("mark");
+                    mark.className = "search-mark";
+                    mark.textContent = match;
+                    frag.appendChild(mark);
+                    last = offset + match.length;
+                    return match;
+                });
+                if (last < node.nodeValue.length) frag.appendChild(document.createTextNode(node.nodeValue.slice(last)));
+                node.parentNode.replaceChild(frag, node);
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== "MARK") {
+                [...node.childNodes].forEach(highlightNode);
+            }
+        };
+
+        cards.forEach((card) => {
+            card.querySelectorAll(".quote-feed-text, .qfb-title, .qfb-author, .name").forEach(highlightNode);
+        });
+    }
+
+    // Sahifa birinchi marta ochilganda qidiruv so'zini belgilash
+    const initialQuery = searchInput ? searchInput.value.trim() : "";
+    if (initialQuery) {
+        highlightCards(Array.from(feedContainer.querySelectorAll(".quote-feed-card")), initialQuery);
+    }
+
+    function updateTabActiveState(activeSort) {
+        tabsContainer.querySelectorAll(".quotes-tab").forEach(tab => {
+            const s = (tab.getAttribute("data-sort") || "latest").toLowerCase();
+            const isActive = s === activeSort.toLowerCase();
+            tab.classList.toggle("active", isActive);
+            tab.classList.toggle("is-active", isActive);
+        });
+    }
+
+    function updateTabHrefs(query) {
+        tabsContainer.querySelectorAll(".quotes-tab").forEach(tab => {
+            const s = (tab.getAttribute("data-sort") || "latest").toLowerCase();
+            const url = new URL("/Quotes", window.location.origin);
+            if (s !== "latest") url.searchParams.set("sort", s);
+            if (query) url.searchParams.set("q", query);
+            tab.href = url.pathname + url.search;
+        });
+    }
+
+    async function fetchQuotes({ page = 1, scrollToTop = false, pushState = true } = {}) {
+        const q = searchInput ? searchInput.value.trim() : "";
+        const sort = currentSort || "latest";
+
+        const url = new URL("/Quotes", window.location.origin);
+        if (sort !== "latest") url.searchParams.set("sort", sort);
+        if (q) url.searchParams.set("q", q);
+        if (page > 1) url.searchParams.set("page", page.toString());
+
+        if (pushState) {
+            window.history.pushState({ sort, q, page }, "", url.pathname + url.search);
+        }
+
+        updateTabHrefs(q);
+
+        if (abortController) {
+            abortController.abort();
+        }
+        abortController = new AbortController();
+
+        feedContainer.classList.add("quotes-loading");
+        try {
+            const res = await fetch(url.toString(), {
+                headers: { "X-Requested-With": "XMLHttpRequest" },
+                signal: abortController.signal
+            });
+
+            if (!res.ok) {
+                if (res.status === 401) {
+                    window.location.href = `/login?returnUrl=${encodeURIComponent(url.pathname + url.search)}`;
+                    return;
+                }
+                throw new Error("Iqtiboslarni yuklab bo'lmadi.");
+            }
+
+            const contentType = res.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                const data = await res.json();
+                if (data.requireLogin && data.loginUrl) {
+                    window.location.href = data.loginUrl;
+                    return;
+                }
+            }
+
+            const html = await res.text();
+            feedContainer.innerHTML = html;
+
+            if (q) {
+                highlightCards(Array.from(feedContainer.querySelectorAll(".quote-feed-card")), q);
+            }
+
+            if (window.kitob && window.kitob.observeQuoteViews) {
+                window.kitob.observeQuoteViews(feedContainer);
+            }
+
+            if (scrollToTop) {
+                const toolbar = document.querySelector(".quotes-toolbar");
+                if (toolbar) toolbar.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        } catch (err) {
+            if (err.name === "AbortError") return;
+            console.error(err);
+        } finally {
+            feedContainer.classList.remove("quotes-loading");
+        }
+    }
+
+    // Tab bosilganda
+    tabsContainer.addEventListener("click", (e) => {
+        const tab = e.target.closest(".quotes-tab");
+        if (!tab) return;
+        const sortVal = tab.getAttribute("data-sort");
+        if (!sortVal) return;
+
+        // Agar foydalanuvchi tizimga kirmagan bo'lsa va "Mening iqtiboslarim"ni bossa, standart havola login sahifasiga yo'naltirsin
+        if (sortVal === "mine" && feedContainer.dataset.isAuth !== "true") {
+            return;
+        }
+
+        e.preventDefault();
+        if (sortVal === currentSort) return;
+
+        currentSort = sortVal;
+        if (sortInput) sortInput.value = currentSort;
+        updateTabActiveState(currentSort);
+        fetchQuotes({ page: 1 });
+    });
+
+    // Qidiruv maydoni: harf terilganda avtomatik (debounce 300ms) qidirish
+    if (searchInput) {
+        searchInput.addEventListener("input", () => {
+            updateClearBtnVisibility();
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                fetchQuotes({ page: 1 });
+            }, 300);
+        });
+    }
+
+    // Qidiruvni tozalash tugmasi
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener("click", () => {
+            if (searchInput) searchInput.value = "";
+            updateClearBtnVisibility();
+            clearTimeout(searchDebounceTimer);
+            fetchQuotes({ page: 1 });
+            if (searchInput) searchInput.focus();
+        });
+    }
+
+    // Qidiruv formasi submit bo'lganda (Enter bosilganda yoki qidiruv tugmasi bosilganda)
+    if (searchForm) {
+        searchForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            clearTimeout(searchDebounceTimer);
+            fetchQuotes({ page: 1 });
+        });
+    }
+
+    // Sahifalash va bo'sh natijadagi tozalash tugmalari hodisasi
+    feedContainer.addEventListener("click", (e) => {
+        const pageBtn = e.target.closest("[data-quote-page]");
+        if (pageBtn) {
+            e.preventDefault();
+            const p = parseInt(pageBtn.getAttribute("data-quote-page"), 10);
+            if (p && p > 0) {
+                fetchQuotes({ page: p, scrollToTop: true });
+            }
+            return;
+        }
+
+        const emptyClear = e.target.closest("#emptyClearSearchBtn");
+        if (emptyClear) {
+            e.preventDefault();
+            if (searchInput) searchInput.value = "";
+            updateClearBtnVisibility();
+            clearTimeout(searchDebounceTimer);
+            fetchQuotes({ page: 1 });
+            if (searchInput) searchInput.focus();
+            return;
+        }
+    });
+
+    // Brauzer tarixi (Orqaga / Oldinga)
+    window.addEventListener("popstate", () => {
+        const params = new URLSearchParams(window.location.search);
+        currentSort = (params.get("sort") || "latest").toLowerCase();
+        const q = params.get("q") || "";
+        const page = parseInt(params.get("page"), 10) || 1;
+
+        if (sortInput) sortInput.value = currentSort;
+        if (searchInput) searchInput.value = q;
+        updateClearBtnVisibility();
+        updateTabActiveState(currentSort);
+        fetchQuotes({ page: page, pushState: false });
+    });
+})();
+</script>
+}

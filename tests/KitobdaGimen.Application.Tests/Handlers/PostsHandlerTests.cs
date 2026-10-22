@@ -128,6 +128,29 @@ public class PostsHandlerTests : TestBase
     }
 
     [Fact]
+    public async Task ToggleLike_syncs_telegram_group_likes()
+    {
+        using var db = CreateContext();
+        var (author, book) = await SeedAuthorAndBookAsync(db, userId: 1);
+        db.Posts.Add(new Post { Id = 1, UserId = author.Id, BookId = book.Id, Slug = "s" + System.Guid.NewGuid().ToString("N")[..8], ReviewText = "r", CreatedAt = DateTime.UtcNow });
+        db.Users.Add(new User { Id = 2, GoogleId = "g-2", Email = "u2@e.com", FullName = "User 2", CreatedAt = DateTime.UtcNow });
+        await db.SaveChangesAsync();
+
+        var tgFake = new FakeTelegramBotService();
+        var handler = new ToggleLikeCommandHandler(db, new FakeCurrentUserService(userId: 2), new SpyNotificationService(), tgFake);
+
+        var liked = await handler.Handle(new ToggleLikeCommand(1), CancellationToken.None);
+        Assert.True(liked.IsLiked);
+        Assert.Single(tgFake.SyncedPostLikes);
+        Assert.Equal((1, 1), tgFake.SyncedPostLikes[0]);
+
+        var unliked = await handler.Handle(new ToggleLikeCommand(1), CancellationToken.None);
+        Assert.False(unliked.IsLiked);
+        Assert.Equal(2, tgFake.SyncedPostLikes.Count);
+        Assert.Equal((1, 0), tgFake.SyncedPostLikes[1]);
+    }
+
+    [Fact]
     public async Task ToggleLike_throws_when_post_missing()
     {
         using var db = CreateContext();

@@ -41,7 +41,7 @@ internal static class MessageQueryableExtensions
                     : m.ReplyToMessage.ImageUrl != null ? "📷 Rasm"
                     : m.ReplyToMessage.VoiceUrl != null ? "🎤 Ovozli xabar"
                     : m.ReplyToMessage.StickerKey != null ? "Stiker"
-                    : m.ReplyToMessage.SharedPostId != null ? "📚 Post"
+                    : m.ReplyToMessage.SharedPostId != null ? "📚 Taqriz"
                     : ""),
             SharedPost = m.SharedPost == null
                 ? null

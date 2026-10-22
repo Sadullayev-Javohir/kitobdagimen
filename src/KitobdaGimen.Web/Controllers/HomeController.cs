@@ -15,8 +15,7 @@ public class HomeController : AppController
         _logger = logger;
     }
 
-    /// <summary>Landing page for anonymous users; authenticated users go straight to the feed.
-    /// Mobile visitors get the lightweight login page instead of the marketing landing.</summary>
+    /// <summary>Landing page for anonymous users; authenticated users go straight to the feed.</summary>
     public async Task<IActionResult> Index()
     {
         try
@@ -29,11 +28,6 @@ public class HomeController : AppController
                 return RedirectToAction("Index", "Feed");
             }
 
-            if (IsMobile())
-            {
-                return RedirectToAction(nameof(Login));
-            }
-
             await LoadLandingStatsAsync();
             return View();
         }
@@ -44,16 +38,14 @@ public class HomeController : AppController
         }
     }
 
-    /// <summary>Renders the marketing landing page on desktop; mobile is redirected to login/feed.</summary>
+    /// <summary>Renders the marketing landing page.</summary>
     public async Task<IActionResult> Landing()
     {
         try
         {
-            if (IsMobile())
+            if (IsAuthenticatedUser)
             {
-                return IsAuthenticatedUser
-                    ? RedirectToAction("Index", "Feed")
-                    : RedirectToAction(nameof(Login));
+                return RedirectToAction("Index", "Feed");
             }
 
             await LoadLandingStatsAsync();

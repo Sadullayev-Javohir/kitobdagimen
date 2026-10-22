@@ -40,6 +40,9 @@ public class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQuery, IRe
                 Role = u.Role,
                 CreatedAt = u.CreatedAt,
                 LastSeenAt = u.LastSeenAt,
+                IsTelegramUser = u.GoogleId.StartsWith("tg:"),
+                IsBotBlocked = u.IsBotBlocked,
+                BotBlockedAt = u.BotBlockedAt,
                 PostCount = u.Posts.Count,
                 QuoteCount = u.Quotes.Count
             })

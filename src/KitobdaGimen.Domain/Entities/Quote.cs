@@ -20,7 +20,12 @@ public class Quote : BaseEntity
     public string Slug { get; set; } = null!;
 
     public string Text { get; set; } = null!;
+    public string? ImageUrl { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>KitobdagiMen Telegram guruhiga yuborilgan xabar IDsi (o'chirilganda guruhdan ham o'chirish uchun).</summary>
+    public long? TelegramChatId { get; set; }
+    public int? TelegramMessageId { get; set; }
 
     // Navigation
     public ICollection<SavedQuote> SavedBy { get; set; } = new List<SavedQuote>();

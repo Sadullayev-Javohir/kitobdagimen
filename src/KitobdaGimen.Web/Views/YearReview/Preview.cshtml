@@ -1,23 +1,53 @@
 @using KitobdaGimen.Application.Features.YearReview.Dtos
 @model KitobdaGimen.Web.Models.YearReviewPageViewModel
 @{
+    ViewData["Title"] = $"{Model.Review.Year}-yil Yakuniy Hisoboti — Oldindan Ko'rish";
     ViewData["ShareUrl"] = Model.ShareUrl;
 }
 
 <link rel="stylesheet" href="/css/year-review.css" asp-append-version="true" />
 
-<div class="yr-page">
+<div class="yr-page yr-preview-page">
     <div class="yr-page-inner">
-        <div class="yr-preview-banner">
-            <span class="material-symbols-outlined">science</span>
-            <div>
-                <strong>Sinov rejimi (oldindan ko'rish)</strong>
-                <p>Bu kartochka foydalanuvchilarga 20-dekabrdan 1-yanvargacha har kirishda avtomatik
-                    ko'rsatiladi. Bu yerda uni sanaga qaramay sinab ko'rishingiz mumkin —
-                    quyida yuklab olish va ulashishni ham tekshiring.</p>
+
+        @* ── Admin Preview Header / Toolbar ── *@
+        <div class="yr-preview-nav">
+            <a href="/admin/year-review" class="yr-preview-back">
+                <span class="material-symbols-outlined">arrow_back</span>
+                <span>Admin panel</span>
+            </a>
+            <div class="yr-preview-meta-badge">
+                <span class="yr-pulse-dot"></span>
+                <span>Sinov rejimi (Admin)</span>
             </div>
         </div>
 
-        @await Html.PartialAsync("_YearReviewCard", Model.Review)
+        <div class="yr-preview-banner">
+            <div class="yr-preview-banner-icon">
+                <span class="material-symbols-outlined">analytics</span>
+            </div>
+            <div class="yr-preview-banner-content">
+                <h1 class="yr-preview-banner-title">@Model.Review.Year-yilgi kitob yakuni hisoboti</h1>
+                <p class="yr-preview-banner-desc">
+                    Ushbu sahifada loyihaning yangi dizayn tizimiga moslashtirilgan yillik hisobot kartochkasi ko'rsatilgan.
+                    Kartochkani to'g'ridan-to'g'ri quyidagi tugmalar orqali <strong>PNG (HD)</strong> va <strong>JPG</strong> formatlarida yuklab olishingiz mumkin.
+                </p>
+                <div class="yr-preview-chips">
+                    <span class="yr-chip"><span class="material-symbols-outlined">check_circle</span> PNG yuklab olish (HD)</span>
+                    <span class="yr-chip"><span class="material-symbols-outlined">check_circle</span> JPG yuklab olish</span>
+                    <span class="yr-chip"><span class="material-symbols-outlined">palette</span> KitobdaGimen SaaS dizayni</span>
+                </div>
+            </div>
+        </div>
+
+        @* ── Kartochka ── *@
+        <div class="yr-preview-card-wrap">
+            @await Html.PartialAsync("_YearReviewCard", Model.Review)
+        </div>
+
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/year-review.js" asp-append-version="true"></script>
+}

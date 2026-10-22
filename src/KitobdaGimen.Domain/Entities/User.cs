@@ -21,6 +21,12 @@ public class User : BaseEntity
     /// <summary>Last time the user was seen online. Updated on SignalR disconnect; null if never connected.</summary>
     public DateTime? LastSeenAt { get; set; }
 
+    /// <summary>Whether the user has stopped/blocked the Telegram bot.</summary>
+    public bool IsBotBlocked { get; set; }
+
+    /// <summary>Timestamp when the user blocked the Telegram bot.</summary>
+    public DateTime? BotBlockedAt { get; set; }
+
     // Navigation
     public ICollection<UserGenre> UserGenres { get; set; } = new List<UserGenre>();
     public ICollection<Post> Posts { get; set; } = new List<Post>();

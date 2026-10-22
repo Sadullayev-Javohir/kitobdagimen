@@ -1,4 +1,4 @@
-/* ===== Almashish (jismoniy kitoblar) sahifasi ===== */
+/* ===== Almashish (jismoniy kitoblar) sahifasi — Modern Minimalist SaaS ===== */
 
 .pb-page {
     padding-top: 24px;
@@ -22,22 +22,25 @@
 .pb-add-panel {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-xs);
+    padding: 22px;
     margin-bottom: 32px;
 }
 
 .pb-field-label {
     display: block;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 13.5px;
+    color: var(--text);
 }
 
 .pb-suggestions {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
     margin-top: 8px;
     max-height: 280px;
     overflow-y: auto;
@@ -69,16 +72,16 @@
 
 .pb-cover-preview {
     width: 72px;
-    height: 100px;
+    height: 102px;
     flex: 0 0 auto;
-    border: 1px dashed var(--border);
-    border-radius: 8px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-xs);
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: var(--surface-hover, rgba(0, 0, 0, 0.03));
-    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    color: var(--text-muted);
 }
 
 .pb-cover-preview img {
@@ -95,7 +98,7 @@
 }
 
 .pb-suggestion {
-    padding: 12px 16px;
+    padding: 11px 16px;
     cursor: pointer;
     border-bottom: 1px solid var(--border);
     transition: background 0.15s;
@@ -106,19 +109,18 @@
 }
 
 .pb-suggestion:hover {
-    background: var(--surface-hover);
+    background: var(--bg-subtle);
 }
 
-/* asaxiy.uz natijalari (Feed pikeri bilan bir xil ko'rinish) — muqova kichik ikonka
-   o'lchamida bo'lishi kerak, aks holda rasm to'liq o'lchamda juda katta chiqadi. */
 .pb-suggestions .book-suggest__src {
     padding: 6px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     cursor: default;
+    background: var(--bg-subtle);
     border-top: 1px solid var(--border);
 }
 
@@ -137,16 +139,16 @@
 }
 
 .pb-suggestions .book-suggest__asaxiy:hover {
-    background: var(--surface-hover);
+    background: var(--bg-subtle);
 }
 
 .pb-suggestions .book-suggest__asaxiy img {
     width: 32px;
     height: 44px;
     object-fit: cover;
-    border-radius: 3px;
+    border-radius: 4px;
     flex: 0 0 auto;
-    background: var(--primary-soft);
+    background: var(--bg-subtle);
 }
 
 .pb-suggestions .book-suggest__asaxiy span {
@@ -159,15 +161,13 @@
     gap: 10px;
     background: var(--primary-soft);
     color: var(--primary);
-    border-radius: 8px;
-    padding: 12px 16px;
+    border: 1px solid var(--primary-border);
+    border-radius: var(--radius-sm);
+    padding: 11px 16px;
     margin-top: 12px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
-/* [hidden] atributi display: flex ni yenga olmaydi — kitob tanlanmaguncha
-   yashil "tanlangan kitob" yorlig'i ko'rinmasligi uchun aniq yashiramiz
-   (Feed'dagi .composer-selected[hidden] bilan bir xil). */
 .pb-selected[hidden] {
     display: none;
 }
@@ -196,8 +196,9 @@
 .pb-manual-toggle {
     background: none;
     border: none;
-    color: var(--accent);
-    font-size: 14px;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 13.5px;
     cursor: pointer;
     padding: 12px 0;
     text-decoration: underline;
@@ -218,13 +219,14 @@
 
 /* Bo'limlar */
 .pb-section {
-    margin-top: 40px;
+    margin-top: 36px;
 }
 
 .pb-section-title {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 16px;
+    font-size: 17.5px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    color: var(--text);
 }
 
 .pb-section-head {
@@ -244,36 +246,40 @@
 .pb-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 18px;
 }
 
 .pb-empty {
     text-align: center;
     color: var(--text-secondary);
     padding: 40px 20px;
-    font-size: 15px;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
 }
 
 /* Kitob kartochkasi */
 .pb-card {
     background: var(--surface);
-    border: 1px solid var(--relief-border, var(--border));
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: var(--card-top-light, inset 0 1px 0 rgba(255,255,255,.10)), var(--card-shadow, 0 6px 0 rgba(0,0,0,.38), 0 10px 24px rgba(0,0,0,.30));
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .pb-card:hover {
     transform: translateY(-3px);
-    box-shadow: var(--card-top-light, inset 0 1px 0 rgba(255,255,255,.10)), var(--card-shadow-hover, 0 8px 0 rgba(0,0,0,.40), 0 14px 32px rgba(0,0,0,.40));
-    border-color: rgba(255,255,255,.20);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
 }
 
 .pb-cover {
     position: relative;
     aspect-ratio: 2 / 3;
-    background: linear-gradient(135deg, rgba(92,194,160,0.12), rgba(240,130,78,0.12));
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -286,8 +292,8 @@
 }
 
 .pb-cover-ph {
-    font-size: 48px;
-    color: var(--text-secondary);
+    font-size: 44px;
+    color: var(--text-muted);
 }
 
 .pb-badge {
@@ -297,37 +303,39 @@
     background: var(--surface);
     color: var(--text);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 700;
     padding: 4px 10px;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     text-transform: uppercase;
-    letter-spacing: 0.3px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.03em;
+    box-shadow: var(--shadow);
 }
 
 .pb-badge--free {
-    background: #4caf50;
-    color: white;
+    background: #16A34A;
+    color: #FFFFFF;
 }
 
 .pb-badge--reserved {
-    background: #ff9800;
-    color: white;
+    background: #D97706;
+    color: #FFFFFF;
 }
 
 .pb-badge--reading {
-    background: #2196f3;
-    color: white;
+    background: #2563EB;
+    color: #FFFFFF;
 }
 
 .pb-body {
-    padding: 14px;
+    padding: 15px;
 }
 
 .pb-title {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0 0 6px 0;
+    font-family: var(--serif);
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 4px 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -358,7 +366,6 @@
     color: var(--text-secondary);
 }
 
-/* Foydalanuvchi havolasi (egasi / band qilgan / o'qiyotgan) */
 .pb-user-link {
     color: var(--primary);
     font-weight: 600;
@@ -369,15 +376,14 @@
     text-decoration: underline;
 }
 
-/* 24 soatlik teskari sanoq */
 .pb-countdown {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 600;
     margin: -4px 0 12px;
-    color: #ff9800;
+    color: var(--warning);
 }
 
 .pb-countdown .material-symbols-outlined {
@@ -385,11 +391,11 @@
 }
 
 .pb-countdown--soon {
-    color: #e53935;
+    color: var(--danger);
 }
 
 .pb-countdown--over {
-    color: var(--text-secondary);
+    color: var(--text-muted);
     font-weight: 500;
 }
 
@@ -399,11 +405,14 @@
     gap: 8px;
 }
 
-/* Mobil moslashuv */
 @media (max-width: 640px) {
+    .pb-section-title {
+        font-size: 15.5px;
+    }
+
     .pb-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 16px;
+        gap: 14px;
     }
 
     .pb-section-head {

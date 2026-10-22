@@ -1,4 +1,5 @@
 @using KitobdaGimen.Application.Features.Admin.Dtos
+@using KitobdaGimen.Application.Common.Interfaces
 @using KitobdaGimen.Domain.Enums
 @model IReadOnlyList<AdminUserDto>
 @{
@@ -6,6 +7,8 @@
     ViewData["Robots"] = "noindex, nofollow";
     var myRole = (UserRole)(ViewData["MyRole"] ?? UserRole.User);
     var isSuper = myRole == UserRole.SuperAdmin;
+    var botStats = ViewData["BotStats"] as TelegramBotUserStatsDto;
+    var currentFilter = (ViewData["Filter"] as string) ?? "all";
 
     string RoleLabel(UserRole r) => r switch
     {
@@ -27,8 +30,41 @@
             <span class="material-symbols-outlined ic-sm">arrow_back</span>
             Admin panel
         </a>
-        <h1>Foydalanuvchilar</h1>
-        <p class="muted">Jami @Model.Count foydalanuvchi.</p>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h1>Foydalanuvchilar</h1>
+                <p class="muted">Ko'rsatilmoqda: @Model.Count nafar foydalanuvchi @(botStats != null ? $"(Jami: {botStats.TotalUsers} ta, Bot: {botStats.TelegramUsers} ta, Bloklagan: {botStats.BlockedBotUsers} ta)" : "").</p>
+            </div>
+            <form method="post" action="/admin/sync-bot-blocked" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline btn-sm" title="Barcha Telegram foydalanuvchilarining blok holatini qaytadan tekshiradi">
+                    <span class="material-symbols-outlined ic-sm">sync</span>
+                    Bot bloklarini tekshirish
+                </button>
+            </form>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string msg)
+        {
+            <div style="margin-top:12px; padding:10px 14px; background:rgba(34, 197, 94, 0.15); border:1px solid rgba(34, 197, 94, 0.3); border-radius:8px; font-size:14px; color:#15803d;">
+                ✅ @msg
+            </div>
+        }
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">
+            <a href="/admin/allusers" class="btn btn-sm @(currentFilter == "all" ? "btn-primary" : "btn-outline")">
+                Barchasi @(botStats != null ? $"({botStats.TotalUsers})" : "")
+            </a>
+            <a href="/admin/allusers?filter=active-bot" class="btn btn-sm @(currentFilter == "active-bot" ? "btn-primary" : "btn-outline")">
+                🟢 Faol bot a'zolari @(botStats != null ? $"({botStats.ActiveBotUsers})" : "")
+            </a>
+            <a href="/admin/allusers?filter=blocked-bot" class="btn btn-sm @(currentFilter == "blocked-bot" ? "btn-danger" : "btn-outline")" style="@(currentFilter != "blocked-bot" ? "color:#ef4444; border-color:rgba(239,68,68,0.3);" : "")">
+                🚫 Botni bloklaganlar @(botStats != null ? $"({botStats.BlockedBotUsers})" : "")
+            </a>
+            <a href="/admin/allusers?filter=web-only" class="btn btn-sm @(currentFilter == "web-only" ? "btn-primary" : "btn-outline")">
+                🌐 Faqat sayt @(botStats != null ? $"({botStats.WebsiteOnlyUsers})" : "")
+            </a>
+        </div>
     </div>
 
     <div class="card admin-card">
@@ -37,10 +73,11 @@
                 <thead>
                     <tr>
                         <th>Foydalanuvchi</th>
+                        <th>Bot holati</th>
                         <th>Rol</th>
                         <th>Ro'yxatdan o'tgan</th>
-                        <th>Oxirgi kirgan</th>
-                        <th>Post / Iqtibos</th>
+                        <th>Oxirgi faollik</th>
+                        <th>Taqriz / Iqtibos</th>
                         <th>Amallar</th>
                     </tr>
                 </thead>
@@ -63,6 +100,38 @@
                                         <span class="muted">@u.Email</span>
                                     </div>
                                 </div>
+                            </td>
+                            <td>
+                                @if (u.IsTelegramUser)
+                                {
+                                    if (u.IsBotBlocked)
+                                    {
+                                        <div style="display:flex; flex-direction:column; gap:2px;">
+                                            <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:10px; background:#fee2e2; color:#b91c1c; font-weight:600; width:fit-content;">
+                                                <span class="material-symbols-outlined" style="font-size:13px;">block</span>
+                                                Bloklagan
+                                            </span>
+                                            @if (u.BotBlockedAt.HasValue)
+                                            {
+                                                <span class="muted" style="font-size:11px;">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.BotBlockedAt)</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:10px; background:#dcfce7; color:#15803d; font-weight:600; width:fit-content;">
+                                            <span class="material-symbols-outlined" style="font-size:13px;">smart_toy</span>
+                                            Bot faol
+                                        </span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:2px 8px; border-radius:10px; background:#f1f5f9; color:#475569; font-weight:600; width:fit-content;">
+                                        <span class="material-symbols-outlined" style="font-size:13px;">language</span>
+                                        Sayt
+                                    </span>
+                                }
                             </td>
                             <td><span class="role-badge @RoleClass(u.Role)">@RoleLabel(u.Role)</span></td>
                             <td class="admin-time">@KitobdaGimen.Web.ViewHelpers.ExactLocal(u.CreatedAt)</td>
@@ -96,6 +165,10 @@
                                     </div>
                                 }
                                 else if (u.Role == UserRole.SuperAdmin)
+                                {
+                                    <span class="muted">—</span>
+                                }
+                                else
                                 {
                                     <span class="muted">—</span>
                                 }

@@ -7,11 +7,9 @@ using KitobdaGimen.Application.Features.Profile.Queries.CheckUsername;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserByUsername;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserPosts;
 using KitobdaGimen.Application.Features.Profile.Queries.GetUserProfile;
-using KitobdaGimen.Application.Features.Quotes.Queries.GetSavedQuotes;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetUserQuotes;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetActiveReadingGoals;
 using KitobdaGimen.Application.Features.ReadingGoals.Queries.GetFinishedReadingGoals;
-using KitobdaGimen.Application.Features.Stories.Queries.GetUserStoryHistory;
 using KitobdaGimen.Infrastructure.Identity;
 using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -62,7 +60,6 @@ public class ProfileController : AppController
         var posts = await Mediator.Send(new GetUserPostsQuery { UserId = userId, Page = page });
         var finishedBooks = await Mediator.Send(new GetFinishedReadingGoalsQuery(userId));
         var activeBooks = await Mediator.Send(new GetActiveReadingGoalsQuery(userId));
-        var stories = await Mediator.Send(new GetUserStoryHistoryQuery(userId));
 
         // The viewed user's quotes are public — shown to everyone in the "Iqtiboslar" tab
         // (the delete control stays owner-only in the view).
@@ -70,21 +67,13 @@ public class ProfileController : AppController
         var challengeWins = await Mediator.Send(
             new KitobdaGimen.Application.Features.Challenge.Queries.GetUserChallengeWins.GetUserChallengeWinsQuery(userId));
 
-        // Saved quotes are viewer-private (a personal bookmark list) — only ever loaded on the
-        // viewer's own /profile, never on someone else's.
-        var savedQuotes = profile.IsCurrentUser
-            ? (await Mediator.Send(new GetSavedQuotesQuery { PageSize = 50 })).Items
-            : Array.Empty<KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDto>();
-
         return View(new ProfilePageViewModel
         {
             Profile = profile,
             Posts = posts,
             FinishedBooks = finishedBooks,
             CurrentBooks = activeBooks,
-            Stories = stories,
             MyQuotes = quotes,
-            SavedQuotes = savedQuotes,
             ChallengeWins = challengeWins
         });
     }
@@ -235,12 +224,26 @@ public class ProfileController : AppController
         return Json(result);
     }
 
+    [HttpGet("followers")]
+    public Task<IActionResult> MyFollowers(int page = 1)
+    {
+        return Followers(CurrentUserId!.Value, page);
+    }
+
     [HttpGet("{id:int}/followers")]
     public async Task<IActionResult> Followers(int id, int page = 1)
     {
         var followers = await Mediator.Send(new GetFollowersQuery { UserId = id, Page = page });
         ViewData["Title"] = "Kuzatuvchilar";
+        ViewData["TargetUserId"] = id;
+        ViewData["ActiveTab"] = "followers";
         return View("FollowList", followers);
+    }
+
+    [HttpGet("following")]
+    public Task<IActionResult> MyFollowing(int page = 1)
+    {
+        return Following(CurrentUserId!.Value, page);
     }
 
     [HttpGet("{id:int}/following")]
@@ -248,6 +251,8 @@ public class ProfileController : AppController
     {
         var following = await Mediator.Send(new GetFollowingQuery { UserId = id, Page = page });
         ViewData["Title"] = "Kuzatilayotganlar";
+        ViewData["TargetUserId"] = id;
+        ViewData["ActiveTab"] = "following";
         return View("FollowList", following);
     }
 }

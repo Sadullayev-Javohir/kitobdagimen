@@ -1,6 +1,5 @@
 @using KitobdaGimen.Application.Common.Interfaces
 @using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser
-@using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl
 @using MediatR
 @inject ICurrentUserService CurrentUser
 @inject ISender Mediator
@@ -12,46 +11,29 @@
         me = await Mediator.Send(new GetCurrentUserQuery());
     }
 
-    // Fon video — super admin /admin panelidan yuklagan bo'lsa o'sha, aks holda standart video.
-    // Barcha sahifalarda (landing ham) bir xil ko'rinishi uchun shu umumiy layoutda hisoblanadi.
-    var bgVideoUrl = await Mediator.Send(new GetBackgroundVideoUrlQuery());
-    if (string.IsNullOrWhiteSpace(bgVideoUrl))
-    {
-        bgVideoUrl = "/videos/book.mp4";
-    }
-    var bgVideoType = System.IO.Path.GetExtension(bgVideoUrl).ToLowerInvariant() switch
-    {
-        ".webm" => "video/webm",
-        ".ogv" or ".ogg" => "video/ogg",
-        ".mov" => "video/quicktime",
-        ".mkv" => "video/x-matroska",
-        ".avi" => "video/x-msvideo",
-        _ => "video/mp4"
-    };
     var initial = string.IsNullOrEmpty(me?.FullName) ? "?" : me!.FullName.Trim()[..1].ToUpper();
     var hideChrome = ViewData["HideChrome"] as bool? ?? false;
     var currentController = ViewContext.RouteData.Values["controller"] as string ?? "";
-    var isChatPage = string.Equals(currentController, "Chat", StringComparison.OrdinalIgnoreCase);
     // Mobil pastki navigatsiya: kirgan foydalanuvchida va chrome ko'rinadigan barcha sahifalarda
-    // (chat sahifasida ham — input pastki nav ustida turadi, balandlik shунга moslashtirilgan).
     var showBottomNav = isAuth && !hideChrome;
     var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
-    // Qidiruv ikoni Feed, Chat, Profil, Kutubxona, Kitoblar, Challenge va post detali sahifalarida ko'rsatilmaydi.
-    // (/feed va /kitoblar da sahifaning o'z qidiruvi bor — navbardagisi ortiqcha.)
-    var hideSearch = isChatPage
+    // Qidiruv ikoni Feed, Profil, Kutubxona, Kitoblar, Challenge, Almashish va post detali sahifalarida ko'rsatilmaydi.
+    var hideSearch = (ViewData["HideSearch"] as bool? ?? false)
         || string.Equals(currentController, "Feed", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Profile", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "ReadingGoals", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Quotes", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Kitob", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Challenge", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase);
+        || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentController, "PhysicalBooks", StringComparison.OrdinalIgnoreCase)
+        || mobilePath.StartsWith("/almashish");
 
-    // --- SEO (Google'da yuqori chiqish uchun) ---
-    // Har bir sahifa ViewData orqali o'z tavsifini/rasmini/robots holatini bera oladi;
-    // berilmasa quyidagi standart qiymatlar ishlatiladi.
+    // --- SEO (Google, Telegram, Facebook, Twitter uchun) ---
     var seoReq = Context.Request;
-    var seoBase = $"{seoReq.Scheme}://{seoReq.Host}";
+    var seoHost = seoReq.Host.HasValue ? seoReq.Host.Value : "kitobdagimen.uz";
+    var seoScheme = seoHost.Contains("localhost") ? seoReq.Scheme : "https";
+    var seoBase = $"{seoScheme}://{seoHost}";
     var seoCanonical = ViewData["Canonical"] as string ?? $"{seoBase}{seoReq.Path}";
     var seoDescription = ViewData["Description"] as string
         ?? "kitobdagimen.uz — o'zbek kitobxonlari uchun ijtimoiy platforma. Kitob taqrizlari yozing, sevimli iqtiboslarni ulashing, o'qish maqsadlari qo'ying va kitobsevarlar bilan tanishing. 100% bepul, o'zbek tilida.";
@@ -60,74 +42,121 @@
     var seoTitle = ViewData["Title"] != null
         ? ViewData["Title"] + " — kitobdagimen.uz"
         : "kitobdagimen.uz — o'zbek kitobxonlari ijtimoiy platformasi";
-    // Maxfiy (auth ortidagi) sahifalar Google indeksiga tushmasin — robots.txt + bu meta birga himoya qiladi.
-    var seoNoindexControllers = new[] { "Feed", "Chat", "Profile", "ReadingGoals", "Quotes", "Onboarding", "Notifications", "Stories", "Books", "Auth", "App", "Challenge" };
+    var seoNoindexControllers = new[] { "Feed", "Profile", "ReadingGoals", "Onboarding", "Notifications", "Stories", "Books", "Auth", "App" };
     var seoRobots = ViewData["Robots"] as string
         ?? (seoNoindexControllers.Contains(currentController, StringComparer.OrdinalIgnoreCase) ? "noindex, follow" : "index, follow, max-image-preview:large");
     var seoJsonLd = ViewData["JsonLd"] as string;
+    var seoJsonLdBreadcrumbs = ViewData["JsonLdBreadcrumbs"] as string;
 }
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" data-theme="light">
 <head>
     <meta charset="utf-8" />
-    @* Chat sahifasida klaviatura ochilganda layout KICHRAYADI (resizes-content, Android Chrome 108+):
-       xabar yozish paneli klaviatura ustida qoladi, suhbatdosh header'i tepada qotib turadi.
-       Boshqa sahifalarda default (resizes-visual) qoladi — pastki nav klaviatura ustiga chiqmaydi. *@
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover@(isChatPage ? ", interactive-widget=resizes-content" : "")" />
-    @* Sayt doim video-glass qorong'u dizaynda — kun/tun almashtirish yo'q *@
-    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-    @* Ko'rinish sozlamalari (navbardagi settings ikonasi orqali boshqariladi, localStorage'da
-       saqlanadi va CSS custom property sifatida barcha sahifalarda global qo'llaniladi). *@
+    <title>@seoTitle</title>
+    <meta name="description" content="@seoDescription" />
+    <meta name="keywords" content="kitob, kitobxonlar, o'zbek kitoblari, kitob taqrizlari, kitob sharhlari, iqtiboslar, o'qish, kutubxona, kitobsevarlar, kitob o'qish, kitobdagimen" />
+    <meta name="author" content="kitobdagimen.uz" />
+    <meta name="robots" content="@seoRobots" />
+    <meta name="googlebot" content="@seoRobots" />
+    <link rel="canonical" href="@seoCanonical" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="google-site-verification" content="google8803ef9cbede5728" />
+    <meta name="yandex-verification" content="a0f87cc1b8524a06" />
+
+    <!-- Open Graph (Telegram, Facebook, WhatsApp) -->
+    <meta property="og:type" content="@seoOgType" />
+    <meta property="og:site_name" content="kitobdagimen.uz" />
+    <meta property="og:locale" content="uz_UZ" />
+    <meta property="og:title" content="@seoTitle" />
+    <meta property="og:description" content="@seoDescription" />
+    <meta property="og:url" content="@seoCanonical" />
+    <meta property="og:image" content="@seoImage" />
+    <meta property="og:image:secure_url" content="@seoImage" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="@seoTitle" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@@KitobdagiMenBot" />
+    <meta name="twitter:title" content="@seoTitle" />
+    <meta name="twitter:description" content="@seoDescription" />
+    <meta name="twitter:image" content="@seoImage" />
+
+    <!-- Favicon & PWA Icons -->
+    <link rel="icon" href="~/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="64x64" href="~/img/favicon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="~/img/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="~/img/icons/icon-512.png" />
+    <link rel="apple-touch-icon" href="~/img/icons/apple-touch-icon.png" />
+
+    @if (!string.IsNullOrEmpty(seoJsonLd))
+    {
+        <script type="application/ld+json">@Html.Raw(seoJsonLd)</script>
+    }
+    @if (!string.IsNullOrEmpty(seoJsonLdBreadcrumbs))
+    {
+        <script type="application/ld+json">@Html.Raw(seoJsonLdBreadcrumbs)</script>
+    }
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    @* Kun va Tun rejimi (Light / Dark mode) — FOUC bo'lmasligi uchun <head> ichida darhol o'rnatiladi *@
     <script>
         (function () {
-            var STORAGE_KEY = 'kg-display-settings';
-            var DEFAULTS = { brightness: 40, cardBlur: 1, cardBg: 50 };
-            function loadSettings() {
+            var STORAGE_KEY = 'kg-theme';
+            function getPreferredTheme() {
                 try {
-                    var raw = localStorage.getItem(STORAGE_KEY);
-                    if (!raw) return Object.assign({}, DEFAULTS);
-                    var p = JSON.parse(raw);
-                    return {
-                        brightness: typeof p.brightness === 'number' ? p.brightness : DEFAULTS.brightness,
-                        cardBlur: typeof p.cardBlur === 'number' ? p.cardBlur : DEFAULTS.cardBlur,
-                        cardBg: typeof p.cardBg === 'number' ? p.cardBg : DEFAULTS.cardBg
-                    };
-                } catch (e) { return Object.assign({}, DEFAULTS); }
+                    var saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved === 'dark' || saved === 'light') return saved;
+                } catch (_) { }
+                return 'light';
             }
-            function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
-            function applySettings(s) {
-                var root = document.documentElement.style;
-                var brightness = clamp(s.brightness, 0, 100);
-                var cardBlur = clamp(s.cardBlur, 0, 1);
-                var cardBg = clamp(s.cardBg, 0, 100);
-                root.setProperty('--gx-overlay-alpha', (1 - brightness / 100).toFixed(3));
-                root.setProperty('--gx-blur-px', (cardBlur * 22).toFixed(1) + 'px');
-                root.setProperty('--gx-card-alpha', ((1 - cardBg / 100) * 0.92).toFixed(3));
+            function applyTheme(theme) {
+                var t = theme === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', t);
+                document.documentElement.classList.toggle('dark', t === 'dark');
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', t === 'dark' ? '#090D16' : '#FFFFFF');
             }
-            window.kgDisplaySettings = {
-                defaults: DEFAULTS,
-                get: loadSettings,
-                save: function (s) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-                    applySettings(s);
+            var initialTheme = getPreferredTheme();
+            applyTheme(initialTheme);
+            window.kgTheme = {
+                get: function () {
+                    return document.documentElement.getAttribute('data-theme') || 'light';
+                },
+                set: function (theme) {
+                    var t = theme === 'dark' ? 'dark' : 'light';
+                    try { localStorage.setItem(STORAGE_KEY, t); } catch (_) { }
+                    applyTheme(t);
+                    document.querySelectorAll('[data-theme-toggle] .theme-icon').forEach(function (ic) {
+                        ic.textContent = t === 'dark' ? 'light_mode' : 'dark_mode';
+                    });
+                },
+                toggle: function () {
+                    var next = this.get() === 'dark' ? 'light' : 'dark';
+                    this.set(next);
+                    return next;
                 }
             };
-            applySettings(loadSettings());
         })();
     </script>
-    @* Rasm xatolarini global hal qilish: (1) Google avatar (lh3.googleusercontent.com) Referer
-       yuborilganda bloklanadi — xato bo'lsa referrerpolicy=no-referrer bilan QAYTA urinamiz;
-       (2) baribir yuklanmasa — avatarni bosh harfga, kitob muqovasini placeholder ikonga almashtiramiz.
-       Capture fazasi kerak, chunki <img> error hodisasi "bubble" qilmaydi. *@
+
+    @* Rasm xatolarini global hal qilish *@
     <script>
         (function () {
             function onImgError(e) {
                 var img = e.target;
                 if (!img || img.tagName !== 'IMG') return;
-                // Chat lightbox rasmi o'zining yuklash/xato holatini boshqaradi — global
-                // "visibility:hidden" fallback unga tegmasligi kerak (aks holda keyingi ochishda
-                // rasm inline visibility:hidden bilan ko'rinmay qoladi).
                 if (img.id === 'chatLightboxImg' || (img.closest && img.closest('.chat-lightbox'))) return;
                 if (!img.dataset.imgRetry) {
                     img.dataset.imgRetry = '1';
@@ -152,49 +181,8 @@
             document.addEventListener('error', onImgError, true);
         })();
     </script>
-    <title>@seoTitle</title>
-    <meta name="description" content="@seoDescription" />
-    <meta name="robots" content="@seoRobots" />
-    <meta name="googlebot" content="@seoRobots" />
-    <link rel="canonical" href="@seoCanonical" />
-    <meta name="theme-color" content="#E8703A" />
-    <meta name="author" content="kitobdagimen.uz" />
-    @* Yandex Webmaster domen tasdiqlash (webmaster.yandex.com) *@
-    <meta name="yandex-verification" content="a0f87cc1b8524a06" />
-    <meta name="keywords" content="kitob, kitobxonlar, o'zbek kitoblari, kitob taqrizlari, kitob sharhlari, iqtiboslar, o'qish, kutubxona, kitobsevarlar, kitob o'qish, kitobdagimen" />
 
-    @* Open Graph — Telegram/Facebook/LinkedInda ulashilganda chiroyli kartochka *@
-    <meta property="og:type" content="@seoOgType" />
-    <meta property="og:site_name" content="kitobdagimen.uz" />
-    <meta property="og:locale" content="uz_UZ" />
-    <meta property="og:title" content="@seoTitle" />
-    <meta property="og:description" content="@seoDescription" />
-    <meta property="og:url" content="@seoCanonical" />
-    <meta property="og:image" content="@seoImage" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-
-    @* Twitter Card *@
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="@seoTitle" />
-    <meta name="twitter:description" content="@seoDescription" />
-    <meta name="twitter:image" content="@seoImage" />
-
-    @if (!string.IsNullOrEmpty(seoJsonLd))
-    {
-        <script type="application/ld+json">@Html.Raw(seoJsonLd)</script>
-    }
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
-    <link rel="icon" href="~/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/png" sizes="64x64" href="~/img/favicon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="~/img/icons/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="~/img/icons/icon-512.png" />
-    <link rel="apple-touch-icon" href="~/img/icons/apple-touch-icon.png" />
-
-    @* PWA — Android (TWA) va telefon "bosh ekranga qo'shish" uchun *@
+    @* PWA *@
     <link rel="manifest" href="~/manifest.webmanifest" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -211,14 +199,7 @@
 <body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
 
-    @* Orqa fon video (kitob mavzusida) — barcha sahifalarda fixed fon. Super admin /admin
-       panelidan boshqa video yuklasa, shu yerda barcha foydalanuvchi va landing uchun almashadi. *@
-    <video class="lp-bg-video" muted loop playsinline preload="auto" autoplay aria-hidden="true" tabindex="-1">
-        <source src="@bgVideoUrl" type="@bgVideoType" />
-    </video>
-    <div class="lp-bg-video-overlay" aria-hidden="true"></div>
-
-    @* Sahifa yuklanish loaderi — barcha resurslar yuklangach JS uni yashiradi *@
+    @* Sahifa yuklanish loaderi *@
     <div class="page-loader" id="pageLoader" role="status" aria-label="Yuklanmoqda">
         <div class="page-loader-box">
             <img class="page-loader-logo" src="~/img/logo.png" alt="" />
@@ -226,115 +207,162 @@
         </div>
     </div>
 
-    @if (isAuth && !hideChrome)
+    @if (!hideChrome)
     {
-        <header class="navbar">
-            <div class="navbar-inner">
-                <a class="brand" href="/Feed">
-                    <img class="brand-logo" src="~/img/logo.png" alt="kitobdagimen.uz logotipi" />
-                    <span class="brand-text">kitobdagimen<span style="color:var(--accent)">.uz</span></span>
-                </a>
+        if (isAuth)
+        {
+            <header class="navbar">
+                <div class="navbar-inner">
+                    <a class="brand" href="/Feed">
+                        <img class="brand-logo" src="~/img/logo.png" alt="kitobdagimen.uz logotipi" />
+                        <span class="brand-text">kitobdagimen<span class="brand-dot">.uz</span></span>
+                    </a>
 
-                <nav class="nav-links" data-nav-links>
-                    <a href="/Feed" title="Tasma" aria-label="Tasma">
-                        <span class="material-symbols-outlined">dynamic_feed</span>
-                    </a>
-                    <a href="/reading-books" title="Kutubxona" aria-label="Kutubxona">
-                        <span class="material-symbols-outlined">menu_book</span>
-                    </a>
-                    <a href="/almashish" title="Almashish" aria-label="Almashish">
-                        <span class="material-symbols-outlined">swap_horiz</span>
-                    </a>
-                    <a href="/challenge" title="Challenge" aria-label="Challenge">
-                        <span class="material-symbols-outlined">military_tech</span>
-                    </a>
-                    <a href="/kitoblar" title="Kitoblar" aria-label="Kitoblar">
-                        <span class="material-symbols-outlined">auto_stories</span>
-                    </a>
-                    <a href="/chat" class="nav-msg-link" title="Xabarlar" aria-label="Xabarlar">
-                        <span class="material-symbols-outlined">forum</span>
-                        <span class="nav-msg-badge" data-msg-badge hidden></span>
-                    </a>
-                </nav>
-
-                <div class="nav-actions">
-                    @if (!hideSearch)
-                    {
-                        <a class="nav-icon-btn desktop-only" href="/kitoblar" title="Qidiruv" aria-label="Qidiruv">
-                            <span class="material-symbols-outlined">search</span>
+                    <nav class="nav-links" data-nav-links>
+                        <a href="/Feed" class="@(mobilePath.StartsWith("/feed") ? "active" : "")" title="Tasma" aria-label="Tasma">
+                            <span class="material-symbols-outlined">dynamic_feed</span>
+                            <span class="nav-link-label">Tasma</span>
                         </a>
-                    }
-                    <div class="notif-wrap" data-notif-wrap>
-                        <button type="button" class="nav-icon-btn notif-bell" data-notif-toggle
-                                title="Bildirishnomalar" aria-label="Bildirishnomalar" aria-expanded="false">
-                            <span class="material-symbols-outlined">notifications</span>
-                            <span class="notif-badge" data-notif-badge hidden></span>
-                        </button>
-                        <div class="notif-panel" data-notif-panel hidden>
-                            <div class="notif-panel-head">
-                                <span>Bildirishnomalar</span>
-                            </div>
-                            <div class="notif-list" data-notif-list>
-                                <p class="notif-empty">Yangi bildirishnoma yo'q.</p>
+                        <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")" title="Kutubxona" aria-label="Kutubxona">
+                            <span class="material-symbols-outlined">menu_book</span>
+                            <span class="nav-link-label">Kutubxona</span>
+                        </a>
+                        <a href="/almashish" class="@(mobilePath.StartsWith("/almashish") ? "active" : "")" title="Almashish" aria-label="Almashish">
+                            <span class="material-symbols-outlined">swap_horiz</span>
+                            <span class="nav-link-label">Almashish</span>
+                        </a>
+                        <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
+                            <span class="material-symbols-outlined">military_tech</span>
+                            <span class="nav-link-label">Challenge</span>
+                        </a>
+                    </nav>
+
+                    <div class="nav-actions">
+                        @if (!hideSearch)
+                        {
+                            <a class="nav-icon-btn desktop-only" href="/kitoblar" title="Qidiruv" aria-label="Qidiruv">
+                                <span class="material-symbols-outlined">search</span>
+                            </a>
+                        }
+                        <div class="notif-wrap" data-notif-wrap>
+                            <button type="button" class="nav-icon-btn notif-bell" data-notif-toggle
+                                    title="Bildirishnomalar" aria-label="Bildirishnomalar" aria-expanded="false">
+                                <span class="material-symbols-outlined">notifications</span>
+                                <span class="notif-badge" data-notif-badge hidden></span>
+                            </button>
+                            <div class="notif-panel" data-notif-panel hidden>
+                                <div class="notif-panel-head">
+                                    <span>Bildirishnomalar</span>
+                                    <button type="button" class="notif-mark-all" data-notif-mark-all hidden>Barchasini o'qish</button>
+                                </div>
+                                <div class="notif-list" data-notif-list>
+                                    <p class="notif-empty">Yangi bildirishnoma yo'q.</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <button type="button" class="nav-icon-btn" id="siteSettingsToggle" title="Ko'rinish sozlamalari" aria-label="Ko'rinish sozlamalari">
-                        <span class="material-symbols-outlined">settings</span>
-                    </button>
-                    @if (me != null && me.Role >= KitobdaGimen.Domain.Enums.UserRole.Admin)
-                    {
-                        <a class="nav-icon-btn" href="/admin" title="Admin panel" aria-label="Admin panel">
-                            <span class="material-symbols-outlined">shield_person</span>
-                        </a>
-                    }
-                    <a href="/profile" title="Profil" aria-label="Profil">
-                        @if (!string.IsNullOrEmpty(me?.AvatarUrl))
-                        {
-                            <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
-                        }
-                        else
-                        {
-                            <span class="avatar">@initial</span>
-                        }
-                    </a>
-                    <form method="post" action="/auth/logout" class="nav-logout-form"
-                          onsubmit="try{window.kitobPush&&window.kitobPush.disable();}catch(e){}">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="nav-icon-btn" title="Chiqish" aria-label="Chiqish">
-                            <span class="material-symbols-outlined">logout</span>
+                        <button type="button" class="nav-icon-btn" data-theme-toggle title="Kun / Tun rejimi" aria-label="Kun / Tun rejimi">
+                            <span class="material-symbols-outlined theme-icon">dark_mode</span>
                         </button>
-                    </form>
-                    <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
-                        <span class="material-symbols-outlined">menu</span>
-                    </button>
+                        @if (me != null && me.Role >= KitobdaGimen.Domain.Enums.UserRole.Admin)
+                        {
+                            <a class="nav-icon-btn" href="/admin" title="Admin panel" aria-label="Admin panel">
+                                <span class="material-symbols-outlined">shield_person</span>
+                            </a>
+                        }
+                        <a href="/profile" class="nav-profile-link" title="Profil" aria-label="Profil">
+                            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                            {
+                                <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@initial</span>
+                            }
+                        </a>
+                        <form method="post" action="/auth/logout" class="nav-logout-form"
+                              onsubmit="try{window.kitobPush&&window.kitobPush.disable();}catch(e){}">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="nav-icon-btn" title="Chiqish" aria-label="Chiqish">
+                                <span class="material-symbols-outlined">logout</span>
+                            </button>
+                        </form>
+                        <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
+                            <span class="material-symbols-outlined">menu</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
+        }
+        else
+        {
+            <header class="navbar navbar-guest">
+                <div class="navbar-inner">
+                    <a class="brand" href="/">
+                        <img class="brand-logo" src="~/img/logo.png" alt="kitobdagimen.uz logotipi" />
+                        <span class="brand-text">kitobdagimen<span class="brand-dot">.uz</span></span>
+                    </a>
+
+                    <nav class="nav-links" data-nav-links>
+                        <a href="/kitoblar" class="@(mobilePath.StartsWith("/kitoblar") ? "active" : "")" title="Kitoblar" aria-label="Kitoblar">
+                            <span class="material-symbols-outlined">menu_book</span>
+                            <span class="nav-link-label">Kitoblar</span>
+                        </a>
+                        <a href="/quotes" class="@(mobilePath.StartsWith("/quotes") || mobilePath.StartsWith("/iqtibos") ? "active" : "")" title="Iqtiboslar" aria-label="Iqtiboslar">
+                            <span class="material-symbols-outlined">format_quote</span>
+                            <span class="nav-link-label">Iqtiboslar</span>
+                        </a>
+                        <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
+                            <span class="material-symbols-outlined">military_tech</span>
+                            <span class="nav-link-label">Challenge</span>
+                        </a>
+                        <a href="/qollanma" class="@(mobilePath.StartsWith("/qollanma") ? "active" : "")" title="Qo'llanma" aria-label="Qo'llanma">
+                            <span class="material-symbols-outlined">help_outline</span>
+                            <span class="nav-link-label">Qo'llanma</span>
+                        </a>
+                    </nav>
+
+                    <div class="nav-actions">
+                        @if (!hideSearch)
+                        {
+                            <a class="nav-icon-btn desktop-only" href="/kitoblar" title="Qidiruv" aria-label="Qidiruv">
+                                <span class="material-symbols-outlined">search</span>
+                            </a>
+                        }
+                        <button type="button" class="nav-icon-btn" data-theme-toggle title="Kun / Tun rejimi" aria-label="Kun / Tun rejimi">
+                            <span class="material-symbols-outlined theme-icon">dark_mode</span>
+                        </button>
+                        <a href="/login" class="btn btn-primary btn-sm guest-login-btn">
+                            <span class="material-symbols-outlined ic-sm">login</span>
+                            <span>Kirish</span>
+                        </a>
+                        <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
+                            <span class="material-symbols-outlined">menu</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+        }
     }
 
-    @* ===== Mobil pastki navigatsiya (faqat telefon/planshet, CSS orqali) ===== *@
+    @* ===== Mobil pastki navigatsiya ===== *@
     @if (showBottomNav)
     {
         <nav class="bottom-nav" aria-label="Asosiy navigatsiya">
             <a href="/Feed" class="@(mobilePath.StartsWith("/feed") ? "active" : "")" title="Tasma" aria-label="Tasma">
                 <span class="material-symbols-outlined">dynamic_feed</span>
+                <span class="bn-label">Tasma</span>
             </a>
             <a href="/reading-books" class="@(mobilePath.StartsWith("/reading-books") ? "active" : "")" title="Kutubxona" aria-label="Kutubxona">
                 <span class="material-symbols-outlined">menu_book</span>
+                <span class="bn-label">Kutubxona</span>
             </a>
             <a href="/almashish" class="@(mobilePath.StartsWith("/almashish") ? "active" : "")" title="Almashish" aria-label="Almashish">
                 <span class="material-symbols-outlined">swap_horiz</span>
+                <span class="bn-label">Almashish</span>
             </a>
             <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
                 <span class="material-symbols-outlined">military_tech</span>
-            </a>
-            <a href="/kitoblar" class="@((mobilePath.StartsWith("/kitoblar") || mobilePath.StartsWith("/kitob/")) ? "active" : "")" title="Kitoblar" aria-label="Kitoblar">
-                <span class="material-symbols-outlined">auto_stories</span>
-            </a>
-            <a href="/chat" class="@(mobilePath.StartsWith("/chat") ? "active" : "")" title="Xabarlar" aria-label="Xabarlar">
-                <span class="material-symbols-outlined">forum</span>
-                <span class="bn-badge" data-msg-badge hidden></span>
+                <span class="bn-label">Challenge</span>
             </a>
         </nav>
     }
@@ -342,6 +370,31 @@
     <main>
         @RenderBody()
     </main>
+
+    @if (!isAuth && !hideChrome)
+    {
+        <footer class="site-public-footer">
+            <div class="spf-inner">
+                <div class="spf-brand">
+                    <a class="brand" href="/">
+                        <img class="brand-logo" src="~/img/logo.png" alt="kitobdagimen.uz logotipi" />
+                        <span class="brand-text">kitobdagimen<span class="brand-dot">.uz</span></span>
+                    </a>
+                    <p class="spf-tagline">O'zbek kitobxonlari uchun mustaqil, bepul ijtimoiy platforma.</p>
+                </div>
+                <div class="spf-links">
+                    <a href="/kitoblar">Kitoblar</a>
+                    <a href="/quotes">Iqtiboslar</a>
+                    <a href="/challenge">Challenge</a>
+                    <a href="/qollanma">Qo'llanma</a>
+                    <a href="https://t.me/KitobdagiMenBot" target="_blank" rel="noopener">Telegram Bot</a>
+                </div>
+                <div class="spf-copy">
+                    &copy; @DateTime.UtcNow.Year kitobdagimen.uz. Barcha huquqlar himoyalangan.
+                </div>
+            </div>
+        </footer>
+    }
 
     <div class="toast-host" id="toastHost" aria-live="polite" aria-atomic="true"></div>
 
@@ -436,99 +489,78 @@
             </div>
         </div>
 
-        <!-- Ko'rinish sozlamalari oynasi -->
-        <div class="modal-overlay" id="siteSettingsModal" hidden>
-            <div class="modal-box" role="dialog" aria-modal="true" aria-label="Ko'rinish sozlamalari">
-                <h3 class="modal-title">Ko'rinish sozlamalari</h3>
-
-                <div class="settings-row">
-                    <label for="settingBrightness">Sayt yorug'ligi <output id="settingBrightnessOut">40%</output></label>
-                    <input type="range" id="settingBrightness" min="0" max="100" step="1" value="40" />
-                </div>
-
-                <div class="settings-row">
-                    <label for="settingCardBlur">Karta xiralashuvi <output id="settingCardBlurOut">1.00</output></label>
-                    <input type="range" id="settingCardBlur" min="0" max="1" step="0.05" value="1" />
-                </div>
-
-                <div class="settings-row">
-                    <label for="settingCardBg">Fon yorug'ligi <output id="settingCardBgOut">50%</output></label>
-                    <input type="range" id="settingCardBg" min="0" max="100" step="1" value="50" />
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-ghost" id="siteSettingsReset">Standart holat</button>
-                    <button type="button" class="btn btn-primary" data-settings-close>Yopish</button>
-                </div>
-            </div>
-        </div>
-
         <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     }
-    @if (isAuth)
-    {
-        <script>
-        // --- Ko'rinish sozlamalari: navbardagi settings ikonasi butun saytda ishlaydi ---
+
+    <script>
         (function () {
-            const toggle = document.getElementById("siteSettingsToggle");
-            const modal = document.getElementById("siteSettingsModal");
-            if (!toggle || !modal || !window.kgDisplaySettings) return;
-
-            const brightness = document.getElementById("settingBrightness");
-            const brightnessOut = document.getElementById("settingBrightnessOut");
-            const cardBlur = document.getElementById("settingCardBlur");
-            const cardBlurOut = document.getElementById("settingCardBlurOut");
-            const cardBg = document.getElementById("settingCardBg");
-            const cardBgOut = document.getElementById("settingCardBgOut");
-
-            function syncInputs() {
-                const s = kgDisplaySettings.get();
-                brightness.value = s.brightness;
-                brightnessOut.textContent = s.brightness + "%";
-                cardBlur.value = s.cardBlur;
-                cardBlurOut.textContent = Number(s.cardBlur).toFixed(2);
-                cardBg.value = s.cardBg;
-                cardBgOut.textContent = s.cardBg + "%";
-            }
-
-            function onChange() {
-                brightnessOut.textContent = brightness.value + "%";
-                cardBlurOut.textContent = parseFloat(cardBlur.value).toFixed(2);
-                cardBgOut.textContent = cardBg.value + "%";
-                kgDisplaySettings.save({
-                    brightness: parseInt(brightness.value, 10),
-                    cardBlur: parseFloat(cardBlur.value),
-                    cardBg: parseInt(cardBg.value, 10)
+            function syncThemeIcons() {
+                if (!window.kgTheme) return;
+                var cur = window.kgTheme.get();
+                document.querySelectorAll('[data-theme-toggle] .theme-icon').forEach(function (ic) {
+                    ic.textContent = cur === 'dark' ? 'light_mode' : 'dark_mode';
                 });
             }
-            [brightness, cardBlur, cardBg].forEach((el) => el.addEventListener("input", onChange));
-
-            document.getElementById("siteSettingsReset").addEventListener("click", () => {
-                kgDisplaySettings.save(Object.assign({}, kgDisplaySettings.defaults));
-                syncInputs();
+            syncThemeIcons();
+            document.addEventListener('click', function (e) {
+                var btn = e.target.closest && e.target.closest('[data-theme-toggle]');
+                if (!btn || !window.kgTheme) return;
+                e.preventDefault();
+                window.kgTheme.toggle();
             });
 
-            function openModal() {
-                syncInputs();
-                modal.hidden = false;
-                document.body.classList.add("modal-open");
+            // Telegram Mini App (WebApp) integratsiyasi: avtomatik expand, tema moslashtirish va parolsiz kirish
+            if (window.Telegram && window.Telegram.WebApp) {
+                var tgApp = window.Telegram.WebApp;
+                try {
+                    tgApp.ready();
+                    tgApp.expand();
+                    document.documentElement.classList.add('is-tg-webapp');
+                    if (tgApp.colorScheme === 'dark' && !localStorage.getItem('kg-theme') && window.kgTheme) {
+                        window.kgTheme.set('dark');
+                    }
+                } catch (_) { }
+
+                var isUserLoggedIn = @(isAuth ? "true" : "false");
+                var startParam = (tgApp.initDataUnsafe && tgApp.initDataUnsafe.start_param) || '';
+                var targetProfileSlug = (startParam.indexOf('profile_') === 0)
+                    ? startParam.substring('profile_'.length).trim()
+                    : null;
+
+                if (!isUserLoggedIn && tgApp.initData && tgApp.initData.length > 10 && !sessionStorage.getItem('kg_tg_autologin_tried')) {
+                    sessionStorage.setItem('kg_tg_autologin_tried', '1');
+                    var formBody = new URLSearchParams();
+                    formBody.set('initData', tgApp.initData);
+                    fetch('/auth/telegram-webapp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: formBody.toString()
+                    })
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (res) {
+                        if (res && res.ok) {
+                            if (targetProfileSlug) {
+                                window.location.href = '/profile/' + encodeURIComponent(targetProfileSlug);
+                            } else {
+                                window.location.href = res.redirectUrl || res.redirect || '/Feed';
+                            }
+                        }
+                    })
+                    .catch(function () { });
+                } else if (targetProfileSlug) {
+                    var targetPath = '/profile/' + encodeURIComponent(targetProfileSlug).toLowerCase();
+                    var currentPath = window.location.pathname.toLowerCase();
+                    if (currentPath !== targetPath && !sessionStorage.getItem('kg_tg_sp_' + targetProfileSlug)) {
+                        sessionStorage.setItem('kg_tg_sp_' + targetProfileSlug, '1');
+                        window.location.href = '/profile/' + encodeURIComponent(targetProfileSlug);
+                    }
+                }
             }
-            function closeModal() {
-                modal.hidden = true;
-                document.body.classList.remove("modal-open");
-            }
-            toggle.addEventListener("click", openModal);
-            modal.querySelectorAll("[data-settings-close]").forEach((el) => el.addEventListener("click", closeModal));
-            modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-            document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
         })();
-        </script>
-    }
+    </script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
-    @* PWA service worker — "bosh ekranga qo'shish"/o'rnatish va Android TWA sifati uchun.
-       Tarmoq-birinchi strategiya: hech qachon eski (stale) sahifani ko'rsatmaydi. *@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {

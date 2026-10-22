@@ -14,12 +14,18 @@ public class ToggleFollowCommandHandler : IRequestHandler<ToggleFollowCommand, F
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
+    private readonly ITelegramBotService _telegramBot;
 
-    public ToggleFollowCommandHandler(IAppDbContext db, ICurrentUserService currentUser, INotificationService notifications)
+    public ToggleFollowCommandHandler(
+        IAppDbContext db,
+        ICurrentUserService currentUser,
+        INotificationService notifications,
+        ITelegramBotService telegramBot)
     {
         _db = db;
         _currentUser = currentUser;
         _notifications = notifications;
+        _telegramBot = telegramBot;
     }
 
     public async Task<FollowResultDto> Handle(ToggleFollowCommand request, CancellationToken cancellationToken)
@@ -79,6 +85,8 @@ public class ToggleFollowCommandHandler : IRequestHandler<ToggleFollowCommand, F
                 Message = $"{actor.FullName} sizni kuzata boshladi",
                 Url = $"/profile/{userId}"
             }, cancellationToken);
+
+            await _telegramBot.NotifyUserFollowedAsync(userId, request.TargetUserId, cancellationToken);
         }
 
         return new FollowResultDto { IsFollowing = isFollowing, FollowerCount = followerCount };

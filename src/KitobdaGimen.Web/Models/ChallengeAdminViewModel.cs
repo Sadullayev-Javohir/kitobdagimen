@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Features.Challenge.Dtos;
 using KitobdaGimen.Domain.Enums;
 
@@ -10,6 +11,8 @@ namespace KitobdaGimen.Web.Models;
 /// </summary>
 public class ChallengeAdminViewModel
 {
+    public ChallengeConfig Config { get; init; } = ChallengeConfigStore.CreateDefault();
+    public string? BookClubGroupId { get; init; }
     /// <summary>Ko'rilayotgan davr — yil.</summary>
     public int Year { get; init; }
 

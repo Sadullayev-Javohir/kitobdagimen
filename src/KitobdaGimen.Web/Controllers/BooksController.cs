@@ -15,12 +15,12 @@ public class BooksController : AppController
 {
     // Allowed cover image types. The file is fully re-encoded to WebP regardless of
     // the original format, so a content-type header alone can't smuggle anything.
-    private static readonly HashSet<string> AllowedImageTypes = new()
+    private static readonly HashSet<string> AllowedImageTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "image/jpeg", "image/png", "image/webp", "image/gif"
+        "image/jpeg", "image/jpg", "image/pjpeg", "image/jfif", "image/png", "image/x-png", "image/webp", "image/gif"
     };
 
-    private const long MaxCoverBytes = 5 * 1024 * 1024; // 5 MB
+    private const long MaxCoverBytes = 10 * 1024 * 1024; // 10 MB
     private const int MaxCoverDimension = 1200;
 
     private readonly IWebHostEnvironment _env;
@@ -114,9 +114,10 @@ public class BooksController : AppController
                 try
                 {
                     await using var ms = new MemoryStream(bytes);
-                    coverUrl = await SaveCoverImageAsync(ms);
+                    var img = await Image.LoadAsync(ms);
+                    coverUrl = await SaveCoverImageAsync(img);
                 }
-                catch (UnknownImageFormatException)
+                catch (Exception)
                 {
                     // asaxiy rasm formatini taniy olmadik — muqovasiz import qilamiz.
                 }
@@ -150,55 +151,79 @@ public class BooksController : AppController
 
         if (file.Length > MaxCoverBytes)
         {
-            return BadRequest(new { message = "Rasm hajmi 5 MB dan oshmasligi kerak." });
+            return BadRequest(new { message = "Rasm hajmi 10 MB dan oshmasligi kerak." });
         }
 
-        if (!AllowedImageTypes.Contains(file.ContentType))
+        // ContentType tekshiruvini yumshatamiz — ba'zi mobil brauzerlar noto'g'ri yoki nostandart MIME type yuboradi.
+        var contentType = file.ContentType?.ToLowerInvariant() ?? "";
+        var isAllowedType = AllowedImageTypes.Contains(contentType);
+        var hasImageExtension = file.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".jfif", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".webp", StringComparison.OrdinalIgnoreCase) == true
+            || file.FileName?.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (!isAllowedType && !hasImageExtension)
         {
             return BadRequest(new { message = "Faqat JPG, PNG, WEBP yoki GIF rasm yuklash mumkin." });
         }
 
+        Image image;
         try
         {
             await using var input = file.OpenReadStream();
-            var url = await SaveCoverImageAsync(input);
+            image = await Image.LoadAsync(input);
+        }
+        catch (Exception ex) when (ex is UnknownImageFormatException or InvalidImageContentException or ImageFormatException)
+        {
+            return BadRequest(new { message = "Fayl rasm formatida emas yoki buzilgan." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Rasmni o'qib bo'lmadi: {ex.Message}" });
+        }
+
+        try
+        {
+            var url = await SaveCoverImageAsync(image);
             return Json(new { url });
         }
-        catch (UnknownImageFormatException)
+        catch (Exception ex)
         {
-            return BadRequest(new { message = "Fayl rasm formatida emas." });
+            return StatusCode(500, new { message = $"Rasmni saqlashda xatolik: {ex.Message}" });
         }
     }
 
     /// <summary>
     /// Dekodes the stream as an image (rejecting non-images / polyglots), downsizes it
-    /// and re-encodes to WebP, returning the saved public URL. Throws
-    /// <see cref="UnknownImageFormatException"/> if the stream isn't a valid image.
+    /// and re-encodes to WebP, returning the saved public URL. Disposes the image.
     /// </summary>
-    private async Task<string> SaveCoverImageAsync(Stream input)
+    private static async Task<string> SaveCoverImageAsync(Image image)
     {
         // Faylni rasm sifatida dekod qilamiz (haqiqiy rasm ekanini tasdiqlaydi) va
         // WebP'ga qayta-kodlaymiz. Shu bilan yuklangan "rasm" ichiga yashiringan
         // HTML/skript (polyglot) butunlay yo'qoladi — content-type'ga ishonmaymiz.
-        using var image = await Image.LoadAsync(input);
-
-        if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
+        using (image)
         {
-            image.Mutate(x => x.Resize(new ResizeOptions
+            if (image.Width > MaxCoverDimension || image.Height > MaxCoverDimension)
             {
-                Mode = ResizeMode.Max,
-                Size = new Size(MaxCoverDimension, MaxCoverDimension)
-            }));
+                image.Mutate(x => x.Resize(new ResizeOptions
+                {
+                    Mode = ResizeMode.Max,
+                    Size = new Size(MaxCoverDimension, MaxCoverDimension)
+                }));
+            }
+
+            var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("covers");
+
+            var fileName = $"{Guid.NewGuid():N}.webp";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 82 });
+
+            return $"/uploads/covers/{fileName}";
         }
-
-        var uploadDir = KitobdaGimen.Web.UploadPaths.Dir("covers");
-
-        var fileName = $"{Guid.NewGuid():N}.webp";
-        var fullPath = Path.Combine(uploadDir, fileName);
-
-        await image.SaveAsWebpAsync(fullPath, new WebpEncoder { Quality = 82 });
-
-        return $"/uploads/covers/{fileName}";
     }
 
     /// <summary>Body of the asaxiy import request.</summary>

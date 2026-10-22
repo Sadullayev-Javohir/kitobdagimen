@@ -1,11 +1,29 @@
 @using KitobdaGimen.Domain.Enums
+@using KitobdaGimen.Application.Common.Interfaces
+@using KitobdaGimen.Application.Features.Admin.Monitoring
 @{
-    ViewData["Title"] = "Admin panel";
+    ViewData["Title"] = "Admin boshqaruv markazi";
     ViewData["Robots"] = "noindex, nofollow";
+
     var myRole = (UserRole)(ViewData["MyRole"] ?? UserRole.User);
     var isSuper = myRole == UserRole.SuperAdmin;
+    var adminName = (string)(ViewData["AdminName"] ?? "Administrator");
+    var adminAvatar = ViewData["AdminAvatar"] as string;
+    var adminInitial = string.IsNullOrWhiteSpace(adminName) ? "A" : adminName.Trim()[..1].ToUpper();
+
     var userCount = (int)(ViewData["UserCount"] ?? 0);
-    var bgVideoUrl = ViewData["BackgroundVideoUrl"] as string;
+    var botStats = ViewData["BotStats"] as TelegramBotUserStatsDto;
+    var totalPosts = (int)(ViewData["TotalPosts"] ?? 0);
+    var totalQuotes = (int)(ViewData["TotalQuotes"] ?? 0);
+    var totalGoals = (int)(ViewData["TotalGoals"] ?? 0);
+    var totalComments = (int)(ViewData["TotalComments"] ?? 0);
+    var totalBooks = (int)(ViewData["TotalBooks"] ?? 0);
+    var serverSnapshot = ViewData["ServerSnapshot"] as ServerSnapshot;
+
+    var isDbUp = serverSnapshot?.Database.Up ?? true;
+    var dbPing = serverSnapshot?.Database.PingMs ?? 0;
+    var isRedisUp = serverSnapshot?.Redis.Up ?? true;
+    var riskCount = serverSnapshot?.Risks.Count(r => r.Severity != RiskLevel.Ok) ?? 0;
 
     string RoleLabel(UserRole r) => r switch
     {
@@ -16,169 +34,297 @@
 }
 
 <div class="container page">
-    <div class="admin-head">
-        <h1>Admin panel</h1>
-        <p class="muted">Jami @userCount foydalanuvchi. Sizning rolingiz: <strong>@RoleLabel(myRole)</strong>.</p>
-        @if (isSuper)
-        {
-            <a href="/admin/analytics" class="btn btn-primary" style="margin-top:10px; display:inline-flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined ic-20">insights</span>
-                Founder analitika (DAU / retention / konversiya)
-            </a>
-        }
-        <a href="/yil-yakuni/preview" target="_blank" class="btn btn-outline" style="margin-top:10px; display:inline-flex; align-items:center; gap:8px">
-            <span class="material-symbols-outlined ic-20">celebration</span>
-            Yillik yakunni hoziroq sinab ko'rish
-        </a>
-    </div>
-
-    @if (isSuper)
-    {
-        <div class="card" style="margin-bottom:18px; padding:18px">
-            <h2 style="margin:0 0 8px 0; font-size:18px; display:flex; align-items:center; gap:8px">
-                <span class="material-symbols-outlined ic-mid">movie</span>
-                Fon video (barcha sahifalar va landing uchun)
-            </h2>
-            <p class="muted" style="font-size:13px; margin:0 0 14px 0; line-height:1.5">
-                Bu yerda yuklagan video <strong>barcha foydalanuvchilarga va landing sahifasiga</strong> fon
-                sifatida qo'llanadi. .mp4, .webm, .mov, .mkv, .ogg, .avi formatlari qabul qilinadi
-                (hajmi 150 MB dan oshmasin).
-            </p>
-
-            <video id="bgVideoPreview" muted loop playsinline autoplay
-                   style="width:100%; max-width:420px; border-radius:12px; border:1px solid var(--border); display:block; margin-bottom:14px">
-                <source id="bgVideoPreviewSource" src="@(bgVideoUrl ?? "/videos/book.mp4")" type="video/mp4" />
-            </video>
-
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap">
-                <label class="btn btn-outline btn-sm" for="bgVideoInput">
-                    <span class="material-symbols-outlined ic-sm ic-baseline">upload</span>
-                    Video tanlash
-                </label>
-                <input type="file" id="bgVideoInput" accept="video/*,.mp4,.webm,.mov,.mkv,.ogg,.ogv,.avi" hidden />
-                <span id="bgVideoFileName" class="muted" style="font-size:13px"></span>
-                <button type="button" id="bgVideoUploadBtn" class="btn btn-primary btn-sm" disabled>
-                    <span class="material-symbols-outlined ic-sm ic-baseline">cloud_upload</span>
-                    Yuklash
-                </button>
+    @* ==================== Modern Admin Hero Header ==================== *@
+    <div class="adm-hero">
+        <div class="adm-hero-top">
+            <div class="adm-profile-row">
+                @if (!string.IsNullOrEmpty(adminAvatar))
+                {
+                    <img src="@adminAvatar" alt="@adminName" class="adm-avatar" />
+                }
+                else
+                {
+                    <div class="adm-avatar">@adminInitial</div>
+                }
+                <div>
+                    <h1 class="adm-user-title">
+                        @adminName
+                        <span class="role-badge @(isSuper ? "role-super" : "role-admin")">
+                            <span class="material-symbols-outlined ic-16">@(isSuper ? "verified_user" : "shield_person")</span>
+                            @RoleLabel(myRole)
+                        </span>
+                    </h1>
+                    <div class="adm-user-subtitle">
+                        <span>Platforma boshqaruv markazi</span>
+                        <span>•</span>
+                        <span class="adm-live-badge">
+                            <span class="adm-pulse"></span>
+                            @(isDbUp ? $"Tizim faol · DB {dbPing:0.#} ms" : "DB aloqasi uzilgan")
+                        </span>
+                        @if (riskCount > 0)
+                        {
+                            <span>•</span>
+                            <a href="/admin/server-status" style="color:var(--danger); font-weight:600; text-decoration:underline;">
+                                @riskCount ta ogohlantirish
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
-            <div id="bgVideoStatus" class="muted" style="font-size:13px; margin-top:10px; min-height:18px"></div>
+
+            <div class="adm-action-bar">
+                @if (isSuper)
+                {
+                    <a href="/admin/analytics" class="btn btn-primary" style="gap:6px">
+                        <span class="material-symbols-outlined ic-20">insights</span>
+                        Founder analitika
+                    </a>
+                }
+                <a href="/admin/allusers" class="btn btn-outline" style="gap:6px">
+                    <span class="material-symbols-outlined ic-20">group</span>
+                    Foydalanuvchilar
+                </a>
+                <a href="/yil-yakuni/preview" target="_blank" rel="noopener" class="btn btn-ghost" style="gap:6px">
+                    <span class="material-symbols-outlined ic-20">celebration</span>
+                    Yillik yakun testi
+                </a>
+            </div>
         </div>
-    }
+    </div>
 
-    <div class="admin-hub-grid">
-        <a class="admin-hub-tile" href="/admin/allusers">
-            <span class="status-icon status-ok"><span class="material-symbols-outlined">group</span></span>
-            <div>
-                <div class="admin-hub-tile-label">Foydalanuvchilar</div>
-                <div class="admin-hub-tile-desc">Ro'yxat, rol va o'chirish</div>
+    @* ==================== Platform Vitals & KPI Grid ==================== *@
+    <div class="adm-metrics-grid">
+        @* Card 1: Users *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Jami Foydalanuvchilar</span>
+                <div class="adm-metric-icon adm-icon-primary">
+                    <span class="material-symbols-outlined">group</span>
+                </div>
             </div>
+            <div class="adm-metric-num">@userCount.ToString("N0")</div>
+            <div class="adm-metric-footer">
+                @if (botStats != null)
+                {
+                    <span class="adm-trend-pill adm-trend-up">
+                        <span class="material-symbols-outlined ic-14">trending_up</span>
+                        +@botStats.TodayNewUsers bugun
+                    </span>
+                    <span class="muted">· +@botStats.WeekNewUsers bu hafta</span>
+                }
+                else
+                {
+                    <span class="muted">Barcha ro'yxatdan o'tganlar</span>
+                }
+            </div>
+        </div>
+
+        @* Card 2: Telegram Bot Integration *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Telegram Bot A'zolari</span>
+                <div class="adm-metric-icon adm-icon-blue">
+                    <span class="material-symbols-outlined">smart_toy</span>
+                </div>
+            </div>
+            <div class="adm-metric-num">
+                @(botStats != null ? botStats.TelegramUsers.ToString("N0") : "—")
+            </div>
+            <div class="adm-metric-footer">
+                @if (botStats != null)
+                {
+                    <span style="color:var(--success); font-weight:600;">@botStats.ActiveBotUsers faol</span>
+                    <span class="muted">· sayt: @botStats.WebsiteOnlyUsers</span>
+                    @if (botStats.BlockedBotUsers > 0)
+                    {
+                        <span style="color:var(--danger); font-weight:600; margin-left:auto;">
+                            (@(botStats.BlockedPercent.ToString("0.#"))% blok)
+                        </span>
+                    }
+                }
+                else
+                {
+                    <span class="muted">Bot integratsiyasi</span>
+                }
+            </div>
+        </div>
+
+        @* Card 3: Content & Engagement *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Kitobxonlik Kontenti</span>
+                <div class="adm-metric-icon adm-icon-accent">
+                    <span class="material-symbols-outlined">menu_book</span>
+                </div>
+            </div>
+            <div class="adm-metric-num">
+                @((totalPosts + totalQuotes).ToString("N0"))
+            </div>
+            <div class="adm-metric-footer">
+                <span><strong>@totalPosts</strong> taqriz</span>
+                <span class="muted">·</span>
+                <span><strong>@totalQuotes</strong> iqtibos</span>
+                <span class="muted">·</span>
+                <span><strong>@totalGoals</strong> maqsad</span>
+            </div>
+        </div>
+
+        @* Card 4: Infrastructure & Health *@
+        <div class="adm-metric-card">
+            <div class="adm-metric-header">
+                <span class="adm-metric-title">Tizim & Server Holati</span>
+                <div class="adm-metric-icon @(riskCount == 0 && isDbUp ? "adm-icon-green" : "adm-icon-warn")">
+                    <span class="material-symbols-outlined">@(riskCount == 0 && isDbUp ? "health_and_safety" : "warning")</span>
+                </div>
+            </div>
+            <div class="adm-metric-num" style="display:flex; align-items:baseline; gap:8px">
+                <span style="color:@(isDbUp ? "var(--success)" : "var(--danger)");">
+                    @(isDbUp ? "Barqaror" : "Xato")
+                </span>
+                <span style="font-size:14px; font-weight:600; color:var(--text-secondary)">
+                    DB: @dbPing.ToString("0.0") ms
+                </span>
+            </div>
+            <div class="adm-metric-footer">
+                <span>Redis: @(isRedisUp ? "Faol" : "O'chiq")</span>
+                <span class="muted">·</span>
+                <span>Kutubxona: <strong>@totalBooks</strong> kitob</span>
+            </div>
+        </div>
+    </div>
+
+    @* ==================== Administrative Hub Grid ==================== *@
+    <div class="adm-section-header">
+        <h2>
+            <span class="material-symbols-outlined ic-22" style="color:var(--primary)">grid_view</span>
+            Boshqaruv modullari
+        </h2>
+        <span class="muted" style="font-size:13px">@(isSuper ? "To'liq superadmin vakolatlari" : "Admin boshqaruvi")</span>
+    </div>
+
+    <div class="adm-hub-grid">
+        @* Users *@
+        <a class="adm-hub-tile" href="/admin/allusers">
+            <div class="adm-tile-icon adm-icon-primary">
+                <span class="material-symbols-outlined">group</span>
+            </div>
+            <div class="adm-tile-body">
+                <div class="adm-tile-label">
+                    Foydalanuvchilar
+                </div>
+                <div class="adm-tile-desc">Ro'yxat, rollarni boshqarish, bot filtri va hisoblar</div>
+            </div>
+            <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
         </a>
 
-        <a class="admin-hub-tile" href="/admin/server-status">
-            <span class="status-icon status-ok"><span class="material-symbols-outlined">monitoring</span></span>
-            <div>
-                <div class="admin-hub-tile-label">Server holati</div>
-                <div class="admin-hub-tile-desc">CPU, DB, Redis, HTTP trafik</div>
+        @* Server Status *@
+        <a class="adm-hub-tile" href="/admin/server-status">
+            <div class="adm-tile-icon adm-icon-blue">
+                <span class="material-symbols-outlined">monitoring</span>
             </div>
+            <div class="adm-tile-body">
+                <div class="adm-tile-label">
+                    Server holati
+                    @if (riskCount > 0)
+                    {
+                        <span class="adm-tile-badge" style="background:var(--danger-soft); color:var(--danger);">@riskCount xavf</span>
+                    }
+                </div>
+                <div class="adm-tile-desc">CPU, DB ulanishlar, Redis kesh, xotira va HTTP trafik</div>
+            </div>
+            <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
         </a>
 
         @if (isSuper)
         {
-            <a class="admin-hub-tile" href="/admin/year-review">
-                <span class="status-icon status-ok"><span class="material-symbols-outlined">campaign</span></span>
-                <div>
-                    <div class="admin-hub-tile-label">Yillik kitob</div>
-                    <div class="admin-hub-tile-desc">Yillik yakunni yuborish</div>
+            @* Analytics *@
+            <a class="adm-hub-tile" href="/admin/analytics">
+                <div class="adm-tile-icon adm-icon-accent">
+                    <span class="material-symbols-outlined">insights</span>
                 </div>
+                <div class="adm-tile-body">
+                    <div class="adm-tile-label">
+                        Founder analitika
+                        <span class="adm-tile-badge adm-tile-badge-super">Super</span>
+                    </div>
+                    <div class="adm-tile-desc">DAU/WAU/MAU, stickiness, haftalik retention va voronka</div>
+                </div>
+                <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
             </a>
 
-            <a class="admin-hub-tile" href="/admin/broadcast">
-                <span class="status-icon status-ok"><span class="material-symbols-outlined">forum</span></span>
-                <div>
-                    <div class="admin-hub-tile-label">Broadcast</div>
-                    <div class="admin-hub-tile-desc">Barchaga xabar yuborish</div>
+            @* Broadcast *@
+            <a class="adm-hub-tile" href="/admin/broadcast">
+                <div class="adm-tile-icon adm-icon-warn">
+                    <span class="material-symbols-outlined">campaign</span>
                 </div>
+                <div class="adm-tile-body">
+                    <div class="adm-tile-label">
+                        Ommaviy xabarnoma (Broadcast)
+                        <span class="adm-tile-badge adm-tile-badge-super">Super</span>
+                    </div>
+                    <div class="adm-tile-desc">Barcha foydalanuvchilar yoki bot a'zolariga e'lon yuborish</div>
+                </div>
+                <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
             </a>
 
-            <a class="admin-hub-tile" href="/admin/settings">
-                <span class="status-icon status-ok"><span class="material-symbols-outlined">settings</span></span>
-                <div>
-                    <div class="admin-hub-tile-label">Tizim sozlamalari</div>
-                    <div class="admin-hub-tile-desc">Kesh, muqovalar, statistika</div>
+            @* Settings *@
+            <a class="adm-hub-tile" href="/admin/settings">
+                <div class="adm-tile-icon" style="background:rgba(100, 116, 139, 0.12); color:#475569;">
+                    <span class="material-symbols-outlined">settings</span>
                 </div>
+                <div class="adm-tile-body">
+                    <div class="adm-tile-label">
+                        Tizim sozlamalari
+                    </div>
+                    <div class="adm-tile-desc">Redis kesh, kitob muqovalarini yangilash, video fon</div>
+                </div>
+                <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
             </a>
 
-            <a class="admin-hub-tile" href="/admin/chat-monitor" target="_blank" rel="noopener">
-                <span class="status-icon status-ok"><span class="material-symbols-outlined">visibility</span></span>
-                <div>
-                    <div class="admin-hub-tile-label">Foydalanuvchilarni kuzatish</div>
-                    <div class="admin-hub-tile-desc">Xabar almashish auditi (yangi oyna)</div>
+            @* Year Review *@
+            <a class="adm-hub-tile" href="/admin/year-review">
+                <div class="adm-tile-icon" style="background:rgba(168, 85, 247, 0.12); color:#9333EA;">
+                    <span class="material-symbols-outlined">celebration</span>
                 </div>
+                <div class="adm-tile-body">
+                    <div class="adm-tile-label">
+                        Yillik kitob yakuni
+                    </div>
+                    <div class="adm-tile-desc">Yillik kitobxonlik hisoboti va nashr kampaniyasi</div>
+                </div>
+                <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
             </a>
         }
+
+        @* Challenge Admin *@
+        <a class="adm-hub-tile" href="/challenge/admin">
+            <div class="adm-tile-icon adm-icon-accent">
+                <span class="material-symbols-outlined">emoji_events</span>
+            </div>
+            <div class="adm-tile-body">
+                <div class="adm-tile-label">
+                    Kitobxonlik Challenge
+                </div>
+                <div class="adm-tile-desc">Haftalik bellashuvlar, g'oliblarni tasdiqlash va sovg'alar</div>
+            </div>
+            <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
+        </a>
     </div>
 
-    <p class="muted admin-note">
-        Postlar va iqtiboslarni o'chirish: tasma (<a href="/feed">/feed</a>) sahifasidagi har bir
-        post yoki iqtibos ustidagi <span class="material-symbols-outlined" style="vertical-align:middle">delete</span>
-        tugmasi orqali (admin va super admin uchun ko'rinadi).
-    </p>
+    @* ==================== Moderator Quick Guidelines ==================== *@
+    <div class="adm-info-card">
+        <div class="adm-info-icon">
+            <span class="material-symbols-outlined ic-22">info</span>
+        </div>
+        <div style="flex:1; min-width:0;">
+            <div style="font-weight:700; font-size:14.5px; color:var(--text); margin-bottom:4px;">
+                Tezkor moderatsiya yo'riqnomasi
+            </div>
+            <div class="muted" style="font-size:13px; line-height:1.5;">
+                Platformadagi noo'rin taqriz va iqtiboslarni to'g'ridan-to'g'ri umumiy tasma (<a href="/feed" style="text-decoration:underline; font-weight:600;">/feed</a>) sahifasidagi post ustida paydo bo'ladigan
+                <span class="material-symbols-outlined ic-16" style="vertical-align:middle; color:var(--danger)">delete</span> <strong>o'chirish</strong> tugmasi orqali bartaraf etishingiz mumkin.
+                Foydalanuvchilarni bloklash yoki rolni o'zgartirish esa <a href="/admin/allusers" style="text-decoration:underline; font-weight:600;">Foydalanuvchilar</a> bo'limida amalga oshiriladi.
+            </div>
+        </div>
+    </div>
 </div>
-
-@section Scripts {
-<script>
-(function () {
-    function token() { var el = document.querySelector('input[name="__RequestVerificationToken"]'); return el ? el.value : ''; }
-
-    var fileInput = document.getElementById("bgVideoInput");
-    var uploadBtn = document.getElementById("bgVideoUploadBtn");
-    var fileNameEl = document.getElementById("bgVideoFileName");
-    var statusEl = document.getElementById("bgVideoStatus");
-    var preview = document.getElementById("bgVideoPreview");
-    var previewSource = document.getElementById("bgVideoPreviewSource");
-    if (!fileInput || !uploadBtn) { return; }
-
-    var extToType = { mp4: "video/mp4", webm: "video/webm", ogg: "video/ogg", ogv: "video/ogg",
-        mov: "video/quicktime", mkv: "video/x-matroska", avi: "video/x-msvideo" };
-
-    fileInput.addEventListener("change", function () {
-        var f = fileInput.files && fileInput.files[0];
-        fileNameEl.textContent = f ? f.name : "";
-        uploadBtn.disabled = !f;
-    });
-
-    uploadBtn.addEventListener("click", async function () {
-        var f = fileInput.files && fileInput.files[0];
-        if (!f) { return; }
-        uploadBtn.disabled = true;
-        statusEl.textContent = "Yuklanmoqda... (video hajmiga qarab biroz vaqt olishi mumkin)";
-        try {
-            var fd = new FormData();
-            fd.append("file", f);
-            var r = await fetch("/admin/background-video/upload", {
-                method: "POST",
-                headers: { "RequestVerificationToken": token(), "X-Requested-With": "XMLHttpRequest" },
-                body: fd
-            });
-            if (!r.ok) { throw new Error("Xatolik (" + r.status + ")"); }
-            var d = await r.json();
-            statusEl.textContent = d.success ? "✓ " + d.message : "✗ " + d.message;
-            if (d.success && d.url) {
-                var ext = (d.url.split(".").pop() || "").toLowerCase();
-                previewSource.src = d.url;
-                previewSource.type = extToType[ext] || "video/mp4";
-                preview.load();
-                preview.play().catch(function () {});
-                fileInput.value = "";
-                fileNameEl.textContent = "";
-            }
-        } catch (e) {
-            statusEl.textContent = "✗ Xato: " + e.message;
-        } finally {
-            uploadBtn.disabled = false;
-        }
-    });
-})();
-</script>
-}

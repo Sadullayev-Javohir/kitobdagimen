@@ -14,12 +14,18 @@ public class ToggleLikeCommandHandler : IRequestHandler<ToggleLikeCommand, LikeR
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
+    private readonly ITelegramBotService? _telegramBot;
 
-    public ToggleLikeCommandHandler(IAppDbContext db, ICurrentUserService currentUser, INotificationService notifications)
+    public ToggleLikeCommandHandler(
+        IAppDbContext db,
+        ICurrentUserService currentUser,
+        INotificationService notifications,
+        ITelegramBotService? telegramBot = null)
     {
         _db = db;
         _currentUser = currentUser;
         _notifications = notifications;
+        _telegramBot = telegramBot;
     }
 
     public async Task<LikeResultDto> Handle(ToggleLikeCommand request, CancellationToken cancellationToken)
@@ -33,7 +39,7 @@ public class ToggleLikeCommandHandler : IRequestHandler<ToggleLikeCommand, LikeR
             .FirstOrDefaultAsync(cancellationToken);
         if (postAuthorId is null)
         {
-            throw new NotFoundException("Post", request.PostId);
+            throw new NotFoundException("Taqriz", request.PostId);
         }
 
         var existing = await _db.Likes
@@ -59,6 +65,9 @@ public class ToggleLikeCommandHandler : IRequestHandler<ToggleLikeCommand, LikeR
         await _db.SaveChangesAsync(cancellationToken);
 
         var likeCount = await _db.Likes.CountAsync(l => l.PostId == request.PostId, cancellationToken);
+
+        // Telegram guruhdagi xabar tugmasidagi like sonini sinxronlashtirish
+        _ = _telegramBot?.SyncPostLikesInGroupAsync(request.PostId, likeCount, CancellationToken.None);
 
         // Notify the post author of a new like (skip un-likes and liking your own post).
         if (isLiked && postAuthorId.Value != userId)

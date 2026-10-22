@@ -71,7 +71,7 @@ public class GetConversationsQueryHandler
                     LastMessageText = c.Messages
                         .Where(m => !m.IsDeleted)
                         .OrderByDescending(m => m.SentAt)
-                        .Select(m => m.Text ?? "📖 Post ulashildi")
+                        .Select(m => m.Text ?? "📖 Taqriz ulashildi")
                         .FirstOrDefault(),
                     LastMessageAt = c.Messages
                         .Where(m => !m.IsDeleted)

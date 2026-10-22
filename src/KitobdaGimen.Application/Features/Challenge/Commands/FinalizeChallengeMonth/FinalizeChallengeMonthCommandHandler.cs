@@ -62,8 +62,10 @@ public class FinalizeChallengeMonthCommandHandler
         }
 
         var announcedAt = DateTime.UtcNow;
+        var customCfg = await ChallengeConfigStore.GetStoredOrNullAsync(_db, cancellationToken);
         foreach (var s in standings)
         {
+            var prize = customCfg?.GetPrize(s.Rank);
             _db.ChallengeWinners.Add(new ChallengeWinner
             {
                 Year = request.Year,
@@ -74,6 +76,10 @@ public class FinalizeChallengeMonthCommandHandler
                 BooksRead = s.BooksRead,
                 ActiveDays = s.ActiveDays,
                 AvgPagesPerDay = s.AvgPagesPerDay,
+                GiftBookTitle = string.IsNullOrWhiteSpace(prize?.Title) ? null : prize.Title,
+                GiftBookAuthor = string.IsNullOrWhiteSpace(prize?.Author) ? null : prize.Author,
+                GiftBookCoverUrl = string.IsNullOrWhiteSpace(prize?.CoverUrl) ? null : prize.CoverUrl,
+                GiftedAt = string.IsNullOrWhiteSpace(prize?.Title) ? null : announcedAt,
                 AnnouncedAt = announcedAt
             });
         }

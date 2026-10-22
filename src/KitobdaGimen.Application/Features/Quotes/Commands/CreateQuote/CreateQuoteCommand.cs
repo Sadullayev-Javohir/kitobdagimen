@@ -8,4 +8,5 @@ public record CreateQuoteCommand : IRequest<QuoteDto>
 {
     public int BookId { get; init; }
     public string Text { get; init; } = null!;
+    public string? ImageUrl { get; init; }
 }

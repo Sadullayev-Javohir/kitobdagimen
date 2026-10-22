@@ -32,10 +32,14 @@ public class PostsController : AppController
     private const int MaxImageDimension = 1600;
 
     private readonly IWebHostEnvironment _env;
+    private readonly KitobdaGimen.Application.Common.Interfaces.ITelegramBotService _telegramBot;
 
-    public PostsController(IWebHostEnvironment env)
+    public PostsController(
+        IWebHostEnvironment env,
+        KitobdaGimen.Application.Common.Interfaces.ITelegramBotService telegramBot)
     {
         _env = env;
+        _telegramBot = telegramBot;
     }
 
     /// <summary>
@@ -93,6 +97,7 @@ public class PostsController : AppController
     public async Task<IActionResult> Create(CreatePostCommand command)
     {
         var post = await Mediator.Send(command);
+        _ = _telegramBot.BroadcastPostToGroupAsync(post.Id, CancellationToken.None);
         return Redirect(ViewHelpers.PostUrl(post.Author.Username, post.Author.Id, post.Slug));
     }
 
@@ -108,10 +113,32 @@ public class PostsController : AppController
     /// <summary>Deletes a post (only the author may do this).</summary>
     [HttpPost("{id:int}/delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, string? returnUrl = null)
     {
         await Mediator.Send(new DeletePostCommand(id));
-        return NoContent();
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+            Request.Headers.Accept.ToString().Contains("application/json"))
+        {
+            return NoContent();
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        var referer = Request.Headers.Referer.ToString();
+        if (!string.IsNullOrWhiteSpace(referer) &&
+            Uri.TryCreate(referer, UriKind.Absolute, out var refUri) &&
+            refUri.Host == Request.Host.Host &&
+            !refUri.AbsolutePath.StartsWith("/posts/" + id, StringComparison.OrdinalIgnoreCase) &&
+            !refUri.AbsolutePath.StartsWith("/post/", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(refUri.PathAndQuery);
+        }
+
+        return Redirect("/Feed");
     }
 
     /// <summary>Uploads a post image, re-encodes it as WebP and returns its public URL (JSON).</summary>

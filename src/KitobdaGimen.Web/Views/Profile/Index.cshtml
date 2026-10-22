@@ -3,6 +3,7 @@
 @using MediatR
 @inject ISender Mediator
 @inject ICurrentUserService CurrentUser
+@inject ITelegramBotService TelegramBot
 @model ProfilePageViewModel
 @{
     var p = Model.Profile;
@@ -78,7 +79,7 @@
             }
             <div class="profile-statbar">
                 <div>
-                    <span class="lbl">Postlar</span>
+                    <span class="lbl">Taqrizlar</span>
                     <span class="num">@p.PostCount</span>
                 </div>
                 @if (isAuth)
@@ -108,11 +109,7 @@
             @if (p.IsCurrentUser)
             {
                 <div class="profile-actions">
-                    <button type="button" class="btn btn-primary btn-sm" data-open-story-composer>
-                        <span class="material-symbols-outlined ic-sm ic-baseline">add_circle</span>
-                        Story qo'shish
-                    </button>
-                    <a class="btn btn-outline btn-sm" href="/profile/edit">Profilni tahrirlash</a>
+                    <a class="btn btn-primary btn-sm" href="/profile/edit">Profilni tahrirlash</a>
                     <button type="button" class="btn btn-outline btn-sm" data-share-profile data-share-url="@shareUrl" title="Profil havolasini nusxalash">
                         <span class="material-symbols-outlined ic-sm ic-baseline">share</span>
                         Ulashish
@@ -129,11 +126,6 @@
                     <button class="btn @(p.IsFollowedByCurrentUser ? "btn-outline" : "btn-accent")" data-follow="@p.Id">
                         @(p.IsFollowedByCurrentUser ? "Kuzatilmoqda" : "Kuzatish")
                     </button>
-                    <form method="post" action="/chat/start" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="otherUserId" value="@p.Id" />
-                        <button type="submit" class="btn btn-outline">Xabar</button>
-                    </form>
                     <button type="button" class="btn btn-outline" data-share-profile data-share-url="@shareUrl" title="Profil havolasini nusxalash">
                         <span class="material-symbols-outlined ic-sm ic-baseline">share</span>
                         Ulashish
@@ -209,23 +201,18 @@
         </style>
     }
 
-    <!-- Tablar + postlar | Hozir o'qiyapti -->
+    <!-- Tablar + taqrizlar | Hozir o'qiyapti -->
     <div class="profile-layout">
         <div class="profile-main">
             <nav class="profile-tabs">
-                <button type="button" class="profile-tab active" data-profile-tab="posts">Postlar</button>
-                <button type="button" class="profile-tab" data-profile-tab="stories">Storylar</button>
+                <button type="button" class="profile-tab active" data-profile-tab="posts">Taqrizlar</button>
                 <button type="button" class="profile-tab" data-profile-tab="quotes">Iqtiboslar</button>
-                @if (p.IsCurrentUser)
-                {
-                    <button type="button" class="profile-tab" data-profile-tab="saved">Saqlangan</button>
-                }
             </nav>
 
             <div data-tab-panel="posts">
                 @if (Model.Posts.Items.Count == 0)
                 {
-                    <div class="card text-center muted">Hali postlar yo'q.</div>
+                    <div class="card text-center muted">Hali taqrizlar yo'q.</div>
                 }
                 else
                 {
@@ -283,47 +270,6 @@
                 }
             </div>
 
-            <div data-tab-panel="stories" hidden>
-                @if (Model.Stories.Count == 0)
-                {
-                    <div class="card text-center muted">Hali story qo'yilmagan.</div>
-                }
-                else
-                {
-                    <div class="story-tiles">
-                        @foreach (var st in Model.Stories)
-                        {
-                            <a class="story-tile" href="/stories/@st.Id" title="@st.Title">
-                                <span class="story-tile-img">
-                                    @if (!string.IsNullOrEmpty(st.ImageUrl))
-                                    {
-                                        <img src="@st.ImageUrl" alt="@st.Title" loading="lazy" />
-                                    }
-                                    else
-                                    {
-                                        <span class="story-tile-fallback">
-                                            <span class="material-symbols-outlined">auto_stories</span>
-                                            <span class="t">@st.Title</span>
-                                        </span>
-                                    }
-                                </span>
-                                <span class="story-tile-meta">
-                                    <span class="story-tile-date">@st.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</span>
-                                    <span class="story-tile-stats">
-                                        <span class="stat" title="Yoqtirishlar">
-                                            <span class="material-symbols-outlined">favorite</span>@st.LikeCount
-                                        </span>
-                                        <span class="stat" title="Ko'rganlar">
-                                            <span class="material-symbols-outlined">visibility</span>@st.ViewCount
-                                        </span>
-                                    </span>
-                                </span>
-                            </a>
-                        }
-                    </div>
-                }
-            </div>
-
             <div data-tab-panel="quotes" hidden>
                 @if (Model.MyQuotes.Count == 0)
                 {
@@ -350,10 +296,9 @@
                                         </span>
                                         @if (p.IsCurrentUser)
                                         {
-                                            <form method="post" action="/quotes/@q.Id/delete" onsubmit="return confirm('Iqtibos o\'chirilsinmi?');" style="display:inline">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="action-btn" title="O'chirish"><span class="material-symbols-outlined">delete</span></button>
-                                            </form>
+                                            <button type="button" class="action-btn danger" data-delete-quote="@q.Id" title="O'chirish">
+                                                <span class="material-symbols-outlined">delete</span>
+                                            </button>
                                         }
                                     </div>
                                 </div>
@@ -363,42 +308,6 @@
                     </div>
                 }
             </div>
-
-            @if (p.IsCurrentUser)
-            {
-                <div data-tab-panel="saved" hidden>
-                    @if (Model.SavedQuotes.Count == 0)
-                    {
-                        <div class="card text-center muted">Hali saqlangan iqtibos yo'q.</div>
-                    }
-                    else
-                    {
-                        <div class="quote-grid">
-                            @foreach (var q in Model.SavedQuotes)
-                            {
-                                var quoteUrl = KitobdaGimen.Web.ViewHelpers.QuoteUrl(q.Author.Username, q.Author.Id, q.Slug);
-                                <div class="card quote-card" data-saved-quote-card="@q.Id">
-                                    <a href="@quoteUrl" style="color:inherit; text-decoration:none">
-                                        <p class="quote-text">@q.Text</p>
-                                        <div class="quote-source">
-                                            <strong>@q.Book.Title</strong><br />@q.Book.Author
-                                        </div>
-                                    </a>
-                                    <div class="quote-foot">
-                                        <div class="flex items-center gap-8">
-                                            <span class="muted" style="font-size:13px">@q.Author.FullName</span>
-                                            <button type="button" class="action-btn liked" data-save-quote="@q.Id" data-unsave title="Saqlashni bekor qilish">
-                                                <span class="material-symbols-outlined">bookmark</span>
-                                                <span class="save-count">@q.SaveCount</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
         </div>
 
         <aside class="profile-side">
@@ -468,7 +377,7 @@
             <!-- 3-bosqich: yakuniy ogohlantirish -->
             <div class="modal-step" data-step="3" hidden>
                 <h3 class="modal-title">Diqqat!</h3>
-                <p>O'chirilsa, <strong>barcha ma'lumotlaringiz</strong> — postlar, story'lar, izohlar, iqtiboslar, kuzatuvlar va xabarlar — butunlay o'chadi va qaytarib bo'lmaydi.</p>
+                <p>O'chirilsa, <strong>barcha ma'lumotlaringiz</strong> — taqrizlar, story'lar, izohlar, iqtiboslar, kuzatuvlar va xabarlar — butunlay o'chadi va qaytarib bo'lmaydi.</p>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-ghost" data-del-back="2">Orqaga</button>
                     <button type="button" class="btn btn-danger" data-del-confirm>O'chirish</button>
@@ -480,8 +389,7 @@
 
 @section Scripts {
 <script>
-// Profil tablari (Postlar / Storylar / Iqtiboslar). Story kartalari endi
-// to'g'ridan-to'g'ri /stories/{id} detal sahifasiga havola (modal emas).
+// Profil tablari (Taqrizlar / Iqtiboslar).
 (function () {
     const tabs = Array.from(document.querySelectorAll("[data-profile-tab]"));
     const panels = Array.from(document.querySelectorAll("[data-tab-panel]"));
@@ -491,16 +399,6 @@
             tabs.forEach((t) => t.classList.toggle("active", t === tab));
             panels.forEach((pn) => { pn.hidden = pn.getAttribute("data-tab-panel") !== name; });
         });
-    });
-
-    // "Saqlangan" tabidagi bookmark tugmasi — site.js dagi umumiy data-save-quote
-    // handleri saqlash holatini serverga yuborib "liked" klassini almashtiradi; shu
-    // klass o'chganda (saqlash bekor qilingani) kartochkani ro'yxatdan olib tashlaymiz.
-    document.querySelectorAll("[data-saved-quote-card] [data-unsave]").forEach((btn) => {
-        const card = btn.closest("[data-saved-quote-card]");
-        new MutationObserver(() => {
-            if (!btn.classList.contains("liked")) card.remove();
-        }).observe(btn, { attributes: true, attributeFilter: ["class"] });
     });
 
     // "Ulashish" — profil havolasini (/u/{id}) clipboard'ga nusxalaymiz
@@ -581,6 +479,24 @@
             btn.disabled = false;
         }
     });
+})();
+
+// Telegram ilovasi ichidagi brauzerdan kirilganda avtomatik Telegram Mini App ga o'tish
+(function () {
+    try {
+        var isInsideTgMiniApp = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData && window.Telegram.WebApp.initData.length > 5;
+        var isTelegramClient = /Telegram/i.test(navigator.userAgent) || window.location.hash.indexOf('tgWebAppData') !== -1;
+
+        if (!isInsideTgMiniApp && isTelegramClient) {
+            var botUser = '@TelegramBot.BotUsername';
+            var profileSlug = '@shareSegment';
+            var guardKey = 'kg_tg_redirected_' + profileSlug;
+            if (!sessionStorage.getItem(guardKey)) {
+                sessionStorage.setItem(guardKey, '1');
+                window.location.replace('https://t.me/' + botUser + '?startapp=profile_' + encodeURIComponent(profileSlug));
+            }
+        }
+    } catch (_) { }
 })();
 </script>
 }

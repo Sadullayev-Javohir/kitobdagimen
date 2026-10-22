@@ -41,12 +41,14 @@ public class CreateQuoteCommandHandler : IRequestHandler<CreateQuoteCommand, Quo
         }
         while (await _db.Quotes.AnyAsync(q => q.Slug == slug, cancellationToken));
 
+        var cleanText = RichTextSanitizer.StripHtml(request.Text);
         var quote = new Quote
         {
             UserId = userId,
             BookId = request.BookId,
             Slug = slug,
-            Text = request.Text,
+            Text = cleanText,
+            ImageUrl = request.ImageUrl,
             CreatedAt = DateTime.UtcNow
         };
 

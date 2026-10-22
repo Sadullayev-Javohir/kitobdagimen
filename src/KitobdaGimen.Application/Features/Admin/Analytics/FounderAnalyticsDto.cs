@@ -2,7 +2,7 @@ namespace KitobdaGimen.Application.Features.Admin.Analytics;
 
 /// <summary>
 /// Founder-level product analytics: growth (signups), engagement (DAU/WAU/MAU),
-/// activation/conversion funnel, and weekly retention cohorts. Aggregate numbers only —
+/// activation/conversion funnel, reading stats, and weekly retention cohorts. Aggregate numbers only —
 /// no PII. Days are bucketed in Uzbekistan local time (UTC+5), consistent with the rest
 /// of the app (e.g. reading leaderboard).
 /// </summary>
@@ -32,13 +32,22 @@ public record FounderAnalyticsDto
     /// <summary>Stickiness = DAU / MAU (%). Higher means users come back more often.</summary>
     public double StickinessPercent { get; init; }
 
-    // ---- Content volume (context) --------------------------------------
+    // ---- Content & Community volume (context) --------------------------
     public int TotalPosts { get; init; }
     public int TotalQuotes { get; init; }
     public int TotalMessages { get; init; }
+    public int TotalComments { get; init; }
+    public int TotalLikes { get; init; }
+    public int TotalReadingGoals { get; init; }
+    public int ActiveReadingGoals { get; init; }
+    public int TotalBooks { get; init; }
+    public int ActiveReaders30d { get; init; }
+    public int TelegramUsers { get; init; }
+    public int WebOnlyUsers { get; init; }
+    public int TotalPagesRead30d { get; init; }
 
     // ---- Series & tables ------------------------------------------------
-    /// <summary>Last 30 days: active users and new signups per day (oldest first).</summary>
+    /// <summary>Last 30 days: active users, new signups, content and reading per day (oldest first).</summary>
     public IReadOnlyList<DailyActivityPoint> DailyActivity { get; init; } = Array.Empty<DailyActivityPoint>();
 
     /// <summary>Registration → onboarding → activation → weekly-active funnel.</summary>
@@ -49,10 +58,18 @@ public record FounderAnalyticsDto
 
     /// <summary>Number of week columns rendered in the retention grid.</summary>
     public int RetentionWeekCount { get; init; }
+
+    /// <summary>Top engaged books by reviews and quotes.</summary>
+    public IReadOnlyList<TopBookItemDto> TopBooks { get; init; } = Array.Empty<TopBookItemDto>();
 }
 
 /// <summary>One day on the activity chart.</summary>
-public record DailyActivityPoint(DateOnly Date, int ActiveUsers, int NewUsers);
+public record DailyActivityPoint(
+    DateOnly Date,
+    int ActiveUsers,
+    int NewUsers,
+    int PostsAndQuotes = 0,
+    int PagesRead = 0);
 
 /// <summary>One step of the conversion funnel.</summary>
 public record FunnelStep(string Key, string Label, int Count, double PercentOfTop, double PercentOfPrevious);
@@ -63,3 +80,6 @@ public record FunnelStep(string Key, string Label, int Count, double PercentOfTo
 /// not happened yet.
 /// </summary>
 public record RetentionCohort(string Label, DateOnly WeekStart, int CohortSize, IReadOnlyList<double?> WeeklyRetention);
+
+/// <summary>Book engagement highlight.</summary>
+public record TopBookItemDto(int Id, string Title, string Author, string? CoverUrl, int ReviewCount, int QuoteCount);

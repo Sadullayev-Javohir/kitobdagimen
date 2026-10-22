@@ -13,13 +13,18 @@ public class ConfirmHandoverCommandHandler : IRequestHandler<ConfirmHandoverComm
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
+    private readonly ITelegramBotService? _telegramBot;
 
     public ConfirmHandoverCommandHandler(
-        IAppDbContext db, ICurrentUserService currentUser, INotificationService notifications)
+        IAppDbContext db,
+        ICurrentUserService currentUser,
+        INotificationService notifications,
+        ITelegramBotService? telegramBot = null)
     {
         _db = db;
         _currentUser = currentUser;
         _notifications = notifications;
+        _telegramBot = telegramBot;
     }
 
     public async Task<PhysicalBookDto> Handle(ConfirmHandoverCommand request, CancellationToken cancellationToken)
@@ -67,6 +72,12 @@ public class ConfirmHandoverCommandHandler : IRequestHandler<ConfirmHandoverComm
             Message = $"\"{bookTitle}\" sizga topshirildi. Yoqimli mutolaa! 📖",
             Url = "/almashish"
         }, cancellationToken);
+
+        // Ikkala tomonga (ega va oluvchi) Telegram orqali bir-birining username va aloqa ma'lumotlarini yuboramiz
+        if (_telegramBot is not null)
+        {
+            _ = _telegramBot.NotifyPhysicalBookHandoverConfirmedAsync(book.Id, book.OwnerId, reservation.ReserverId, CancellationToken.None);
+        }
 
         return PhysicalBookMapper.ToDto(book, userId);
     }

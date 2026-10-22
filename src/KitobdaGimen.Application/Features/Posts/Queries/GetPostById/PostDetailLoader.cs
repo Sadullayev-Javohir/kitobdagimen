@@ -22,7 +22,7 @@ internal static class PostDetailLoader
         var post = await source
             .ToPostDto(currentUserId, viewerEmail)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException("Post topilmadi.");
+            ?? throw new NotFoundException("Taqriz topilmadi.");
 
         // Load all comments flat, then build the parent/reply tree in memory.
         var flat = await source

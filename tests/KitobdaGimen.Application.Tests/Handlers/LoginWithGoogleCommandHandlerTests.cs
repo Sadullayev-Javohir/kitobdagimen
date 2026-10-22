@@ -16,7 +16,7 @@ public class LoginWithGoogleCommandHandlerTests : TestBase
     };
 
     [Fact]
-    public async Task Creates_new_user_and_requires_onboarding_on_first_login()
+    public async Task Creates_new_user_and_requires_profile_setup_on_first_login()
     {
         using var db = CreateContext();
         var tokens = new FakeTokenService();
@@ -25,7 +25,8 @@ public class LoginWithGoogleCommandHandlerTests : TestBase
         var result = await handler.Handle(Command(), CancellationToken.None);
 
         Assert.Equal("test-token", result.Token);
-        Assert.True(result.RequiresOnboarding); // new user has no genres
+        Assert.False(result.RequiresOnboarding);
+        Assert.True(result.RequiresProfileSetup);
         Assert.Equal("ali@example.com", result.User.Email);
 
         var saved = await db.Users.SingleAsync();

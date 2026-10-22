@@ -2,6 +2,7 @@
 @model PhysicalBooksPageViewModel
 @{
     ViewData["Title"] = "Kitob almashish";
+    ViewData["HideSearch"] = true;
 }
 
 @section Styles {
@@ -50,21 +51,25 @@
             Kitob topilmadimi? Qo'lda kiriting
         </button>
 
-        @* Qo'lda kiritish — nom, muallif, muqova rasmi *@
+        @* Qo'lda kiritish — nom, muallif *@
         <div class="pb-manual" id="pbManualForm" hidden>
             <input class="input" type="text" id="pbManualTitle" maxlength="150" placeholder="Kitob nomi *" />
             <input class="input" type="text" id="pbManualAuthor" maxlength="150" placeholder="Muallif (ixtiyoriy)" />
+        </div>
 
-            <div class="pb-cover-upload">
-                <div class="pb-cover-preview" id="pbManualCoverPreview">
-                    <span class="material-symbols-outlined">image</span>
-                </div>
-                <div class="pb-cover-upload-actions">
-                    <label class="btn btn-outline btn-sm" for="pbManualCover">Muqova rasmi</label>
-                    <input type="file" id="pbManualCover" accept="image/*" hidden />
-                    <button type="button" class="btn btn-ghost btn-sm" id="pbManualCoverClear" hidden>O'chirish</button>
-                    <span class="muted" id="pbManualCoverHint" style="font-size:12px">Ixtiyoriy — JPG/PNG, 5 MB gacha.</span>
-                </div>
+        @* Kitob fotosurati (kitob holatini ko'rsatish uchun — ixtiyoriy / tavsiya etiladi) *@
+        <div class="pb-cover-upload" style="margin-top:12px">
+            <div class="pb-cover-preview" id="pbManualCoverPreview">
+                <span class="material-symbols-outlined">image</span>
+            </div>
+            <div class="pb-cover-upload-actions">
+                <label class="btn btn-outline btn-sm" for="pbManualCover">
+                    <span class="material-symbols-outlined ic-sm ic-baseline">photo_camera</span>
+                    Kitob fotosuratini yuklash
+                </label>
+                <input type="file" id="pbManualCover" accept="image/*" hidden />
+                <button type="button" class="btn btn-ghost btn-sm" id="pbManualCoverClear" hidden>O'chirish</button>
+                <span class="muted" id="pbManualCoverHint" style="font-size:12px">Kitobingiz holati (yangi/eski) ko'rinishi uchun rasm yuklang — JPG/PNG/WebP, 10 MB gacha.</span>
             </div>
         </div>
 

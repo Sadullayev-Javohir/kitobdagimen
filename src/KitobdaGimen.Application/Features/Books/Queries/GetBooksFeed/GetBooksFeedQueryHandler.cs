@@ -18,12 +18,18 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, MaxPageSize);
 
-        var query = _db.Books.Where(b => b.Posts.Any() || b.Quotes.Any());
+        var isSearch = !string.IsNullOrWhiteSpace(request.Search);
+        var query = _db.Books.AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(request.Search))
+        if (isSearch)
         {
             var term = request.Search.Trim().ToLower();
             query = query.Where(b => b.Title.ToLower().Contains(term) || b.Author.ToLower().Contains(term));
+        }
+        else
+        {
+            // Bosh sahifada (qidiruvsiz) faqat faolligi (taqriz yoki iqtibos) bor kitoblar chiqadi.
+            query = query.Where(b => b.Posts.Any() || b.Quotes.Any());
         }
 
         var projected = query.Select(b => new
@@ -46,15 +52,18 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
 
         var totalCount = await projected.CountAsync(cancellationToken);
 
-        // Eng so'nggi faollik vaqti: LastPost va LastQuote'ning eng kattasi. Ikkalasidan
-        // biri NULL bo'lishi mumkin (faqat taqrizlari yoki faqat iqtiboslari bor kitob),
-        // shuning uchun NULL ni aniq himoyalaymiz — aks holda "X > NULL" noto'g'ri baholanib,
-        // faqat postli kitoblar NULL bo'yicha tartiblanib pastga tushib qoladi. (The query
-        // guarantees at least one is non-null via the Posts.Any() || Quotes.Any() filter.)
-        var raw = await projected
-            .OrderByDescending(b => b.LastPost == null ? b.LastQuote
-                : b.LastQuote == null ? b.LastPost
-                : (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote))
+        // Qidiruvda avval eng ko'p o'qilgan/muhokama qilingan kitoblar, keyin nomi bo'yicha.
+        // Qidiruvsiz esa eng so'nggi faollik (taqriz/iqtibos) vaqti bo'yicha tartiblanadi.
+        var ordered = isSearch
+            ? projected
+                .OrderByDescending(b => b.ReviewCount + b.QuoteCount)
+                .ThenBy(b => b.Title)
+            : projected
+                .OrderByDescending(b => b.LastPost == null ? b.LastQuote
+                    : b.LastQuote == null ? b.LastPost
+                    : (b.LastPost > b.LastQuote ? b.LastPost : b.LastQuote));
+
+        var raw = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

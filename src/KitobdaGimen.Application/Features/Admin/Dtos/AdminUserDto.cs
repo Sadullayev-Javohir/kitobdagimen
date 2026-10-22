@@ -13,6 +13,9 @@ public record AdminUserDto
     public UserRole Role { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? LastSeenAt { get; init; }
+    public bool IsTelegramUser { get; init; }
+    public bool IsBotBlocked { get; init; }
+    public DateTime? BotBlockedAt { get; init; }
     public int PostCount { get; init; }
     public int QuoteCount { get; init; }
 }

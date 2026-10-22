@@ -27,10 +27,15 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostD
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedAccessException("Avval tizimga kiring.");
 
-        var bookExists = await _db.Books.AnyAsync(b => b.Id == request.BookId, cancellationToken);
-        if (!bookExists)
+        var book = await _db.Books.FirstOrDefaultAsync(b => b.Id == request.BookId, cancellationToken);
+        if (book is null)
         {
             throw new NotFoundException("Kitob", request.BookId);
+        }
+
+        if (string.IsNullOrWhiteSpace(book.CoverUrl))
+        {
+            book.CoverUrl = "/img/default-book-cover.webp";
         }
 
         // Random public slug; retry on the rare chance of a collision.
@@ -74,7 +79,7 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, PostD
                 ActorId = dto.Author.Id,
                 ActorName = dto.Author.FullName,
                 ActorAvatarUrl = dto.Author.AvatarUrl,
-                Message = $"{dto.Author.FullName} yangi post chop etdi",
+                Message = $"{dto.Author.FullName} yangi taqriz chop etdi",
                 Url = url
             }, cancellationToken);
         }

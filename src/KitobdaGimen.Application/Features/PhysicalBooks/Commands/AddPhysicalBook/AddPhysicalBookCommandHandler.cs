@@ -37,6 +37,7 @@ public class AddPhysicalBookCommandHandler : IRequestHandler<AddPhysicalBookComm
             {
                 throw new NotFoundException("Kitob", bookId);
             }
+            manualCoverUrl = string.IsNullOrWhiteSpace(request.ManualCoverUrl) ? null : request.ManualCoverUrl.Trim();
         }
         else
         {

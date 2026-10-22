@@ -56,7 +56,7 @@ public class SignalRChatNotifier : IChatNotifier
                     actorName = senderName,
                     actorAvatarUrl = senderAvatarUrl,
                     message = $"{senderName} sizga xabar yubordi",
-                    url = "/chat",
+                    url = (string?)null,
                     isRead = false
                 }, cancellationToken);
         }
@@ -126,7 +126,7 @@ public class SignalRChatNotifier : IChatNotifier
                     actorName,
                     actorAvatarUrl,
                     message = $"{actorName} xabaringizga {emoji} reaksiya qoldirdi",
-                    url = "/chat",
+                    url = (string?)null,
                     isRead = false
                 }, cancellationToken);
         }

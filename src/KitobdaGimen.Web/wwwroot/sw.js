@@ -10,7 +10,7 @@
  *   - GET bo'lmagan so'rovlar, hublar (/hubs/...) va yuklamalar (/uploads/...) chetlab
  *     o'tiladi.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const STATIC_CACHE = 'kg-static-' + VERSION;
 
 // Versiya almashganda eski keshlarni tozalash.

@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
 
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, services, configuration) =>
@@ -70,6 +72,16 @@ builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 // Online presence (Redis, TTL heartbeat). Scoped because it persists LastSeenAt via the scoped DbContext.
 builder.Services.AddScoped<IPresenceService, RedisPresenceService>();
 
+// ── Telegram Bot va OTP integratsiyasi ───────────────────────────────────────────────
+builder.Services.Configure<KitobdaGimen.Web.Telegram.TelegramBotSettings>(
+    builder.Configuration.GetSection(KitobdaGimen.Web.Telegram.TelegramBotSettings.SectionName));
+builder.Services.AddHttpClient("TelegramBot", c => c.Timeout = TimeSpan.FromSeconds(20));
+builder.Services.AddHttpClient("TelegramBotPolling", c => c.Timeout = TimeSpan.FromSeconds(45));
+builder.Services.AddSingleton<KitobdaGimen.Web.Telegram.TelegramBotService>();
+builder.Services.AddSingleton<ITelegramBotService>(sp =>
+    sp.GetRequiredService<KitobdaGimen.Web.Telegram.TelegramBotService>());
+builder.Services.AddHostedService<KitobdaGimen.Web.Telegram.TelegramBotHostedService>();
+
 // ── Server monitoring (admin dashboard) ─────────────────────────────────────────────
 // A single central collector gathers server health every few seconds into an in-memory
 // ring buffer; the admin panel reads the latest snapshot. All singletons so the counters
@@ -108,10 +120,7 @@ app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
-    headers["X-Frame-Options"] = "DENY";
-    // no-referrer: tashqi rasmlar (Google avatar lh3.googleusercontent.com, kitob muqovalari)
-    // Referer yuborilganda bloklanadi/429 qaytaradi. Referersiz so'rov ularni hamma qurilmada
-    // (laptop ham) muammosiz yuklaydi. Bizning resurslarimiz same-origin — referer kerak emas.
+    // no-referrer: tashqi rasmlar (kitob muqovalari va avatarlar) Referersiz muammosiz yuklanadi.
     headers["Referrer-Policy"] = "no-referrer";
     headers["X-Permitted-Cross-Domain-Policies"] = "none";
     headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
@@ -119,11 +128,11 @@ app.Use(async (context, next) =>
         "default-src 'self'; " +
         "base-uri 'self'; " +
         "object-src 'none'; " +
-        "frame-ancestors 'none'; " +
+        "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org; " +
         "img-src 'self' data: https:; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com; " +
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://unpkg.com https://telegram.org; " +
         "connect-src 'self' https://cdnjs.cloudflare.com; " +
         "form-action 'self'";
     await next();
@@ -132,7 +141,6 @@ app.Use(async (context, next) =>
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
-    app.UseHttpsRedirection();
 }
 
 app.UseSerilogRequestLogging();

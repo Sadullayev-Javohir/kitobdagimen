@@ -45,18 +45,22 @@ public class ChallengeController : AppController
     };
 
     private readonly IAppDbContext _db;
+    private readonly ITelegramBotService _telegramBot;
 
-    public ChallengeController(IAppDbContext db)
+    public ChallengeController(IAppDbContext db, ITelegramBotService telegramBot)
     {
         _db = db;
+        _telegramBot = telegramBot;
     }
 
     // ── Foydalanuvchi sahifasi ────────────────────────────────────────────────────
 
+    [AllowAnonymous]
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
         var (year, month) = ChallengeCalendar.CurrentPeriod();
+        var config = await ChallengeConfigStore.GetOrDefaultAsync(_db);
 
         var board = await Mediator.Send(new GetChallengeBoardQuery
         {
@@ -75,9 +79,10 @@ public class ChallengeController : AppController
 
         return View(new ChallengePageViewModel
         {
+            Config = config,
             CurrentYear = year,
             CurrentMonth = month,
-            CurrentPeriodLabel = ChallengeCalendar.PeriodLabel(year, month),
+            CurrentPeriodLabel = !string.IsNullOrWhiteSpace(config.Title) ? config.Title : ChallengeCalendar.PeriodLabel(year, month),
             LiveStandings = board.Podium,
             OtherStandings = board.Others,
             MyStanding = board.MyStanding,
@@ -140,7 +145,7 @@ public class ChallengeController : AppController
             return RedirectToAction("Index");
         }
 
-        // Ko'rsatilmasa — oxirgi yakunlangan oy (e'lon qilinadigan davr).
+        // Ko'rsatilmasa — joriy davr (admin challenge sanalarini va sovg'a kitoblarni boshqarishi uchun).
         int y, m;
         if (year is int yy && month is int mm)
         {
@@ -148,27 +153,132 @@ public class ChallengeController : AppController
         }
         else
         {
-            (y, m) = ChallengeCalendar.LastCompletedPeriod();
+            (y, m) = ChallengeCalendar.CurrentPeriod();
         }
+
+        var config = await ChallengeConfigStore.GetOrDefaultAsync(_db);
+        var groupRow = await _db.AppSettings.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == ChallengeConfigStore.BookClubGroupIdKey);
 
         var standings = await Mediator.Send(new GetChallengeStandingsQuery { Year = y, Month = m, Limit = 3 });
         var announced = await Mediator.Send(new GetAnnouncedWinnersQuery { Year = y, Month = m });
         var covers = await Mediator.Send(new GetRandomBookCoversQuery { Count = DecorationCoverCount });
         covers = FilterExistingCovers(covers);
 
-        ViewData["Title"] = "Challenge — admin oldindan ko'rish";
+        ViewData["Title"] = "Challenge — Admin boshqaruvi";
 
         return View(new ChallengeAdminViewModel
         {
+            Config = config,
+            BookClubGroupId = groupRow?.Value,
             Year = y,
             Month = m,
-            PeriodLabel = ChallengeCalendar.PeriodLabel(y, m),
+            PeriodLabel = !string.IsNullOrWhiteSpace(config.Title) ? config.Title : ChallengeCalendar.PeriodLabel(y, m),
             Standings = standings,
             Announced = announced,
             IsPeriodCompleted = ChallengeCalendar.IsCompleted(y, m),
             DecorationCovers = covers,
             MyRole = role
         });
+    }
+
+    [HttpPost("admin/save-config")]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(30 * 1024 * 1024)]
+    public async Task<IActionResult> SaveConfig(
+        string? title,
+        string? startDate,
+        string? endDate,
+        string? bookClubGroupId,
+        CancellationToken ct)
+    {
+        var role = await GetMyRoleAsync();
+        if (role < UserRole.Admin)
+        {
+            return RedirectToAction("Index");
+        }
+
+        try
+        {
+            var cfg = await ChallengeConfigStore.GetOrDefaultAsync(_db, ct);
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                cfg.Title = title.Trim();
+            }
+
+            if (DateOnly.TryParse(startDate, out var sd))
+            {
+                cfg.StartDate = sd;
+            }
+
+            if (DateOnly.TryParse(endDate, out var ed))
+            {
+                cfg.EndDate = ed < cfg.StartDate ? cfg.StartDate : ed;
+            }
+
+            for (var rank = 1; rank <= 3; rank++)
+            {
+                var p = cfg.GetPrize(rank);
+                var pTitle = Request.Form[$"prizeTitle_{rank}"].ToString();
+                var pAuthor = Request.Form[$"prizeAuthor_{rank}"].ToString();
+                var pCover = Request.Form.Files.GetFile($"prizeCover_{rank}");
+
+                p.Title = string.IsNullOrWhiteSpace(pTitle) ? null : pTitle.Trim();
+                p.Author = string.IsNullOrWhiteSpace(pAuthor) ? null : pAuthor.Trim();
+                if (pCover is not null && pCover.Length > 0)
+                {
+                    p.CoverUrl = await SaveGiftCoverAsync(pCover);
+                }
+            }
+
+            await ChallengeConfigStore.SaveAsync(_db, cfg, ct);
+
+            if (bookClubGroupId is not null)
+            {
+                var groupRow = await _db.AppSettings
+                    .FirstOrDefaultAsync(s => s.Key == ChallengeConfigStore.BookClubGroupIdKey, ct);
+                if (groupRow is null)
+                {
+                    _db.AppSettings.Add(new KitobdaGimen.Domain.Entities.AppSetting
+                    {
+                        Key = ChallengeConfigStore.BookClubGroupIdKey,
+                        Value = bookClubGroupId.Trim(),
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    groupRow.Value = bookClubGroupId.Trim();
+                    groupRow.UpdatedAt = DateTime.UtcNow;
+                }
+                await _db.SaveChangesAsync(ct);
+            }
+
+            TempData["ChallengeMsg"] = "✅ Challenge muddati, 1-2-3-o'rin sovg'a kitoblari va «KitobdagiMen» guruhi sozlamalari saqlandi!";
+        }
+        catch (Exception ex)
+        {
+            TempData["ChallengeMsg"] = $"Xato: {ex.Message}";
+        }
+
+        return RedirectToAction("Admin");
+    }
+
+    [HttpPost("admin/send-daily-report")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendDailyReportNow(CancellationToken ct)
+    {
+        var role = await GetMyRoleAsync();
+        if (role < UserRole.Admin)
+        {
+            return RedirectToAction("Index");
+        }
+
+        var ok = await _telegramBot.SendDailyGroupReportAsync(ct);
+        TempData["ChallengeMsg"] = ok
+            ? "✅ Kunlik mutolaa sarhisobi (23:59) Telegram orqali yuborildi!"
+            : "⚠️ Hisobotni yuborib bo'lmadi — «KitobdagiMen» guruhi ID ulanganini yoki Admin Telegram hisobini tekshiring.";
+        return RedirectToAction("Admin");
     }
 
     /// <summary>Berilgan oyni e'lon qiladi (g'oliblarni saqlaydi). Admin+.</summary>
@@ -179,6 +289,10 @@ public class ChallengeController : AppController
         try
         {
             var count = await Mediator.Send(new FinalizeChallengeMonthCommand(year, month));
+            if (count > 0)
+            {
+                _ = _telegramBot.BroadcastChallengeWinnersAsync(year, month);
+            }
             TempData["ChallengeMsg"] = count > 0
                 ? $"{ChallengeCalendar.PeriodLabel(year, month)} uchun {count} ta g'olib e'lon qilindi."
                 : $"{ChallengeCalendar.PeriodLabel(year, month)} allaqachon e'lon qilingan yoki g'olib topilmadi.";
@@ -234,6 +348,8 @@ public class ChallengeController : AppController
                     // Bu o'rin uchun g'olib yo'q (masalan reytingda 2 kishi) — o'tkazamiz.
                 }
             }
+
+            _ = _telegramBot.BroadcastChallengeWinnersAsync(year, month);
 
             TempData["ChallengeMsg"] = count > 0
                 ? $"{ChallengeCalendar.PeriodLabel(year, month)} uchun {count} ta g'olib e'lon qilindi va sovg'alar saqlandi."

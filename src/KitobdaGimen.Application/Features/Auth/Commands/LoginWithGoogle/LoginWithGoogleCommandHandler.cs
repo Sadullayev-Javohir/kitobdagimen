@@ -66,16 +66,13 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
             await _db.SaveChangesAsync(cancellationToken);
         }
 
-        var hasGenres = !isNewUser &&
-            await _db.UserGenres.AnyAsync(ug => ug.UserId == user.Id, cancellationToken);
-
         var token = _tokenService.GenerateToken(user);
 
         return new AuthResultDto
         {
             Token = token,
             User = _mapper.Map<UserDto>(user),
-            RequiresOnboarding = !hasGenres,
+            RequiresOnboarding = false,
             RequiresProfileSetup = string.IsNullOrEmpty(user.Username)
         };
     }

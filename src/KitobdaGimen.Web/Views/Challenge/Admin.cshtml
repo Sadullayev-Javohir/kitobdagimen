@@ -18,49 +18,210 @@
     var podiumOrder = new[] { 2, 1, 3 };
 
     var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-    var coversJson = Html.Raw(JsonSerializer.Serialize(Model.DecorationCovers, jsonOpts));
     var standingsJson = Html.Raw(JsonSerializer.Serialize(Model.Standings, jsonOpts));
 
     var msg = TempData["ChallengeMsg"] as string;
 }
 
 @Html.AntiForgeryToken()
-<div class="ch-decor" data-ch-decor aria-hidden="true"></div>
 
 <div class="container page ch-page ch-admin">
-    <header class="ch-head">
-        <div>
-            <h1 class="section-title" style="margin:0">
-                <span class="material-symbols-outlined ic-accent" style="vertical-align:-4px">visibility</span>
-                Challenge — admin oldindan ko'rish
-            </h1>
-            <p class="muted ch-sub">
-                G'oliblar qanday ko'rinishini oldindan ko'ring, oyni e'lon qiling.
-                @if (Model.IsSuperAdmin)
-                {
-                    <text>Super admin sifatida 1-o'rin g'olibiga kitob sovg'a qila olasiz.</text>
-                }
+    <header class="ch-admin-header">
+        <div class="ch-admin-header-main">
+            <div class="ch-admin-badge">
+                <span class="material-symbols-outlined">tune</span>
+                Admin boshqaruvi
+            </div>
+            <h1 class="ch-admin-title">Challenge monitoring & sozlamalar</h1>
+            <p class="muted ch-admin-desc">
+                Challenge muddati, sovg'a kitoblar, Telegram guruh integratsiyasi hamda oylik sarhisobni boshqaring.
             </p>
         </div>
-        <a class="btn btn-outline" href="/challenge">
-            <span class="material-symbols-outlined" style="vertical-align:-4px">arrow_back</span>
-            Challenge sahifasi
-        </a>
+        <div class="ch-admin-header-actions">
+            <a class="btn btn-outline btn-sm" href="/admin">
+                <span class="material-symbols-outlined ic-sm">dashboard</span>
+                Admin panel
+            </a>
+            <a class="btn btn-primary btn-sm" href="/challenge">
+                <span class="material-symbols-outlined ic-sm">arrow_outward</span>
+                Challenge sahifasi
+            </a>
+        </div>
     </header>
 
     @if (!string.IsNullOrEmpty(msg))
     {
-        <div class="card ch-msg">@msg</div>
+        <div class="ch-admin-alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@msg</span>
+        </div>
     }
 
+    @* ================= ADMIN: CHALLENGE VA 1-2-3-O'RIN SOVG'A KITOBLAR BOSHQARUVI ================= *@
+    <section class="ch-admin-card">
+        <div class="ch-admin-card-head">
+            <div>
+                <h2>
+                    <span class="material-symbols-outlined" style="color:var(--accent)">tune</span>
+                    Challenge parametrlari va sovrinlar
+                </h2>
+                <p>
+                    Challenge muddati, Telegram guruh bog'lanishi va 1-, 2-, 3-o'rin kitoblarini sozlang.
+                </p>
+            </div>
+        </div>
+
+        <form method="post" action="/challenge/admin/save-config" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="ch-admin-grid-2">
+                <div class="ch-admin-field">
+                    <label>
+                        <span class="material-symbols-outlined ic-sm">title</span>
+                        Challenge sarlavhasi
+                    </label>
+                    <input class="input" type="text" name="title" value="@Model.Config.Title" placeholder="Masalan: KitobdagiMen — Kuzgi Mutolaa Challenge" required />
+                </div>
+                <div class="ch-admin-field">
+                    <label>
+                        <span class="material-symbols-outlined ic-sm">groups</span>
+                        Telegram guruh ID (KitobdagiMen)
+                    </label>
+                    <input class="input" type="text" name="bookClubGroupId" value="@Model.BookClubGroupId" placeholder="Masalan: -1001234567890" />
+                    <small>Ixtiyoriy — guruhda <code>/bind_group</code> buyrug'i orqali ham bog'lash mumkin.</small>
+                </div>
+            </div>
+
+            <div class="ch-admin-grid-2">
+                <div class="ch-admin-field">
+                    <label>
+                        <span class="material-symbols-outlined ic-sm">event</span>
+                        Boshlanish sanasi (Start Date)
+                    </label>
+                    <input class="input" type="date" name="startDate" value="@Model.Config.StartDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="ch-admin-field">
+                    <label>
+                        <span class="material-symbols-outlined ic-sm">event_available</span>
+                        Tugash sanasi (End Date)
+                    </label>
+                    <input class="input" type="date" name="endDate" value="@Model.Config.EndDate.ToString("yyyy-MM-dd")" required />
+                </div>
+            </div>
+
+            <div class="ch-admin-prizes">
+                <div class="ch-admin-prizes-title">
+                    <span class="material-symbols-outlined">redeem</span>
+                    1-, 2-, 3-o'rinlar uchun sovg'a kitoblar
+                </div>
+
+                <div class="ch-admin-prizes-grid">
+                    @for (var r = 1; r <= 3; r++)
+                    {
+                        var p = Model.Config.GetPrize(r);
+                        var rankClass = r switch { 1 => "ch-prize-card-gold", 2 => "ch-prize-card-silver", _ => "ch-prize-card-bronze" };
+                        var rankBadge = r switch { 1 => "1-o'rin sovg'a kitobi", 2 => "2-o'rin sovg'a kitobi", _ => "3-o'rin sovg'a kitobi" };
+                        <div class="ch-prize-card @rankClass">
+                            <div class="ch-prize-head">
+                                <span class="ch-prize-rank-badge">
+                                    @Html.Raw(MedalIcon(r))
+                                    <span>@rankBadge</span>
+                                </span>
+                            </div>
+                            <div class="ch-admin-field">
+                                <label>
+                                    <span class="material-symbols-outlined ic-sm">menu_book</span>
+                                    Kitob nomi
+                                </label>
+                                <input class="input" type="text" name="prizeTitle_@r" value="@p.Title" placeholder="Masalan: Atom odatlari" />
+                            </div>
+                            <div class="ch-admin-field">
+                                <label>
+                                    <span class="material-symbols-outlined ic-sm">person</span>
+                                    Muallif
+                                </label>
+                                <input class="input" type="text" name="prizeAuthor_@r" value="@p.Author" placeholder="Masalan: Jeyms Klir" />
+                            </div>
+                            <div class="ch-admin-field">
+                                <label>
+                                    <span class="material-symbols-outlined ic-sm">photo</span>
+                                    Muqova rasmi
+                                </label>
+                                <div class="ch-file-uploader" data-ch-uploader>
+                                    <input type="file"
+                                           name="prizeCover_@r"
+                                           id="prizeCover_@r"
+                                           class="ch-file-uploader-input"
+                                           accept="image/jpeg,image/png,image/webp,image/gif" />
+                                    <label for="prizeCover_@r" class="ch-file-uploader-zone">
+                                        <div class="ch-file-uploader-icon">
+                                            <span class="material-symbols-outlined">add_photo_alternate</span>
+                                        </div>
+                                        <div class="ch-file-uploader-text">
+                                            <span class="ch-file-uploader-btn">
+                                                <span class="material-symbols-outlined">upload_file</span>
+                                                Faylni tanlash
+                                            </span>
+                                            <span class="ch-file-uploader-hint">yoki rasmni bu yerga torting</span>
+                                        </div>
+                                    </label>
+                                    <div class="ch-file-uploader-preview-bar" hidden>
+                                        <img class="ch-file-uploader-thumb" src="" alt="Tanlangan muqova" />
+                                        <div class="ch-file-uploader-meta">
+                                            <span class="ch-file-uploader-name"></span>
+                                            <span class="ch-file-uploader-size"></span>
+                                        </div>
+                                        <button type="button" class="btn btn-ghost btn-sm ch-file-uploader-clear" title="Bekor qilish">
+                                            <span class="material-symbols-outlined">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(p.CoverUrl))
+                            {
+                                <div class="ch-prize-cover-preview">
+                                    <img class="ch-prize-cover-img" src="@p.CoverUrl" alt="@p.Title" />
+                                    <div class="ch-prize-cover-meta">
+                                        <strong>@p.Title</strong>
+                                        <span class="ch-prize-cover-status">
+                                            <span class="material-symbols-outlined ic-sm">verified</span>
+                                            Joriy muqova saqlangan
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="ch-admin-form-actions">
+                <div class="ch-admin-form-actions-left">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
+                        Sozlamalar va kitoblarni saqlash
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <form method="post" action="/challenge/admin/send-daily-report" style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--border)">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline btn-sm">
+                <span class="material-symbols-outlined ic-sm" style="vertical-align:-3px">send</span>
+                Bugungi (23:59) kunlik mutolaa hisobotini hozir Telegram'ga yuborish
+            </button>
+        </form>
+    </section>
+
     @* Davr navigatsiyasi *@
-    <div class="ch-period-nav card">
+    <div class="ch-period-nav">
         <a class="btn btn-sm btn-outline" href="/challenge/admin?year=@prevY&month=@prevM">
             <span class="material-symbols-outlined" style="vertical-align:-4px">chevron_left</span> Oldingi davr
         </a>
         <div class="ch-period-label">
             <strong>@Model.PeriodLabel</strong>
-            <span class="muted">
+            <div>
                 @if (Model.Announced is not null)
                 {
                     <span class="ch-status is-announced"><span class="material-symbols-outlined">check_circle</span> E'lon qilingan</span>
@@ -73,7 +234,7 @@
                 {
                     <span class="ch-status is-live"><span class="material-symbols-outlined">radio_button_checked</span> Davom etmoqda (jonli)</span>
                 }
-            </span>
+            </div>
         </div>
         <a class="btn btn-sm btn-outline" href="/challenge/admin?year=@nextY&month=@nextM">
             Keyingi davr <span class="material-symbols-outlined" style="vertical-align:-4px">chevron_right</span>
@@ -101,7 +262,7 @@
 
     @if (Model.Announced is null && !Model.IsSuperAdmin)
     {
-        <p class="muted">
+        <p class="muted" style="margin-bottom:20px">
             <span class="material-symbols-outlined ic-sm" style="vertical-align:-4px">info</span>
             G'oliblar odatda davr oxirida avtomatik e'lon qilinadi. Avtomatik jarayon ishlamay qolsa,
             faqat <strong>super admin</strong> qo'lda e'lon qila oladi.
@@ -142,7 +303,9 @@
                         <div class="ch-name" title="@u.FullName">@u.FullName</div>
                         <div class="ch-score"><strong>@u.PagesRead</strong> bet</div>
                         <div class="ch-detail muted">@u.BooksRead kitob · kuniga @u.AvgPagesPerDay bet</div>
-                        <div class="ch-pillar"></div>
+                        <div class="ch-pillar">
+                            <span class="ch-pillar-num">@u.Rank</span>
+                        </div>
                     </div>
                 }
             </div>
@@ -157,46 +320,79 @@
             <p class="muted ch-note">Har bir g'olibga (1-, 2-, 3-o'rin) bittadan kitob sovg'a qilishingiz mumkin.</p>
             @foreach (var win in Model.Announced.Winners.OrderBy(w => w.Rank))
             {
-                <div class="card ch-gift-form" style="margin-bottom:14px">
-                    <p class="muted">
-                        @Html.Raw(MedalIcon(win.Rank)) <strong>@win.Rank-o'rin — @win.FullName</strong>.
-                        @if (!string.IsNullOrEmpty(win.GiftBookTitle))
-                        {
-                            <text> Joriy sovg'a: <strong>@win.GiftBookTitle</strong>.</text>
-                        }
-                    </p>
+                <div class="ch-gift-form">
+                    <div class="ch-gift-form-header">
+                        <div>
+                            @Html.Raw(MedalIcon(win.Rank)) <strong>@win.Rank-o'rin — @win.FullName</strong>
+                            @if (!string.IsNullOrEmpty(win.GiftBookTitle))
+                            {
+                                <span class="muted">· Joriy sovg'a: <strong>@win.GiftBookTitle</strong></span>
+                            }
+                        </div>
+                    </div>
                     <form method="post" action="/challenge/admin/gift" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="year" value="@Model.Year" />
                         <input type="hidden" name="month" value="@Model.Month" />
                         <input type="hidden" name="rank" value="@win.Rank" />
-                        <div class="ch-form-row">
-                            <label>Kitob nomi
-                                <input type="text" name="title" value="@win.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
-                            </label>
-                            <label>Muallif
-                                <input type="text" name="author" value="@win.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
-                            </label>
+                        <div class="ch-admin-grid-2">
+                            <div class="ch-admin-field">
+                                <label>Kitob nomi</label>
+                                <input class="input" type="text" name="title" value="@win.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
+                            </div>
+                            <div class="ch-admin-field">
+                                <label>Muallif</label>
+                                <input class="input" type="text" name="author" value="@win.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
+                            </div>
                         </div>
-                        <div class="ch-form-row">
-                            <label>Muqova rasmi (yuklash)
-                                <input type="file" name="cover" accept="image/jpeg,image/png,image/webp,image/gif" />
+                        <div class="ch-admin-field" style="margin-bottom:14px">
+                            <label>
+                                <span class="material-symbols-outlined ic-sm">photo</span>
+                                Muqova rasmi (yuklash)
                             </label>
-                            <small class="muted">JPG, PNG, WEBP yoki GIF. iPhone HEIC rasmlari qo'llab-quvvatlanmaydi.</small>
+                            <div class="ch-file-uploader" data-ch-uploader>
+                                <input type="file"
+                                       name="cover"
+                                       id="giftCover_@win.Rank"
+                                       class="ch-file-uploader-input"
+                                       accept="image/jpeg,image/png,image/webp,image/gif" />
+                                <label for="giftCover_@win.Rank" class="ch-file-uploader-zone">
+                                    <div class="ch-file-uploader-icon">
+                                        <span class="material-symbols-outlined">add_photo_alternate</span>
+                                    </div>
+                                    <div class="ch-file-uploader-text">
+                                        <span class="ch-file-uploader-btn">
+                                            <span class="material-symbols-outlined">upload_file</span>
+                                            Faylni tanlash
+                                        </span>
+                                        <span class="ch-file-uploader-hint">JPG, PNG, WEBP yoki GIF</span>
+                                    </div>
+                                </label>
+                                <div class="ch-file-uploader-preview-bar" hidden>
+                                    <img class="ch-file-uploader-thumb" src="" alt="Tanlangan muqova" />
+                                    <div class="ch-file-uploader-meta">
+                                        <span class="ch-file-uploader-name"></span>
+                                        <span class="ch-file-uploader-size"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-ghost btn-sm ch-file-uploader-clear" title="Bekor qilish">
+                                        <span class="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="muted" style="margin-top:4px">JPG, PNG, WEBP yoki GIF formatlarida (maks. 5MB).</small>
                         </div>
-                        <button type="submit" class="btn btn-accent">
-                            <span class="material-symbols-outlined" style="vertical-align:-4px">save</span>
+                        <button type="submit" class="btn btn-accent btn-sm">
+                            <span class="material-symbols-outlined ic-sm" style="vertical-align:-3px">save</span>
                             @win.Rank-o'rin sovg'asini saqlash
                         </button>
                     </form>
                     @if (!string.IsNullOrEmpty(win.GiftBookCoverUrl))
                     {
-                        <div class="ch-gift" style="margin-top:14px;max-width:320px">
-                            <img src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
-                            <div>
-                                <span class="ch-gift-label"><span class="material-symbols-outlined">redeem</span> Joriy sovg'a</span>
+                        <div class="ch-prize-cover-preview" style="margin-top:12px; max-width:360px">
+                            <img class="ch-prize-cover-img" src="@win.GiftBookCoverUrl" alt="@win.GiftBookTitle" referrerpolicy="no-referrer" />
+                            <div class="ch-prize-cover-meta">
                                 <strong>@win.GiftBookTitle</strong>
-                                <span class="muted">@win.GiftBookAuthor</span>
+                                <span class="muted" style="color:var(--text-secondary)">@win.GiftBookAuthor</span>
                             </div>
                         </div>
                     }
@@ -249,27 +445,59 @@
                 @foreach (var u in Model.Standings.OrderBy(x => x.Rank))
                 {
                     <div class="card ch-gift-form" style="margin:0 16px 12px;text-align:left">
-                        <p class="muted">
+                        <p class="muted" style="margin-bottom:10px">
                             @Html.Raw(MedalIcon(u.Rank)) <strong>@u.Rank-o'rin — @u.FullName</strong>
                             <span class="muted">· @u.PagesRead bet · @u.BooksRead kitob</span>
                         </p>
-                        <div class="ch-form-row">
-                            <label>Kitob nomi
-                                <input type="text" name="title_@u.Rank" placeholder="Masalan: Atom odatlari" />
-                            </label>
-                            <label>Muallif
-                                <input type="text" name="author_@u.Rank" placeholder="Masalan: Jeyms Klir" />
-                            </label>
+                        <div class="ch-admin-grid-2">
+                            <div class="ch-admin-field">
+                                <label>Kitob nomi</label>
+                                <input class="input" type="text" name="title_@u.Rank" placeholder="Masalan: Atom odatlari" />
+                            </div>
+                            <div class="ch-admin-field">
+                                <label>Muallif</label>
+                                <input class="input" type="text" name="author_@u.Rank" placeholder="Masalan: Jeyms Klir" />
+                            </div>
                         </div>
-                        <div class="ch-form-row">
-                            <label>Muqova rasmi (yuklash)
-                                <input type="file" name="cover_@u.Rank" accept="image/jpeg,image/png,image/webp,image/gif" />
+                        <div class="ch-admin-field" style="margin-top:10px">
+                            <label>
+                                <span class="material-symbols-outlined ic-sm">photo</span>
+                                Muqova rasmi (yuklash)
                             </label>
-                            <small class="muted">JPG, PNG, WEBP yoki GIF. iPhone HEIC rasmlari qo'llab-quvvatlanmaydi.</small>
+                            <div class="ch-file-uploader" data-ch-uploader>
+                                <input type="file"
+                                       name="cover_@u.Rank"
+                                       id="announceCover_@u.Rank"
+                                       class="ch-file-uploader-input"
+                                       accept="image/jpeg,image/png,image/webp,image/gif" />
+                                <label for="announceCover_@u.Rank" class="ch-file-uploader-zone">
+                                    <div class="ch-file-uploader-icon">
+                                        <span class="material-symbols-outlined">add_photo_alternate</span>
+                                    </div>
+                                    <div class="ch-file-uploader-text">
+                                        <span class="ch-file-uploader-btn">
+                                            <span class="material-symbols-outlined">upload_file</span>
+                                            Faylni tanlash
+                                        </span>
+                                        <span class="ch-file-uploader-hint">JPG, PNG, WEBP yoki GIF</span>
+                                    </div>
+                                </label>
+                                <div class="ch-file-uploader-preview-bar" hidden>
+                                    <img class="ch-file-uploader-thumb" src="" alt="Tanlangan muqova" />
+                                    <div class="ch-file-uploader-meta">
+                                        <span class="ch-file-uploader-name"></span>
+                                        <span class="ch-file-uploader-size"></span>
+                                    </div>
+                                    <button type="button" class="btn btn-ghost btn-sm ch-file-uploader-clear" title="Bekor qilish">
+                                        <span class="material-symbols-outlined">close</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="muted" style="margin-top:4px">JPG, PNG, WEBP yoki GIF (maks. 5MB).</small>
                         </div>
                     </div>
                 }
-                <div style="text-align:center;padding:6px 16px 0">
+                <div style="text-align:center;padding:12px 16px 6px">
                     <button type="submit" class="btn btn-primary"
                             onclick="return confirm('@Model.PeriodLabel uchun g\'oliblarni e\'lon qilishni tasdiqlaysizmi? Bu amalni orqaga qaytarib bo\'lmaydi.');">
                         <span class="material-symbols-outlined" style="vertical-align:-4px">campaign</span>
@@ -284,10 +512,6 @@
 <link rel="stylesheet" href="/css/challenge.css" asp-append-version="true" />
 
 @section Scripts {
-    <script type="application/json" data-ch-data>
-        { "covers": @coversJson, "daily": [], "monthly": [], "announced": null, "announceKey": "" }
-    </script>
-    <script type="module" src="~/js/challenge.js" asp-append-version="true"></script>
     <script type="application/json" data-preview-standings>@standingsJson</script>
     <script src="~/js/challenge-admin.js" asp-append-version="true"></script>
 }

@@ -77,13 +77,27 @@
             @if (Model.Status == PhysicalBookStatus.BandQilindi)
             {
                 <div class="pb-actions">
-                    <button class="btn btn-accent btn-sm" data-pb-action="confirm" data-pb-id="@Model.Id">Topshirdim</button>
+                    @if (!string.IsNullOrWhiteSpace(Model.ReserverUsername))
+                    {
+                        <a class="btn btn-outline btn-sm" href="https://t.me/@Model.ReserverUsername.TrimStart('@')" target="_blank" rel="noopener">
+                            <span class="material-symbols-outlined ic-sm ic-baseline">send</span>
+                            Kitobxonga yozish
+                        </a>
+                    }
+                    <button class="btn btn-accent btn-sm" data-pb-action="confirm" data-pb-id="@Model.Id">Qabul qilish</button>
                     <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bekor qilish</button>
                 </div>
             }
             else if (Model.Status == PhysicalBookStatus.OqiyApti)
             {
                 <div class="pb-actions">
+                    @if (!string.IsNullOrWhiteSpace(Model.ReserverUsername))
+                    {
+                        <a class="btn btn-outline btn-sm" href="https://t.me/@Model.ReserverUsername.TrimStart('@')" target="_blank" rel="noopener">
+                            <span class="material-symbols-outlined ic-sm ic-baseline">send</span>
+                            Kitobxonga yozish
+                        </a>
+                    }
                     <button class="btn btn-accent btn-sm" data-pb-action="return" data-pb-id="@Model.Id">Qaytarildi</button>
                 </div>
             }
@@ -102,10 +116,20 @@
                     <button class="btn btn-accent btn-sm" data-pb-action="reserve" data-pb-id="@Model.Id">O'qimoqchiman</button>
                 </div>
             }
-            else if (Model.ReservedByMe && Model.Status == PhysicalBookStatus.BandQilindi)
+            else if (Model.ReservedByMe && (Model.Status == PhysicalBookStatus.BandQilindi || Model.Status == PhysicalBookStatus.OqiyApti))
             {
                 <div class="pb-actions">
-                    <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bandni bekor qilish</button>
+                    @if (!string.IsNullOrWhiteSpace(Model.OwnerUsername))
+                    {
+                        <a class="btn btn-accent btn-sm" href="https://t.me/@Model.OwnerUsername.TrimStart('@')" target="_blank" rel="noopener">
+                            <span class="material-symbols-outlined ic-sm ic-baseline">send</span>
+                            Egasiga yozish
+                        </a>
+                    }
+                    @if (Model.Status == PhysicalBookStatus.BandQilindi)
+                    {
+                        <button class="btn btn-ghost btn-sm" data-pb-action="cancel" data-pb-id="@Model.Id">Bandni bekor qilish</button>
+                    }
                 </div>
             }
         }

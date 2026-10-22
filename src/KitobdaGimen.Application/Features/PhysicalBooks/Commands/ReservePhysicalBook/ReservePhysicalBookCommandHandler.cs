@@ -17,13 +17,18 @@ public class ReservePhysicalBookCommandHandler : IRequestHandler<ReservePhysical
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
+    private readonly ITelegramBotService? _telegramBot;
 
     public ReservePhysicalBookCommandHandler(
-        IAppDbContext db, ICurrentUserService currentUser, INotificationService notifications)
+        IAppDbContext db,
+        ICurrentUserService currentUser,
+        INotificationService notifications,
+        ITelegramBotService? telegramBot = null)
     {
         _db = db;
         _currentUser = currentUser;
         _notifications = notifications;
+        _telegramBot = telegramBot;
     }
 
     public async Task<PhysicalBookDto> Handle(ReservePhysicalBookCommand request, CancellationToken cancellationToken)
@@ -79,6 +84,12 @@ public class ReservePhysicalBookCommandHandler : IRequestHandler<ReservePhysical
             Message = $"{reserverName} \"{bookTitle}\" kitobingizni o'qimoqchi. 24 soat ichida topshiring.",
             Url = "/almashish"
         }, cancellationToken);
+
+        // Kitob egasiga Telegram orqali ham bildirishnoma va "Qabul qilish" tugmasi yuboriladi
+        if (_telegramBot is not null)
+        {
+            _ = _telegramBot.NotifyPhysicalBookReservedAsync(book.Id, userId, CancellationToken.None);
+        }
 
         // Yangilangan holatni qaytaramiz (yangi band qilish reservation ro'yxatida).
         book.Reservations.Add(reservation);

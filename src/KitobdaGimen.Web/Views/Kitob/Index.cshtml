@@ -1,11 +1,17 @@
 @using KitobdaGimen.Application.Common.Interfaces
 @using KitobdaGimen.Application.Common.Models
 @using KitobdaGimen.Application.Features.Books.Queries.GetBooksFeed
+@using KitobdaGimen.Web.Seo
 @inject ICurrentUserService CurrentUser
 @model PagedResult<BookFeedItemDto>
 @{
-    ViewData["Title"] = "Kitoblar — taqriz va iqtiboslar";
-    ViewData["Description"] = "Kitobxonlar taqriz va iqtibos yozgan barcha kitoblar — kitobdagimen.uz da.";
+    var seoBase = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    ViewData["Title"] = "Kitoblar katalogi — Asarlar, taqriz va iqtiboslar";
+    ViewData["Description"] = "O'zbek va jahon adabiyoti durdonalaridan iborat kitoblar katalogi. Kitobxonlar taqrizlari, baholari va iqtiboslari bilan tanishing.";
+    ViewData["Canonical"] = $"{seoBase}/kitoblar";
+    ViewData["OgType"] = "website";
+    ViewData["JsonLdBreadcrumbs"] = SeoJsonLd.Breadcrumb(seoBase, ("Bosh sahifa", "/"), ("Kitoblar", "/kitoblar"));
+
     var isAuth = CurrentUser.IsAuthenticated;
     var search = ViewData["Search"] as string ?? "";
 }

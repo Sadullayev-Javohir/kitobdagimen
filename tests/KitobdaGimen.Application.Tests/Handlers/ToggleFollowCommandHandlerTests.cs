@@ -23,7 +23,7 @@ public class ToggleFollowCommandHandlerTests : TestBase
         using var db = CreateContext();
         await SeedUsersAsync(db, 1, 2);
         var notifier = new SpyNotificationService();
-        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), notifier);
+        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), notifier, new FakeTelegramBotService());
 
         var followed = await handler.Handle(new ToggleFollowCommand(2), CancellationToken.None);
         Assert.True(followed.IsFollowing);
@@ -43,7 +43,7 @@ public class ToggleFollowCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 1);
-        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
+        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService(), new FakeTelegramBotService());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new ToggleFollowCommand(1), CancellationToken.None));
@@ -54,7 +54,7 @@ public class ToggleFollowCommandHandlerTests : TestBase
     {
         using var db = CreateContext();
         await SeedUsersAsync(db, 1);
-        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService());
+        var handler = new ToggleFollowCommandHandler(db, new FakeCurrentUserService(userId: 1), new SpyNotificationService(), new FakeTelegramBotService());
 
         await Assert.ThrowsAsync<NotFoundException>(
             () => handler.Handle(new ToggleFollowCommand(999), CancellationToken.None));

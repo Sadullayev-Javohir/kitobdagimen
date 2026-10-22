@@ -265,12 +265,11 @@
             if (d.pages > 0) {
                 detailEl.innerHTML =
                     '<span class="material-symbols-outlined">event_available</span>' +
-                    '<span><strong>' + human + '</strong> — ' +
-                    '<b>' + (d.books || 0) + '</b> kitob o\'qildi · <b>' + d.pages + '</b> bet</span>';
+                    '<span><strong>' + human + '</strong>: <b>' + d.pages + '</b> bet · ' + (d.books || 0) + ' kitob</span>';
             } else {
                 detailEl.innerHTML =
                     '<span class="material-symbols-outlined">event_busy</span>' +
-                    '<span><strong>' + human + '</strong> — bu kuni o\'qilmagan</span>';
+                    '<span><strong>' + human + '</strong>: mutolaa qilinmagan</span>';
             }
         }
 
@@ -318,7 +317,7 @@
             if (detailEl) {
                 detailEl.innerHTML =
                     '<span class="material-symbols-outlined">touch_app</span>' +
-                    '<span class="muted">Kunni ustiga bosing — o\'sha kuni qancha kitob o\'qiganingiz ko\'rsatiladi.</span>';
+                    '<span class="muted">Kunlik natijani ko\'rish uchun katakni tanlang</span>';
             }
         }
 
@@ -347,9 +346,9 @@
             const calEl = buildHeatmap(cal.days || [], cal.maxPages || 0, detailEl, true);
             host.appendChild(calEl);
             setSummary(
-                '<span class="material-symbols-outlined">menu_book</span> <strong>' + (cal.totalBooks || 0) + '</strong> kitob' +
-                ' · <span class="material-symbols-outlined">description</span> <strong>' + (cal.totalPages || 0) + '</strong> bet' +
-                ' · <span class="material-symbols-outlined">event_available</span> <strong>' + (cal.activeDays || 0) + '</strong> kun o\'qildi'
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">menu_book</span> <strong>' + (cal.totalBooks || 0) + '</strong> kitob</span>' +
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">description</span> <strong>' + (cal.totalPages || 0) + '</strong> bet</span>' +
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">event_available</span> <strong>' + (cal.activeDays || 0) + '</strong> faol kun</span>'
             );
             resetDetail();
             scrollYearToMonth(calEl, cal.year);
@@ -361,9 +360,9 @@
             host.innerHTML = "";
             host.appendChild(buildHeatmap(days, max, detailEl, false));
             setSummary(
-                '<span class="material-symbols-outlined">menu_book</span> <strong>' + (data.monthBooks || 0) + '</strong> kitob' +
-                ' · <span class="material-symbols-outlined">description</span> <strong>' + (data.monthPages || 0) + '</strong> bet' +
-                ' · <span class="material-symbols-outlined">event_available</span> <strong>' + (data.monthActiveDays || 0) + '</strong> kun (30 kun)'
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">menu_book</span> <strong>' + (data.monthBooks || 0) + '</strong> kitob</span>' +
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">description</span> <strong>' + (data.monthPages || 0) + '</strong> bet</span>' +
+                '<span class="ch-stat-chip"><span class="material-symbols-outlined">event_available</span> <strong>' + (data.monthActiveDays || 0) + '</strong> faol kun</span>'
             );
             resetDetail();
         }

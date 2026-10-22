@@ -36,6 +36,7 @@ public class PhysicalBooksHandlerTests : TestBase
         var ownerSvc = new FakeCurrentUserService(owner.Id);
         var reserverSvc = new FakeCurrentUserService(reserver.Id);
         var notifications = new SpyNotificationService();
+        var telegramBot = new FakeTelegramBotService();
 
         // Act 1: Egasi kitob qo'shadi (katalogdan)
         var addHandler = new AddPhysicalBookCommandHandler(db, ownerSvc);
@@ -46,7 +47,7 @@ public class PhysicalBooksHandlerTests : TestBase
         Assert.True(added.IsMine);
 
         // Act 2: Boshqa foydalanuvchi band qiladi
-        var reserveHandler = new ReservePhysicalBookCommandHandler(db, reserverSvc, notifications);
+        var reserveHandler = new ReservePhysicalBookCommandHandler(db, reserverSvc, notifications, telegramBot);
         var reserved = await reserveHandler.Handle(new ReservePhysicalBookCommand(added.Id), default);
 
         Assert.Equal(PhysicalBookStatus.BandQilindi, reserved.Status);
@@ -59,7 +60,7 @@ public class PhysicalBooksHandlerTests : TestBase
 
         // Act 3: Egasi topshirishni tasdiqlaydi
         notifications.Sent.Clear();
-        var confirmHandler = new ConfirmHandoverCommandHandler(db, ownerSvc, notifications);
+        var confirmHandler = new ConfirmHandoverCommandHandler(db, ownerSvc, notifications, telegramBot);
         var confirmed = await confirmHandler.Handle(new ConfirmHandoverCommand(added.Id), default);
 
         Assert.Equal(PhysicalBookStatus.OqiyApti, confirmed.Status);
@@ -90,7 +91,8 @@ public class PhysicalBooksHandlerTests : TestBase
         });
         await db.SaveChangesAsync();
 
-        var handler = new ReservePhysicalBookCommandHandler(db, new FakeCurrentUserService(owner.Id), new SpyNotificationService());
+        var handler = new ReservePhysicalBookCommandHandler(
+            db, new FakeCurrentUserService(owner.Id), new SpyNotificationService(), new FakeTelegramBotService());
 
         await Assert.ThrowsAsync<ForbiddenAccessException>(
             () => handler.Handle(new ReservePhysicalBookCommand(1), default));

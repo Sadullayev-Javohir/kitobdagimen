@@ -33,7 +33,7 @@ public class AddCommentCommandHandler : IRequestHandler<AddCommentCommand, Comme
             .FirstOrDefaultAsync(cancellationToken);
         if (postAuthorId is null)
         {
-            throw new NotFoundException("Post", request.PostId);
+            throw new NotFoundException("Taqriz", request.PostId);
         }
 
         if (request.ParentCommentId is int parentId)
@@ -47,7 +47,7 @@ public class AddCommentCommandHandler : IRequestHandler<AddCommentCommand, Comme
                 throw new ValidationException(new[]
                 {
                     new FluentValidation.Results.ValidationFailure(
-                        nameof(request.ParentCommentId), "Izoh boshqa postga tegishli.")
+                        nameof(request.ParentCommentId), "Izoh boshqa taqrizga tegishli.")
                 });
             }
 

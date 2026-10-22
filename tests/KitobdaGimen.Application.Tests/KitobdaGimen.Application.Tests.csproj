@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\KitobdaGimen.Application\KitobdaGimen.Application.csproj" />
     <ProjectReference Include="..\..\src\KitobdaGimen.Domain\KitobdaGimen.Domain.csproj" />
+    <ProjectReference Include="..\..\src\KitobdaGimen.Infrastructure\KitobdaGimen.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

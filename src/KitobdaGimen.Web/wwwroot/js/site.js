@@ -26,21 +26,6 @@
         }
     })();
 
-    // ===== Orqa fon video autoplay =====
-    // Ba'zi brauzerlar autoplay'ni bloklaydi — video yuklangach va birinchi
-    // foydalanuvchi klikida qayta urinib ko'ramiz. Barcha sahifalarda ishlaydi.
-    (function () {
-        var v = document.querySelector(".lp-bg-video");
-        if (!v) return;
-        var tryPlay = function () {
-            var p = v.play();
-            if (p && p.catch) p.catch(function () { });
-        };
-        tryPlay();
-        v.addEventListener("loadeddata", tryPlay);
-        document.addEventListener("click", tryPlay, { once: true });
-    })();
-
     // Mobil burger menyu
     const burger = document.querySelector("[data-burger]");
     const navLinks = document.querySelector("[data-nav-links]");
@@ -102,7 +87,7 @@
             });
             const countEl = document.querySelector("[data-follower-count]");
             if (countEl) countEl.textContent = result.followerCount;
-            // Feedda yangi kuzatilgan muallifning postlari ko'rinishi uchun ro'yxatni yangilaymiz.
+            // Feedda yangi kuzatilgan muallifning taqrizlari ko'rinishi uchun ro'yxatni yangilaymiz.
             if (result.isFollowing && fromFeed) {
                 setTimeout(() => window.location.reload(), 400);
             }
@@ -138,7 +123,7 @@
         } catch (err) { alert(err.message); }
     });
 
-    // Admin moderatsiyasi — istalgan post/iqtibosni o'chirish (admin/super admin uchun).
+    // Admin moderatsiyasi — istalgan taqriz/iqtibosni o'chirish (admin/super admin uchun).
     document.addEventListener("click", async (e) => {
         const pBtn = e.target.closest("[data-admin-delete-post]");
         const qBtn = e.target.closest("[data-admin-delete-quote]");
@@ -146,16 +131,16 @@
         e.preventDefault();
         const isPost = !!pBtn;
         const id = (pBtn || qBtn).getAttribute(isPost ? "data-admin-delete-post" : "data-admin-delete-quote");
-        if (!confirm(isPost ? "Bu postni o'chirishni tasdiqlaysizmi? (admin)" : "Bu iqtibosni o'chirishni tasdiqlaysizmi? (admin)")) return;
+        if (!confirm(isPost ? "Bu taqrizni o'chirishni tasdiqlaysizmi? (admin)" : "Bu iqtibosni o'chirishni tasdiqlaysizmi? (admin)")) return;
         try {
             await apiPost(`/admin/${isPost ? "posts" : "quotes"}/${id}/delete`);
             const card = (pBtn || qBtn).closest(".post-card, .quote-card, .pd-article");
             if (card) { card.style.transition = "opacity .2s"; card.style.opacity = "0"; setTimeout(() => card.remove(), 200); }
-            showToast(isPost ? "Post o'chirildi." : "Iqtibos o'chirildi.");
+            showToast(isPost ? "Taqriz o'chirildi." : "Iqtibos o'chirildi.");
         } catch (err) { alert(err.message); }
     });
 
-    // Post tahrirlash/o'chirish — "[data-post-scope]" ichida ham feed kartasi (.post-card),
+    // Taqriz tahrirlash/o'chirish — "[data-post-scope]" ichida ham feed kartasi (.post-card),
     // ham post detali sahifasi (.pd-article) bir xil belgilar bilan ishlaydi.
     function setEditing(scope, editing) {
         scope.querySelectorAll("[data-view-panel]").forEach((el) => { el.hidden = editing; });
@@ -301,19 +286,44 @@
         finally { btn.disabled = false; }
     });
 
-    // Postni o'chirish (faqat egasiga ko'rinadi) — feed kartasidan o'chiradi,
-    // post detali sahifasida esa o'chirilgandan keyin feedga qaytaradi.
+    // Taqrizni o'chirish (faqat egasiga ko'rinadi) — feed kartasidan o'chiradi,
+    // Taqrizni o'chirish — feed/profil sahifasida kartani olib tashlaydi,
+    // taqriz detali sahifasida esa o'chirilgandan keyin feedga yoki avvalgi sahifaga qaytaradi.
     document.addEventListener("click", async (e) => {
         const btn = e.target.closest("[data-delete-post]");
         if (!btn) return;
         e.preventDefault();
-        if (!confirm("Postni o'chirmoqchimisiz?")) return;
+        if (!confirm("Taqrizni o'chirmoqchimisiz?")) return;
         const id = btn.getAttribute("data-delete-post");
         try {
             await apiPost(`/posts/${id}/delete`);
-            const card = btn.closest(".post-card");
+            const card = btn.closest(".post-card") || btn.closest(".card");
             if (card) { card.remove(); return; }
-            window.location.href = "/Feed";
+            if (window.history.length > 1 && document.referrer && document.referrer.indexOf(window.location.host) !== -1 && !document.referrer.includes('/post/')) {
+                window.location.href = document.referrer;
+            } else {
+                window.location.href = "/Feed";
+            }
+        } catch (err) { alert(err.message); }
+    });
+
+    // Iqtibosni o'chirish — feed/quotes/profil sahifasida kartani olib tashlaydi,
+    // detal sahifasida esa avvalgi sahifaga yoki /Feed ga qaytaradi.
+    document.addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-delete-quote]");
+        if (!btn) return;
+        e.preventDefault();
+        if (!confirm("Iqtibosni o'chirmoqchimisiz?")) return;
+        const id = btn.getAttribute("data-delete-quote");
+        try {
+            await apiPost(`/quotes/${id}/delete`);
+            const card = btn.closest(".quote-feed-card") || btn.closest(".quote-item") || btn.closest(".card");
+            if (card) { card.remove(); return; }
+            if (window.history.length > 1 && document.referrer && document.referrer.indexOf(window.location.host) !== -1 && !document.referrer.includes('/iqtibos/')) {
+                window.location.href = document.referrer;
+            } else {
+                window.location.href = "/Feed";
+            }
         } catch (err) { alert(err.message); }
     });
 
@@ -414,12 +424,22 @@ function showToast(message, options) {
             link.target = "_blank";
             link.rel = "noopener";
         }
+        if (options.id) {
+            link.addEventListener("click", () => {
+                if (window.kitob && typeof window.kitob.markNotificationRead === "function") {
+                    window.kitob.markNotificationRead(options.id);
+                }
+            });
+        }
         body.appendChild(link);
     }
     el.appendChild(body);
     if (options.url) {
         el.classList.add("clickable");
         el.addEventListener("click", (e) => {
+            if (options.id && window.kitob && typeof window.kitob.markNotificationRead === "function") {
+                window.kitob.markNotificationRead(options.id);
+            }
             // Aniq havola tugmasi bosilsa, uni o'z holiga qo'yamiz (yangi tab / rel ishlaydi).
             if (e.target.closest(".toast-link-btn")) return;
             window.location.href = options.url;
@@ -462,6 +482,7 @@ function initNotifications() {
     if (document.body.dataset.authenticated !== "true" || !window.signalR) return;
 
     const badge = document.querySelector("[data-notif-badge]");
+    const markAllBtn = document.querySelector("[data-notif-mark-all]");
     let unread = 0;
     function renderBadge() {
         if (!badge) return;
@@ -472,14 +493,14 @@ function initNotifications() {
             badge.textContent = "";
             badge.hidden = true;
         }
+        if (markAllBtn) {
+            markAllBtn.hidden = unread === 0;
+        }
     }
     function bumpBadge() { unread += 1; renderBadge(); }
     function setBadge(count) { unread = Math.max(0, count | 0); renderBadge(); }
 
     // ── Bildirishnomalar paneli (qo'ng'iroq dropdown) ──
-    // Kim qaysi postga izoh qoldirgani / like bosgani / kuzatgani ro'yxati. Panel ochilganda
-    // serverga "o'qildi" deb belgilanadi — keyingi refreshda ro'yxat tozalanadi (joriy ochilgan
-    // panelda esa ko'rinib turadi, foydalanuvchi o'qib ulgursin).
     const notifWrap = document.querySelector("[data-notif-wrap]");
     const notifToggle = document.querySelector("[data-notif-toggle]");
     const notifPanel = document.querySelector("[data-notif-panel]");
@@ -517,10 +538,12 @@ function initNotifications() {
             const tag = n.url ? "a" : "div";
             const ext = n.url && /^https?:\/\//i.test(n.url) && n.url.indexOf(location.origin) !== 0;
             const href = n.url ? ` href="${esc(n.url)}"${ext ? ' target="_blank" rel="noopener"' : ""}` : "";
-            const cls = "notif-item" + (n.type === "announcement" ? " notif-announcement" : "");
+            const notifId = n.id ? ` data-notif-id="${n.id}"` : "";
+            const unreadCls = !n.isRead ? " notif-unread" : "";
+            const cls = "notif-item" + unreadCls + (n.type === "announcement" ? " notif-announcement" : "");
             const title = n.title ? `<span class="notif-title">${esc(n.title)}</span>` : "";
             const linkBtn = n.url ? `<span class="notif-link-btn">Ko'rish →</span>` : "";
-            return `<${tag} class="${cls}"${href}>${av}` +
+            return `<${tag} class="${cls}"${href}${notifId}>${av}` +
                 `<span class="notif-meta">` +
                 title +
                 `<span class="notif-msg">${esc(n.message)}</span>` +
@@ -533,16 +556,60 @@ function initNotifications() {
         if (!notifPanel) return;
         notifPanel.hidden = false;
         if (notifToggle) notifToggle.setAttribute("aria-expanded", "true");
-        if (unread > 0) {
-            apiPost("/notifications/read").catch(() => {});
-            setBadge(0); // panel ochildi → o'qildi; ro'yxat hozir ko'rinib turadi, refreshdan keyin tozalanadi
-        }
     }
     function closeNotifPanel() {
         if (!notifPanel) return;
         notifPanel.hidden = true;
         if (notifToggle) notifToggle.setAttribute("aria-expanded", "false");
     }
+
+    function markNotificationRead(id) {
+        if (!id) return;
+        const target = items.find((x) => x.id === id);
+        if (target && !target.isRead) {
+            target.isRead = true;
+            setBadge(unread - 1);
+            const domItem = notifList ? notifList.querySelector(`[data-notif-id="${id}"]`) : null;
+            if (domItem) domItem.classList.remove("notif-unread");
+        }
+        try {
+            fetch("/notifications/read", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": antiforgeryToken()
+                },
+                credentials: "include",
+                body: JSON.stringify({ ids: [id] }),
+                keepalive: true
+            }).catch(() => {});
+        } catch (_) {}
+    }
+
+    if (notifList) {
+        notifList.addEventListener("click", (e) => {
+            const item = e.target.closest("[data-notif-id]");
+            if (!item) return;
+            const id = parseInt(item.getAttribute("data-notif-id"), 10);
+            if (id) {
+                markNotificationRead(id);
+            }
+        });
+    }
+
+    if (markAllBtn) {
+        markAllBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (unread <= 0) return;
+            apiPost("/notifications/read").catch(() => {});
+            items.forEach((n) => { n.isRead = true; });
+            setBadge(0);
+            renderList();
+        });
+    }
+
     if (notifToggle && notifPanel) {
         notifToggle.addEventListener("click", (e) => {
             e.preventDefault();
@@ -556,41 +623,8 @@ function initNotifications() {
         });
     }
 
-    // ── Navbar "Xabarlar" unread-message badge (separate from the activity bell) ──
-    // Bir nechta joyda bo'lishi mumkin: yuqori navbar + mobil pastki navigatsiya.
-    const msgBadges = document.querySelectorAll("[data-msg-badge]");
-    let unreadMsgs = 0;
-    function renderMsgBadge() {
-        msgBadges.forEach((b) => {
-            if (unreadMsgs > 0) {
-                b.textContent = unreadMsgs > 99 ? "99+" : String(unreadMsgs);
-                b.hidden = false;
-            } else {
-                b.textContent = "";
-                b.hidden = true;
-            }
-        });
-    }
-    function bumpMsgBadge() { unreadMsgs += 1; renderMsgBadge(); }
-    function setMsgBadge(count) { unreadMsgs = Math.max(0, count | 0); renderMsgBadge(); }
-
-    // The conversation currently open on /chat (if any) — its incoming messages are read on
-    // arrival, so they must NOT bump the badge.
-    function activeConversationId() {
-        const el = document.getElementById("conversationId");
-        return el ? (parseInt(el.value, 10) || 0) : 0;
-    }
-
-    // Source of truth: re-fetch the real unread-message count on every page load, so the badge is
-    // accurate after a refresh and clears once a conversation is opened (server marks it read).
-    fetch("/chat/unread-count", { headers: { "X-Requested-With": "XMLHttpRequest" } })
-        .then(r => (r.ok ? r.json() : null))
-        .then(d => { if (d) setMsgBadge(d.count); })
-        .catch(() => {});
-
     // Replay: on every page load, pull notifications missed while offline so an invite sent
-    // while we were logged out still surfaces (badge count). /chat marks them read server-side,
-    // so there the count is already 0.
+    // while we were logged out still surfaces (badge count).
     fetch("/notifications/unread", { headers: { "X-Requested-With": "XMLHttpRequest" } })
         .then(r => (r.ok ? r.json() : null))
         .then(d => { if (d) { setBadge(d.count); items = d.items || []; renderList(); } })
@@ -609,20 +643,7 @@ function initNotifications() {
     connection.on("ReceiveNotification", (n) => {
         if (!n) return;
 
-        // New chat message → drive the "Xabarlar" badge, NOT the activity bell.
-        if (n.type === "message") {
-            // If the user is already viewing this conversation, it's read on arrival — don't bump.
-            if (n.relatedId && activeConversationId() === n.relatedId) return;
-            bumpMsgBadge();
-            // /chat shows its own per-message toast; elsewhere, surface one here.
-            const onChat = location.pathname.toLowerCase().startsWith("/chat");
-            if (!onChat) {
-                showToast(n.message || "Yangi xabar", { avatarUrl: n.actorAvatarUrl, url: n.url || "/chat" });
-            }
-            return;
-        }
-
-        // Let pages (e.g. /chat owl) react to specific notification types first.
+        // Let pages react to specific notification types first.
         document.dispatchEvent(new CustomEvent("kitob:notification", { detail: n }));
 
         // Kunlik o'qish eslatmasi — boyo'g'li (🦉) yetkazadi: ajralib turadigan toast.
@@ -638,7 +659,7 @@ function initNotifications() {
         const handledByPage = (n.type === "connection_request" || n.type === "connection_accepted")
             && document.getElementById("owlPanel");
         if (!handledByPage) {
-            showToast(n.message || "Yangi bildirishnoma", { avatarUrl: n.actorAvatarUrl, url: n.url, title: n.title });
+            showToast(n.message || "Yangi bildirishnoma", { avatarUrl: n.actorAvatarUrl, url: n.url, title: n.title, id: n.id });
         }
         // Qo'ng'iroq panelidagi ro'yxatga ham qo'shamiz (eng yangisi tepada).
         items.unshift(n);
@@ -663,6 +684,7 @@ function initNotifications() {
     });
     startNotif();
     window.kitob.notifications = connection;
+    window.kitob.markNotificationRead = markNotificationRead;
 }
 
 /**
@@ -831,6 +853,32 @@ function founderBadge(username) {
 // ham ko'rsatamiz. Foydalanuvchi birini bossa — u lokal katalogga import qilinib
 // (muqovasi bilan), tanlangan kitob sifatida qaytariladi (pickBook orqali).
 async function renderAsaxiyBooks(query, suggestions, pickBook) {
+    // Agar oldingi yuklanish indikatori bo'lsa tozalaymiz
+    const prevLoader = suggestions.querySelector(".book-suggest__loading");
+    if (prevLoader) prevLoader.remove();
+    const prevEmpty = suggestions.querySelector(".book-suggest__empty");
+    if (prevEmpty) prevEmpty.remove();
+
+    // Foydalanuvchiga qidiruv ketayotganini ko'rsatish uchun loader qo'shamiz
+    const loader = document.createElement("div");
+    loader.className = "book-suggest__loading";
+    loader.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width: 14px; height: 14px; border-width: 2px;"></span><span>asaxiy.uz dan qidirilmoqda…</span>';
+    suggestions.appendChild(loader);
+    suggestions.hidden = false;
+
+    function checkEmpty() {
+        if (suggestions.dataset.q !== query) return;
+        const hasBooks = suggestions.querySelector(".book-suggest__asaxiy") ||
+                         suggestions.querySelector("div:not(.book-suggest__loading):not(.book-suggest__src):not(.book-suggest__empty)");
+        if (!hasBooks) {
+            const empty = document.createElement("div");
+            empty.className = "book-suggest__empty";
+            empty.textContent = "Kitob topilmadi. Yangi kitob qo'shishingiz mumkin.";
+            suggestions.appendChild(empty);
+            suggestions.hidden = false;
+        }
+    }
+
     let items;
     try {
         const res = await fetch(`/books/asaxiy-search?q=${encodeURIComponent(query)}`,
@@ -838,12 +886,25 @@ async function renderAsaxiyBooks(query, suggestions, pickBook) {
                 headers: { "X-Requested-With": "XMLHttpRequest" },
                 credentials: "include"
             });
-        if (!res.ok) return;
+        loader.remove();
+        if (!res.ok) {
+            checkEmpty();
+            return;
+        }
         items = await res.json();
-    } catch { return; }
+    } catch {
+        loader.remove();
+        checkEmpty();
+        return;
+    }
 
     // Foydalanuvchi shu orada boshqa narsa yozgan bo'lsa — eski natijani chiqarmaymiz.
-    if (suggestions.dataset.q !== query || !Array.isArray(items) || !items.length) return;
+    if (suggestions.dataset.q !== query) return;
+
+    if (!Array.isArray(items) || !items.length) {
+        checkEmpty();
+        return;
+    }
 
     const head = document.createElement("div");
     head.className = "book-suggest__src";
@@ -916,7 +977,129 @@ document.addEventListener("click", async (e) => {
     }
 });
 
-window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks };
+// Mobil qurilmalarda kamera orqali olingan katta hajmli (8-15 MB) muqova rasmlarini
+// brauzerning o'zida canvas orqali ixchamlashtirish yordamchisi.
+function compressImageForCover(file) {
+    return new Promise(function (resolve) {
+        if (!file || !(file instanceof Blob)) return resolve(null);
+        var type = (file.type || "").toLowerCase();
+        var name = file.name || "";
+        var isImg = type.startsWith("image/") || /\.(jpe?g|png|webp|gif|jfif|heic|heif)$/i.test(name);
+        if (!isImg) return resolve(null);
+
+        // Agar rasm allaqachon kichik bo'lsa (<= 1.5MB va JPEG), qayta siqish shart emas
+        if (file.size <= 1.5 * 1024 * 1024 && type === "image/jpeg") {
+            return resolve(null);
+        }
+
+        var url = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function () {
+            URL.revokeObjectURL(url);
+            var maxDim = 1200;
+            var w = img.naturalWidth || img.width;
+            var h = img.naturalHeight || img.height;
+            if (!w || !h) return resolve(null);
+
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                }
+            }
+
+            var canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext("2d");
+            if (!ctx) return resolve(null);
+            ctx.drawImage(img, 0, 0, w, h);
+
+            if (canvas.toBlob) {
+                canvas.toBlob(function (blob) {
+                    if (!blob) return resolve(null);
+                    var cleanName = (name.replace(/\.[^.]+$/, "") || "cover") + ".jpg";
+                    var resizedFile;
+                    try {
+                        resizedFile = new File([blob], cleanName, { type: "image/jpeg", lastModified: Date.now() });
+                    } catch (e) {
+                        resizedFile = blob;
+                        resizedFile.name = cleanName;
+                    }
+                    resolve(resizedFile);
+                }, "image/jpeg", 0.85);
+            } else {
+                resolve(null);
+            }
+        };
+        img.onerror = function () {
+            URL.revokeObjectURL(url);
+            resolve(null);
+        };
+        img.src = url;
+    });
+}
+
+// Kitob muqovasini yuklash umumiy funksiyasi (/feed, /reading-goals, /quotes, /almashish)
+async function uploadBookCover(file) {
+    if (!file) return null;
+
+    let uploadFile = file;
+    try {
+        const compressed = await compressImageForCover(file);
+        if (compressed) uploadFile = compressed;
+    } catch {
+        // canvas xatolik bersa, asl fayl bilan davom etamiz
+    }
+
+    const fd = new FormData();
+    fd.append("file", uploadFile);
+
+    const token = antiforgeryToken();
+    if (token) {
+        fd.append("__RequestVerificationToken", token);
+    }
+
+    const res = await fetch("/books/upload-cover", {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            ...(token ? { "RequestVerificationToken": token } : {})
+        },
+        credentials: "include",
+        body: fd
+    });
+
+    if (res.status === 401) {
+        window.location.href = "/";
+        return null;
+    }
+
+    if (!res.ok) {
+        let message = "Rasmni yuklab bo'lmadi.";
+        try {
+            const d = await res.json();
+            message = d.message || message;
+        } catch {
+            if (res.status === 413) {
+                message = "Rasm hajmi juda katta. Iltimos kichikroq rasm tanlang (10 MB gacha).";
+            } else if (res.status === 400) {
+                message = "Rasm formati mos kelmadi yoki so'rov noto'g'ri.";
+            } else if (res.status >= 500) {
+                message = "Serverda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.";
+            }
+        }
+        throw new Error(message);
+    }
+
+    const data = await res.json();
+    return data.url;
+}
+
+window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks, uploadBookCover, compressImageForCover };
 
 // ===== Iqtibos ko'rishlari =====
 // Feed'da iqtibos kartasi ekranga chiqishi bilan (foydalanuvchi ichiga kirmasa ham) ko'rish

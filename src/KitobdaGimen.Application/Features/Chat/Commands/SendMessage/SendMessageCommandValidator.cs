@@ -16,7 +16,7 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
                        || !string.IsNullOrWhiteSpace(x.ImageUrl)
                        || !string.IsNullOrWhiteSpace(x.StickerKey)
                        || !string.IsNullOrWhiteSpace(x.VoiceUrl))
-            .WithMessage("Xabar matni, rasm, ovoz, stiker yoki ulashilgan post bo'lishi kerak.");
+            .WithMessage("Xabar matni, rasm, ovoz, stiker yoki ulashilgan taqriz bo'lishi kerak.");
 
         // Rasm URL'i faqat ichki yuklama papkasidan bo'lishi mumkin (tashqi/injeksiya emas).
         RuleFor(x => x.ImageUrl)

@@ -1,0 +1,80 @@
+@using KitobdaGimen.Web.Models
+@model QuotesPageViewModel
+@{
+    var search = Model.Search ?? "";
+    var sort = (Model.Sort ?? "latest").ToLowerInvariant();
+    var items = Model.Quotes?.Items ?? (IReadOnlyList<KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDto>)Array.Empty<KitobdaGimen.Application.Features.Quotes.Dtos.QuoteDto>();
+    var totalPages = Model.Quotes?.TotalPages ?? 0;
+    var currentPage = Model.Quotes?.Page ?? 1;
+}
+
+@if (items.Count == 0)
+{
+    <div class="card empty-state">
+        <span class="material-symbols-outlined">format_quote</span>
+        <p>
+            @if (!string.IsNullOrEmpty(search))
+            {
+                @($"\"{search}\" bo'yicha iqtibos topilmadi.")
+            }
+            else if (sort == "mine")
+            {
+                @("Siz hali iqtibos qo'shmagansiz. Sevimli asaringizdan birinchi iqtibosni qo'shing!")
+            }
+            else
+            {
+                @("Hozircha bu bo'limda iqtiboslar yo'q. Birinchi bo'lib sevimli asaringizdan iqtibos ulashing!")
+            }
+        </p>
+        @if (!string.IsNullOrEmpty(search))
+        {
+            <button type="button" class="btn btn-outline btn-sm" id="emptyClearSearchBtn" style="margin-top:8px">
+                <span class="material-symbols-outlined ic-sm">close</span>
+                Qidiruvni tozalash
+            </button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary btn-sm" style="margin-top:8px" onclick="document.getElementById('openNewQuoteBtn')?.click()">
+                <span class="material-symbols-outlined ic-sm">add</span>
+                Iqtibos ulashish
+            </button>
+        }
+    </div>
+}
+else
+{
+    <div class="quotes-feed-grid">
+        @foreach (var quote in items)
+        {
+            <partial name="_QuoteFeedCard" model="quote" />
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <div class="quotes-pagination">
+            @if (currentPage > 1)
+            {
+                <a class="btn btn-outline btn-sm"
+                   href="/Quotes?sort=@sort&page=@(currentPage - 1)@(string.IsNullOrEmpty(search) ? "" : $"&q={Uri.EscapeDataString(search)}")"
+                   data-quote-page="@(currentPage - 1)">
+                    <span class="material-symbols-outlined ic-sm">chevron_left</span>
+                    Oldingi
+                </a>
+            }
+            <span class="quotes-page-indicator">
+                Sahifa <strong>@currentPage</strong> / @totalPages
+            </span>
+            @if (currentPage < totalPages)
+            {
+                <a class="btn btn-outline btn-sm"
+                   href="/Quotes?sort=@sort&page=@(currentPage + 1)@(string.IsNullOrEmpty(search) ? "" : $"&q={Uri.EscapeDataString(search)}")"
+                   data-quote-page="@(currentPage + 1)">
+                    Keyingi
+                    <span class="material-symbols-outlined ic-sm">chevron_right</span>
+                </a>
+            }
+        </div>
+    }
+}

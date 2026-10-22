@@ -17,6 +17,7 @@ internal static class QuoteQueryableExtensions
             Id = q.Id,
             Slug = q.Slug,
             Text = q.Text,
+            ImageUrl = q.ImageUrl,
             CreatedAt = q.CreatedAt,
             Author = new UserSummaryDto
             {

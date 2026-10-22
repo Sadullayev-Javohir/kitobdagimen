@@ -14,12 +14,18 @@ public class ToggleQuoteLikeCommandHandler : IRequestHandler<ToggleQuoteLikeComm
     private readonly IAppDbContext _db;
     private readonly ICurrentUserService _currentUser;
     private readonly INotificationService _notifications;
+    private readonly ITelegramBotService? _telegramBot;
 
-    public ToggleQuoteLikeCommandHandler(IAppDbContext db, ICurrentUserService currentUser, INotificationService notifications)
+    public ToggleQuoteLikeCommandHandler(
+        IAppDbContext db,
+        ICurrentUserService currentUser,
+        INotificationService notifications,
+        ITelegramBotService? telegramBot = null)
     {
         _db = db;
         _currentUser = currentUser;
         _notifications = notifications;
+        _telegramBot = telegramBot;
     }
 
     public async Task<LikeResultDto> Handle(ToggleQuoteLikeCommand request, CancellationToken cancellationToken)
@@ -59,6 +65,9 @@ public class ToggleQuoteLikeCommandHandler : IRequestHandler<ToggleQuoteLikeComm
         await _db.SaveChangesAsync(cancellationToken);
 
         var likeCount = await _db.QuoteLikes.CountAsync(l => l.QuoteId == request.QuoteId, cancellationToken);
+
+        // Telegram guruhdagi xabar tugmasidagi like sonini sinxronlashtirish
+        _ = _telegramBot?.SyncQuoteLikesInGroupAsync(request.QuoteId, likeCount, CancellationToken.None);
 
         // Notify the quote author of a new like (skip un-likes and liking your own quote).
         if (isLiked && quoteAuthorId.Value != userId)

@@ -7,7 +7,7 @@ public class AddCommentCommandValidator : AbstractValidator<AddCommentCommand>
     public AddCommentCommandValidator()
     {
         RuleFor(x => x.PostId)
-            .GreaterThan(0).WithMessage("Post tanlanmadi.");
+            .GreaterThan(0).WithMessage("Taqriz tanlanmadi.");
 
         RuleFor(x => x.Text)
             .NotEmpty().WithMessage("Izoh matnini kiriting.")

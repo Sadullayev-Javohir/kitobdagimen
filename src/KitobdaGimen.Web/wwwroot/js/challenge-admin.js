@@ -119,4 +119,94 @@
             }
         });
     });
+
+    // Custom File Uploader boshqaruvi (muqova rasmlarini yuklash, preview va bekor qilish)
+    function initFileUploader(uploader) {
+        var input = uploader.querySelector(".ch-file-uploader-input");
+        var zone = uploader.querySelector(".ch-file-uploader-zone");
+        var bar = uploader.querySelector(".ch-file-uploader-preview-bar");
+        var thumb = uploader.querySelector(".ch-file-uploader-thumb");
+        var nameEl = uploader.querySelector(".ch-file-uploader-name");
+        var sizeEl = uploader.querySelector(".ch-file-uploader-size");
+        var clearBtn = uploader.querySelector(".ch-file-uploader-clear");
+
+        if (!input || !zone || !bar) { return; }
+
+        function formatSize(bytes) {
+            if (bytes == null || isNaN(bytes)) return "";
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        }
+
+        function showFile(file) {
+            if (!file) {
+                clearFile();
+                return;
+            }
+            if (nameEl) { nameEl.textContent = file.name; }
+            if (sizeEl) { sizeEl.textContent = formatSize(file.size); }
+
+            if (file.type && file.type.indexOf("image/") === 0) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    if (thumb) {
+                        thumb.src = e.target.result;
+                        thumb.style.display = "";
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (thumb) {
+                thumb.style.display = "none";
+            }
+
+            zone.hidden = true;
+            bar.hidden = false;
+            uploader.classList.add("has-file");
+        }
+
+        function clearFile() {
+            input.value = "";
+            if (thumb) { thumb.src = ""; thumb.style.display = ""; }
+            if (nameEl) { nameEl.textContent = ""; }
+            if (sizeEl) { sizeEl.textContent = ""; }
+            bar.hidden = true;
+            zone.hidden = false;
+            uploader.classList.remove("has-file");
+        }
+
+        input.addEventListener("change", function () {
+            if (input.files && input.files[0]) {
+                showFile(input.files[0]);
+            } else {
+                clearFile();
+            }
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearFile();
+            });
+        }
+
+        zone.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            uploader.classList.add("is-dragging");
+        });
+        zone.addEventListener("dragleave", function () {
+            uploader.classList.remove("is-dragging");
+        });
+        zone.addEventListener("drop", function (e) {
+            e.preventDefault();
+            uploader.classList.remove("is-dragging");
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                input.files = e.dataTransfer.files;
+                showFile(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    document.querySelectorAll("[data-ch-uploader]").forEach(initFileUploader);
 })();
