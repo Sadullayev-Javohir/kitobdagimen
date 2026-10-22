@@ -14,9 +14,11 @@
     --surface-hover: #F8FAFC;
     --surface-elevated: #FFFFFF;
     --surface-glass: rgba(255, 255, 255, 0.84);
+    --bg-card: #FFFFFF;
 
     /* Typography Colors */
     --text: #0F172A;
+    --text-primary: #0F172A;
     --text-secondary: #475569;
     --text-muted: #64748B;
 
@@ -42,6 +44,7 @@
 
     /* Borders & Dividers */
     --border: #E2E8F0;
+    --border-color: #E2E8F0;
     --border-strong: #CBD5E1;
     --relief-border: #E2E8F0;
 
@@ -101,9 +104,11 @@
     --surface-hover: #192236;
     --surface-elevated: #182135;
     --surface-glass: rgba(15, 21, 35, 0.82);
+    --bg-card: #182135;
 
     /* Typography Colors */
     --text: #F1F5F9;
+    --text-primary: #F1F5F9;
     --text-secondary: #94A3B8;
     --text-muted: #64748B;
 
@@ -129,6 +134,7 @@
 
     /* Borders & Dividers */
     --border: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.16);
     --relief-border: rgba(255, 255, 255, 0.09);
 
@@ -5163,20 +5169,29 @@ img#storyImgPreviewImg,
 .likes-modal-backdrop[hidden] {
     display: none !important;
 }
+[data-theme="dark"] .likes-modal-backdrop {
+    background: rgba(0, 0, 0, 0.75);
+}
 
 .likes-modal-dialog {
-    background: var(--bg-card, #ffffff);
-    color: var(--text, #111827);
+    background: var(--surface-elevated, #ffffff);
+    color: var(--text, #0F172A);
     width: 100%;
     max-width: 520px;
     max-height: 82vh;
     border-radius: 16px;
     border: 1px solid var(--border, #e5e7eb);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: likesModalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="dark"] .likes-modal-dialog {
+    background: var(--surface-elevated, #182135);
+    color: var(--text, #F1F5F9);
+    border-color: var(--border-strong, rgba(255, 255, 255, 0.16));
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 @keyframes likesModalPop {
@@ -5196,6 +5211,7 @@ img#storyImgPreviewImg,
     justify-content: space-between;
     padding: 14px 18px;
     border-bottom: 1px solid var(--border, #e5e7eb);
+    background: transparent;
 }
 .likes-modal-title {
     margin: 0;
@@ -5204,17 +5220,18 @@ img#storyImgPreviewImg,
     display: flex;
     align-items: center;
     gap: 8px;
+    color: var(--text, #0F172A);
 }
 .likes-modal-counter {
     font-size: 15px;
     font-weight: 500;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-muted, #64748B);
 }
 .likes-modal-close {
     background: transparent;
     border: none;
     cursor: pointer;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-secondary, #475569);
     width: 34px;
     height: 34px;
     border-radius: 50%;
@@ -5225,8 +5242,8 @@ img#storyImgPreviewImg,
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 .likes-modal-close:hover {
-    background: var(--bg-subtle, #f3f4f6);
-    color: var(--text, #111827);
+    background: var(--surface-hover, #f1f5f9);
+    color: var(--text, #0F172A);
 }
 
 .likes-modal-body {
@@ -5235,6 +5252,7 @@ img#storyImgPreviewImg,
     flex: 1;
     min-height: 120px;
     max-height: 480px;
+    background: transparent;
 }
 
 .likes-user-row {
@@ -5243,9 +5261,10 @@ img#storyImgPreviewImg,
     gap: 12px;
     padding: 10px 18px;
     transition: background-color 0.15s ease;
+    background: transparent;
 }
 .likes-user-row:hover {
-    background: var(--bg-subtle, #f9fafb);
+    background: var(--surface-hover, #f8fafc);
 }
 
 .likes-user-row.is-daily-hero {
@@ -5291,11 +5310,11 @@ img#storyImgPreviewImg,
     justify-content: center;
     font-weight: 700;
     font-size: 16px;
-    background: var(--primary, #4f46e5);
-    color: #fff;
+    background: var(--primary, #0F5132);
+    color: var(--btn-primary-fg, #ffffff);
 }
 .likes-user-avatar-wrap.has-story .avatar {
-    box-shadow: 0 0 0 2px var(--bg-card, #fff), 0 0 0 4px var(--primary, #4f46e5);
+    box-shadow: 0 0 0 2px var(--surface-elevated, #fff), 0 0 0 4px var(--primary, #0F5132);
 }
 
 .likes-user-info {
@@ -5312,25 +5331,25 @@ img#storyImgPreviewImg,
 .likes-user-name {
     font-size: 14.5px;
     font-weight: 600;
-    color: var(--text, #111827);
+    color: var(--text, #0F172A);
     text-decoration: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .likes-user-name:hover {
-    color: var(--primary, #4f46e5);
+    color: var(--primary, #0F5132);
     text-decoration: underline;
 }
 .likes-user-username {
     font-size: 12.5px;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-muted, #64748B);
     white-space: nowrap;
 }
 .likes-user-bio {
     margin: 2px 0 0;
     font-size: 12.5px;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-secondary, #475569);
     line-height: 1.35;
     white-space: nowrap;
     overflow: hidden;
@@ -5358,6 +5377,24 @@ img#storyImgPreviewImg,
     gap: 12px;
     padding: 8px 0;
 }
+.likes-skeleton-row .skeleton,
+.likes-sk-avatar,
+.likes-sk-name,
+.likes-sk-bio {
+    background: var(--bg-subtle, #f1f5f9);
+    animation: likesSkeletonPulse 1.4s ease-in-out infinite;
+}
+[data-theme="dark"] .likes-skeleton-row .skeleton,
+[data-theme="dark"] .likes-sk-avatar,
+[data-theme="dark"] .likes-sk-name,
+[data-theme="dark"] .likes-sk-bio {
+    background: rgba(255, 255, 255, 0.08);
+}
+@keyframes likesSkeletonPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 .likes-sk-avatar {
     width: 44px;
     height: 44px;
@@ -5384,7 +5421,7 @@ img#storyImgPreviewImg,
 .likes-modal-empty {
     padding: 40px 18px;
     text-align: center;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-muted, #64748B);
 }
 .likes-modal-empty .material-symbols-outlined {
     font-size: 44px;
@@ -5404,7 +5441,7 @@ img#storyImgPreviewImg,
     }
     .likes-modal-dialog {
         max-width: 100%;
-        max-height: 75vh;
+        max-height: 80vh;
         border-radius: 20px 20px 0 0;
         border-bottom: none;
         animation: likesModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -5643,11 +5680,14 @@ img#storyImgPreviewImg,
 .feed-jackpot-author-name {
     font-size: 13px;
     font-weight: 700;
-    color: var(--text-primary, #111827);
+    color: var(--text, #111827);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
+}
+[data-theme="dark"] .feed-jackpot-author-name {
+    color: #fde68a;
 }
 .feed-jackpot-author-sub {
     font-size: 11px;
@@ -5689,11 +5729,14 @@ img#storyImgPreviewImg,
 .feed-jackpot-book-title {
     font-size: 12px;
     font-weight: 700;
-    color: var(--text-primary, #111827);
+    color: var(--text, #111827);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
+}
+[data-theme="dark"] .feed-jackpot-book-title {
+    color: #fef3c7;
 }
 .feed-jackpot-book-author {
     font-size: 11px;
@@ -5728,12 +5771,15 @@ img#storyImgPreviewImg,
 .feed-jackpot-text {
     font-size: 12.5px;
     line-height: 1.45;
-    color: var(--text-primary, #1f2937);
+    color: var(--text, #1f2937);
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+[data-theme="dark"] .feed-jackpot-text {
+    color: #f3f4f6;
 }
 
 .feed-jackpot-footer {
@@ -5779,7 +5825,7 @@ img#storyImgPreviewImg,
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .jackpot-page {
-    max-width: 920px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 24px 16px 80px;
 }
@@ -5788,16 +5834,16 @@ img#storyImgPreviewImg,
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #fde68a 100%);
     border: 2px solid #f59e0b;
     border-radius: 24px;
-    padding: 32px;
+    padding: 30px;
     box-shadow: 0 10px 40px rgba(245, 158, 11, 0.22);
     position: relative;
     overflow: hidden;
-    margin-bottom: 36px;
+    margin-bottom: 34px;
 }
 [data-theme="dark"] .jackpot-hero-card {
-    background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #451a03 100%);
+    background: linear-gradient(135deg, #181512 0%, #241c14 45%, #341a06 100%);
     border-color: #d97706;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(245, 158, 11, 0.15);
 }
 
 .jackpot-hero-card::after {
@@ -5807,14 +5853,14 @@ img#storyImgPreviewImg,
     right: -20%;
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, transparent 70%);
     pointer-events: none;
     border-radius: 50%;
 }
 
 .jackpot-header {
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 26px;
 }
 .jackpot-crown-pill {
     display: inline-flex;
@@ -5854,26 +5900,28 @@ img#storyImgPreviewImg,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(245, 158, 11, 0.35);
     border-radius: 16px;
     padding: 14px 20px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 [data-theme="dark"] .jackpot-hero-author-box {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(20, 18, 16, 0.7);
+    border-color: rgba(245, 158, 11, 0.25);
 }
 .jackpot-hero-author-left {
     display: flex;
     align-items: center;
     gap: 14px;
+    min-width: 0;
 }
 .jackpot-hero-avatar-wrap {
     position: relative;
     width: 52px;
     height: 52px;
+    flex-shrink: 0;
 }
 .jackpot-hero-avatar {
     width: 52px;
@@ -5890,6 +5938,11 @@ img#storyImgPreviewImg,
     color: #92400e;
     background: #fde68a;
 }
+[data-theme="dark"] .jackpot-hero-avatar:not(img) {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border-color: #f59e0b;
+}
 .jackpot-hero-crown-large {
     position: absolute;
     top: -10px;
@@ -5900,17 +5953,24 @@ img#storyImgPreviewImg,
 .jackpot-hero-author-title {
     font-size: 16px;
     font-weight: 800;
-    color: var(--text-primary, #111827);
+    color: #78350f;
     margin: 0;
     display: flex;
     align-items: center;
     gap: 8px;
+}
+[data-theme="dark"] .jackpot-hero-author-title {
+    color: #fef3c7;
 }
 .jackpot-hero-author-sub {
     font-size: 13px;
     color: #b45309;
     font-weight: 600;
     margin: 2px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 [data-theme="dark"] .jackpot-hero-author-sub {
     color: #fbbf24;
@@ -5920,14 +5980,15 @@ img#storyImgPreviewImg,
     display: flex;
     align-items: center;
     gap: 16px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(245, 158, 11, 0.25);
     border-radius: 12px;
     padding: 12px 16px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
 }
 [data-theme="dark"] .jackpot-hero-book-box {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(20, 18, 16, 0.65);
+    border-color: rgba(245, 158, 11, 0.2);
 }
 .jackpot-hero-book-cover {
     width: 44px;
@@ -5935,31 +5996,49 @@ img#storyImgPreviewImg,
     object-fit: cover;
     border-radius: 6px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+.jackpot-hero-book-info {
+    min-width: 0;
 }
 .jackpot-hero-book-info h3 {
     margin: 0 0 4px;
     font-size: 15px;
     font-weight: 800;
-    color: var(--text-primary, #111827);
+    color: #78350f;
+}
+[data-theme="dark"] .jackpot-hero-book-info h3 {
+    color: #fde68a;
 }
 .jackpot-hero-book-info p {
     margin: 0;
     font-size: 13px;
-    color: var(--text-secondary, #6b7280);
+    color: #92400e;
+}
+[data-theme="dark"] .jackpot-hero-book-info p {
+    color: #cbd5e1;
+}
+.jackpot-hero-book-info p strong {
+    color: #78350f;
+}
+[data-theme="dark"] .jackpot-hero-book-info p strong {
+    color: #fef3c7;
 }
 
 .jackpot-hero-text-box {
     position: relative;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 16px;
-    padding: 24px 28px 24px 42px;
-    margin-bottom: 22px;
+    padding: 22px 26px 22px 42px;
+    margin-bottom: 20px;
     border-left: 5px solid #f59e0b;
     box-shadow: 0 4px 18px rgba(245, 158, 11, 0.08);
 }
 [data-theme="dark"] .jackpot-hero-text-box {
-    background: rgba(20, 20, 20, 0.65);
-    border-color: #d97706;
+    background: rgba(16, 15, 18, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 5px solid #f59e0b;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 .jackpot-hero-text-box::before {
     content: "“";
@@ -5972,11 +6051,15 @@ img#storyImgPreviewImg,
     line-height: 1;
 }
 .jackpot-hero-text {
-    font-size: 16px;
+    font-size: 15.5px;
     line-height: 1.7;
-    color: var(--text-primary, #1f2937);
+    color: #1f2937;
     margin: 0;
     white-space: pre-line;
+    word-break: break-word;
+}
+[data-theme="dark"] .jackpot-hero-text {
+    color: #f1f5f9;
 }
 
 /* Premium Iqtibos dizayni */
@@ -5986,23 +6069,24 @@ img#storyImgPreviewImg,
     box-shadow: 0 12px 40px rgba(217, 119, 6, 0.22);
 }
 [data-theme="dark"] .jackpot-hero-card.is-quote-card {
-    background: linear-gradient(135deg, #1c1917 0%, #292017 40%, #451a03 100%);
+    background: linear-gradient(135deg, #1a1612 0%, #261b11 40%, #3a1c06 100%);
     border-color: #f59e0b;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(245, 158, 11, 0.2);
 }
 
 .jackpot-hero-text-box.is-quote-text {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.96);
     border-left: 6px solid #d97706;
-    padding: 28px 32px 28px 46px;
+    padding: 26px 30px 26px 44px;
 }
 [data-theme="dark"] .jackpot-hero-text-box.is-quote-text {
-    background: rgba(26, 20, 16, 0.85);
-    border-left-color: #f59e0b;
+    background: rgba(20, 16, 12, 0.88);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-left: 6px solid #f59e0b;
 }
 .jackpot-hero-text-box.is-quote-text .jackpot-hero-text {
     font-family: Georgia, "Playfair Display", "Times New Roman", serif;
-    font-size: 19px;
+    font-size: 18.5px;
     font-style: italic;
     line-height: 1.8;
     color: #451a03;
@@ -6012,11 +6096,12 @@ img#storyImgPreviewImg,
 }
 
 .jackpot-hero-book-box.is-quote-book {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.75);
     border: 1px solid rgba(217, 119, 6, 0.25);
 }
 [data-theme="dark"] .jackpot-hero-book-box.is-quote-book {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(20, 18, 16, 0.7);
+    border-color: rgba(245, 158, 11, 0.2);
 }
 
 .jackpot-hero-actions {
@@ -6026,7 +6111,10 @@ img#storyImgPreviewImg,
     flex-wrap: wrap;
     gap: 14px;
     padding-top: 18px;
-    border-top: 1px dashed rgba(245, 158, 11, 0.4);
+    border-top: 1px dashed rgba(245, 158, 11, 0.35);
+}
+[data-theme="dark"] .jackpot-hero-actions {
+    border-top-color: rgba(245, 158, 11, 0.25);
 }
 .jackpot-hero-actions-left {
     display: flex;
@@ -6049,14 +6137,19 @@ img#storyImgPreviewImg,
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 [data-theme="dark"] .jackpot-like-btn {
-    background: #292524;
+    background: #1e1b18;
+    border-color: #d97706;
     color: #fbbf24;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .jackpot-like-btn:hover {
+    background: #2a241f;
 }
 .jackpot-like-btn.is-liked {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    border-color: #ef4444;
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    border-color: #ef4444 !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
 }
 .jackpot-like-btn:hover {
     transform: translateY(-2px);
@@ -6066,21 +6159,24 @@ img#storyImgPreviewImg,
 .jackpot-like-count {
     cursor: pointer;
     font-weight: 800;
-    padding: 1px 6px;
+    padding: 1px 7px;
     border-radius: 6px;
-    background: rgba(245, 158, 11, 0.15);
+    background: rgba(245, 158, 11, 0.16);
     transition: all 0.15s ease;
 }
+[data-theme="dark"] .jackpot-like-count {
+    background: rgba(245, 158, 11, 0.22);
+}
 .jackpot-like-btn.is-liked .jackpot-like-count {
-    background: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
 }
 .jackpot-like-count:hover {
     text-decoration: underline;
     background: rgba(245, 158, 11, 0.28);
 }
 .jackpot-like-btn.is-liked .jackpot-like-count:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.4) !important;
 }
 
 .jackpot-original-link {
@@ -6094,26 +6190,33 @@ img#storyImgPreviewImg,
     padding: 8px 16px;
     border-radius: 9999px;
     text-decoration: none;
-    transition: background 0.2s;
+    transition: background 0.2s, transform 0.2s;
 }
 [data-theme="dark"] .jackpot-original-link {
     background: rgba(245, 158, 11, 0.2);
     color: #fde68a;
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 .jackpot-original-link:hover {
     background: rgba(245, 158, 11, 0.28);
+    transform: translateY(-1px);
 }
 
-/* Izohlar bo'limi — Post Detali (pd-comments-card) uslubida */
+/* Izohlar bo'limi */
 .jackpot-comments-section {
     margin-bottom: 36px;
 }
 .jackpot-comments-card {
-    background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 20px;
     padding: 24px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow);
+}
+[data-theme="dark"] .jackpot-comments-card {
+    background: var(--surface-elevated);
+    border-color: var(--border);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
 }
 .jackpot-comments-title {
     font-size: 17px;
@@ -6122,7 +6225,7 @@ img#storyImgPreviewImg,
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--text-primary, #111827);
+    color: var(--text);
 }
 .jackpot-comment-form {
     display: flex;
@@ -6134,7 +6237,7 @@ img#storyImgPreviewImg,
     width: 100%;
     border-radius: 12px;
     resize: vertical;
-    min-height: 54px;
+    min-height: 58px;
     max-height: 160px;
 }
 .jackpot-comment-form-actions {
@@ -6143,12 +6246,12 @@ img#storyImgPreviewImg,
 }
 .jackpot-login-prompt {
     padding: 14px 18px;
-    background: var(--bg-subtle, #f9fafb);
-    border: 1px dashed var(--border-color, #d1d5db);
+    background: var(--bg-subtle);
+    border: 1px dashed var(--border-strong);
     border-radius: 12px;
     margin-bottom: 20px;
     font-size: 13.5px;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-secondary);
 }
 .jackpot-login-prompt a {
     color: #f59e0b;
@@ -6167,11 +6270,38 @@ img#storyImgPreviewImg,
 .jackpot-no-comments {
     text-align: center;
     padding: 28px 16px;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-secondary);
     font-size: 13.5px;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+/* Bo'sh holat kartasi */
+.jackpot-empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+}
+.jackpot-empty-state .jackpot-empty-icon {
+    font-size: 48px;
+    color: #f59e0b;
+    margin-bottom: 8px;
+}
+.jackpot-empty-state h3 {
+    margin: 10px 0 6px;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+}
+.jackpot-empty-state p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
 }
 
 /* Profil hero kun qahramoni */
@@ -6199,26 +6329,37 @@ img#storyImgPreviewImg,
     display: flex;
     align-items: center;
     gap: 8px;
+    color: var(--text);
 }
 .jackpot-history-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     gap: 18px;
 }
 .jackpot-history-card {
-    background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 18px;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
     display: flex;
     flex-direction: column;
     text-decoration: none;
     color: inherit;
+    box-shadow: var(--shadow-xs);
+}
+[data-theme="dark"] .jackpot-history-card {
+    background: var(--surface-elevated);
+    border-color: var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 .jackpot-history-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: #f59e0b;
+}
+[data-theme="dark"] .jackpot-history-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
     border-color: #f59e0b;
 }
 .jackpot-history-card-top {
@@ -6259,9 +6400,24 @@ img#storyImgPreviewImg,
     border-radius: 50%;
     object-fit: cover;
 }
+.jackpot-history-card-avatar.avatar-fallback {
+    background: #fde68a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    color: #92400e;
+}
+[data-theme="dark"] .jackpot-history-card-avatar.avatar-fallback {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
 .jackpot-history-card-author-name {
     font-size: 12.5px;
     font-weight: 700;
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -6269,7 +6425,7 @@ img#storyImgPreviewImg,
 .jackpot-history-card-text {
     font-size: 12.5px;
     line-height: 1.45;
-    color: var(--text-secondary, #4b5563);
+    color: var(--text-secondary);
     margin: 0 0 12px;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -6277,12 +6433,182 @@ img#storyImgPreviewImg,
     overflow: hidden;
     flex: 1;
 }
+.jackpot-history-read-more {
+    color: #d97706;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 12px;
+    transition: color 0.15s ease;
+}
+.jackpot-history-read-more:hover {
+    color: #b45309;
+    text-decoration: underline;
+}
+[data-theme="dark"] .jackpot-history-read-more {
+    color: #fbbf24;
+}
+[data-theme="dark"] .jackpot-history-read-more:hover {
+    color: #fde68a;
+}
+
 .jackpot-history-card-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
     font-size: 12px;
-    color: var(--text-secondary, #6b7280);
+    color: var(--text-muted);
     padding-top: 10px;
-    border-top: 1px solid var(--border-color, #f3f4f6);
+    border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   JACKPOT MOBIL MOSLASHUV (RESPONSIVE)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .jackpot-page {
+        padding: 16px 12px 76px;
+    }
+    .jackpot-header {
+        margin-bottom: 18px;
+    }
+    .jackpot-header h1 {
+        font-size: 20px;
+        letter-spacing: -0.3px;
+    }
+    .jackpot-crown-pill {
+        font-size: 11px;
+        padding: 4px 12px;
+        letter-spacing: 0.5px;
+    }
+    .jackpot-hero-card {
+        padding: 16px 14px;
+        border-radius: 18px;
+        margin-bottom: 20px;
+    }
+    .jackpot-hero-author-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px 14px;
+        margin-bottom: 16px;
+    }
+    .jackpot-hero-author-left {
+        width: 100%;
+        min-width: 0;
+        gap: 10px;
+    }
+    .jackpot-hero-author-left > div {
+        min-width: 0;
+        flex: 1;
+    }
+    .jackpot-hero-author-title {
+        font-size: 14.5px;
+        flex-wrap: wrap;
+        word-break: break-word;
+    }
+    .jackpot-hero-author-sub {
+        flex-wrap: wrap;
+        font-size: 11.5px;
+        gap: 4px;
+    }
+    .jackpot-hero-author-right {
+        align-self: flex-start;
+    }
+    .jackpot-hero-book-box {
+        padding: 10px 12px;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .jackpot-hero-book-cover {
+        width: 38px;
+        height: 52px;
+        flex-shrink: 0;
+    }
+    .jackpot-hero-book-info {
+        min-width: 0;
+        flex: 1;
+    }
+    .jackpot-hero-book-info h3 {
+        font-size: 13.5px;
+        word-break: break-word;
+    }
+    .jackpot-hero-book-info p {
+        font-size: 11.5px;
+    }
+    .jackpot-hero-text-box {
+        padding: 14px 12px 14px 28px;
+        margin-bottom: 16px;
+        border-radius: 12px;
+        border-left-width: 4px;
+    }
+    .jackpot-hero-text-box::before {
+        font-size: 32px;
+        left: 8px;
+        top: 2px;
+    }
+    .jackpot-hero-text {
+        font-size: 14px;
+        line-height: 1.6;
+        word-break: break-word;
+    }
+    .jackpot-hero-text-box.is-quote-text {
+        padding: 16px 14px 16px 30px;
+        border-left-width: 5px;
+    }
+    .jackpot-hero-text-box.is-quote-text .jackpot-hero-text {
+        font-size: 15px;
+        line-height: 1.65;
+    }
+    .jackpot-hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding-top: 14px;
+    }
+    .jackpot-hero-actions-left {
+        width: 100%;
+    }
+    .jackpot-like-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 9px 16px;
+        font-size: 13.5px;
+    }
+    .jackpot-original-link {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+        padding: 9px 16px;
+        font-size: 13px;
+    }
+    .jackpot-comments-section {
+        margin-bottom: 24px;
+    }
+    .jackpot-comments-card {
+        padding: 16px 14px;
+        border-radius: 16px;
+    }
+    .jackpot-comments-title {
+        font-size: 15.5px;
+        margin-bottom: 14px;
+    }
+    .jackpot-comment-form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .jackpot-history-section {
+        margin-top: 24px;
+    }
+    .jackpot-history-title {
+        font-size: 17px;
+        margin-bottom: 14px;
+    }
+    .jackpot-history-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .jackpot-history-card {
+        padding: 14px;
+        border-radius: 14px;
+    }
 }

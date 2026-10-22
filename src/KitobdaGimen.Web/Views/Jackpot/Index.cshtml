@@ -171,10 +171,10 @@
     }
     else
     {
-        <div style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 20px; margin-bottom: 30px;">
-            <span class="material-symbols-outlined" style="font-size: 48px; color: #f59e0b;">hourglass_empty</span>
-            <h3 style="margin-top: 10px;">Bugungi Jackpot hali aniqlanmoqda...</h3>
-            <p style="color: var(--text-secondary); font-size: 14px;">Kuni bo'yi taqriz yoki iqtibos yozing va bugungi omadli g'olibga aylaning!</p>
+        <div class="jackpot-empty-state">
+            <span class="material-symbols-outlined jackpot-empty-icon">hourglass_empty</span>
+            <h3>Bugungi Jackpot hali aniqlanmoqda...</h3>
+            <p>Kuni bo'yi taqriz yoki iqtibos yozing va bugungi omadli g'olibga aylaning!</p>
         </div>
     }
 
@@ -212,7 +212,7 @@
                             }
                             else
                             {
-                                <span class="jackpot-history-card-avatar" style="background: #fde68a; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #92400e;">@authorInitial</span>
+                                <span class="jackpot-history-card-avatar avatar-fallback">@authorInitial</span>
                             }
                             <span class="jackpot-history-card-author-name">@item.UserFullName 👑</span>
                         </div>
@@ -221,7 +221,7 @@
 
                         <div class="jackpot-history-card-footer">
                             <span>❤️ @item.LikeCount · 💬 @item.CommentCount</span>
-                            <a href="@item.TargetUrl" style="color: #d97706; font-weight: 700; text-decoration: none; font-size: 12px;">O'qish →</a>
+                            <a href="@item.TargetUrl" class="jackpot-history-read-more">O'qish →</a>
                         </div>
                     </div>
                 }
