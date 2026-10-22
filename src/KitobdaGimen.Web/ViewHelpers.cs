@@ -34,23 +34,11 @@ public static class ViewHelpers
             : HtmlString.Empty;
 
     /// <summary>
-    /// Kitob tashqi manbadan (mas. asaxiy.uz) olingan bo'lsa, kichik "Manba: ..." kreditini
-    /// chiqaradi (asaxiy.uz uchun havola bilan); aks holda hech nima. Manba nomi attribution
-    /// uchun ko'rsatiladi. `@Html.Raw(ViewHelpers.SourceCredit(Model.Book.Source))` shaklida.
+    /// Kitob manbasi — saytda manba (asaxiy.uz) yozuvlari ko'rsatilmaydi.
     /// </summary>
     public static IHtmlContent SourceCredit(string? source)
     {
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return HtmlString.Empty;
-        }
-
-        var name = System.Net.WebUtility.HtmlEncode(source.Trim());
-        var inner = string.Equals(source.Trim(), "asaxiy.uz", StringComparison.OrdinalIgnoreCase)
-            ? $"<a href=\"https://asaxiy.uz\" target=\"_blank\" rel=\"noopener nofollow\">{name}</a>"
-            : name;
-
-        return new HtmlString($"<span class=\"book-source\">Manba: {inner}</span>");
+        return HtmlString.Empty;
     }
 
     /// <summary>

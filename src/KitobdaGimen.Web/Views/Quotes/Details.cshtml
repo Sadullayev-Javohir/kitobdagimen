@@ -99,7 +99,6 @@
                         @* Ichki havola: kitob nomi jamlovchi kitob sahifasiga olib boradi (SEO + navigatsiya) *@
                         <a class="qfb-title" href="@KitobdaGimen.Web.ViewHelpers.BookUrl(q.Book.Id, q.Book.Title)">@q.Book.Title</a>
                         <span class="qfb-author">@q.Book.Author</span>
-                        @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(q.Book.Source))
                     </div>
                 </div>
             </div>

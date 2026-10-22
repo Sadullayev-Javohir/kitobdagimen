@@ -848,100 +848,46 @@ function founderBadge(username) {
         : "";
 }
 
-// ===== asaxiy.uz kitob qidiruvi (kitob tanlash oynalarida ishlatiladi) =====
-// Lokal katalogda kitob kam bo'lgani uchun, qidiruvga mos asaxiy.uz kitoblarini
-// ham ko'rsatamiz. Foydalanuvchi birini bossa — u lokal katalogga import qilinib
-// (muqovasi bilan), tanlangan kitob sifatida qaytariladi (pickBook orqali).
-async function renderAsaxiyBooks(query, suggestions, pickBook) {
-    // Agar oldingi yuklanish indikatori bo'lsa tozalaymiz
-    const prevLoader = suggestions.querySelector(".book-suggest__loading");
-    if (prevLoader) prevLoader.remove();
-    const prevEmpty = suggestions.querySelector(".book-suggest__empty");
-    if (prevEmpty) prevEmpty.remove();
+// ===== Kitob qidiruv natijalarini chiroyli karta (muqova, nom, muallif, betlar) ko'rinishida chiqarish =====
+function createBookSuggestionItem(book, pickBook) {
+    const div = document.createElement("div");
+    div.className = "book-suggest__item";
 
-    // Foydalanuvchiga qidiruv ketayotganini ko'rsatish uchun loader qo'shamiz
-    const loader = document.createElement("div");
-    loader.className = "book-suggest__loading";
-    loader.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" style="width: 14px; height: 14px; border-width: 2px;"></span><span>asaxiy.uz dan qidirilmoqda…</span>';
-    suggestions.appendChild(loader);
-    suggestions.hidden = false;
+    const img = document.createElement("img");
+    img.src = book.coverUrl || "/img/default-book-cover.webp";
+    img.alt = "";
+    img.loading = "lazy";
+    img.onerror = () => { img.src = "/img/default-book-cover.webp"; };
+    div.appendChild(img);
 
-    function checkEmpty() {
-        if (suggestions.dataset.q !== query) return;
-        const hasBooks = suggestions.querySelector(".book-suggest__asaxiy") ||
-                         suggestions.querySelector("div:not(.book-suggest__loading):not(.book-suggest__src):not(.book-suggest__empty)");
-        if (!hasBooks) {
-            const empty = document.createElement("div");
-            empty.className = "book-suggest__empty";
-            empty.textContent = "Kitob topilmadi. Yangi kitob qo'shishingiz mumkin.";
-            suggestions.appendChild(empty);
-            suggestions.hidden = false;
-        }
-    }
+    const info = document.createElement("div");
+    info.className = "book-suggest__info";
 
-    let items;
-    try {
-        const res = await fetch(`/books/asaxiy-search?q=${encodeURIComponent(query)}`,
-            { 
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-                credentials: "include"
-            });
-        loader.remove();
-        if (!res.ok) {
-            checkEmpty();
-            return;
-        }
-        items = await res.json();
-    } catch {
-        loader.remove();
-        checkEmpty();
-        return;
-    }
+    const title = document.createElement("div");
+    title.className = "book-suggest__title";
+    title.textContent = book.title;
+    info.appendChild(title);
 
-    // Foydalanuvchi shu orada boshqa narsa yozgan bo'lsa — eski natijani chiqarmaymiz.
-    if (suggestions.dataset.q !== query) return;
+    const meta = document.createElement("div");
+    meta.className = "book-suggest__meta";
+    const pagesText = book.totalPages > 1 ? ` • ${book.totalPages} bet` : "";
+    meta.textContent = `${book.author}${pagesText}`;
+    info.appendChild(meta);
 
-    if (!Array.isArray(items) || !items.length) {
-        checkEmpty();
-        return;
-    }
-
-    const head = document.createElement("div");
-    head.className = "book-suggest__src";
-    head.textContent = "asaxiy.uz dan:";
-    suggestions.appendChild(head);
-
-    items.forEach(it => {
-        const div = document.createElement("div");
-        div.className = "book-suggest__asaxiy";
-        if (it.coverUrl) {
-            const img = document.createElement("img");
-            img.src = it.coverUrl;
-            img.alt = "";
-            img.loading = "lazy";
-            div.appendChild(img);
-        }
-        const span = document.createElement("span");
-        span.textContent = `${it.title} — ${it.author}`;
-        div.appendChild(span);
-        div.addEventListener("click", async () => {
-            if (div.dataset.loading) return;
-            div.dataset.loading = "1";
-            const original = span.textContent;
-            span.textContent = "Yuklanmoqda…";
-            try {
-                const book = await window.kitob.apiPost("/books/import-asaxiy", { url: it.url });
-                if (book) pickBook(book);
-            } catch (e) {
-                span.textContent = original;
-                delete div.dataset.loading;
-                alert(e.message || "Kitobni import qilib bo'lmadi.");
-            }
-        });
-        suggestions.appendChild(div);
-    });
-    suggestions.hidden = false;
+    div.appendChild(info);
+    div.addEventListener("click", () => pickBook(book));
+    return div;
 }
+
+function createBookSuggestionEmpty() {
+    const empty = document.createElement("div");
+    empty.className = "book-suggest__empty";
+    empty.textContent = "Kitob topilmadi. Yangi kitob qo'shishingiz mumkin.";
+    return empty;
+}
+
+// Eski chaqiruvlar uchun xavfsiz stub
+function renderAsaxiyBooks() {}
 
 // "Kitoblarni yangilash" tugmasi — asaxiy qidiruvini qayta ishga tushiradi.
 // Tugma [data-asaxiy-refresh="<qidiruv input selektori>"] atributiga ega. Bosilganda
@@ -1099,7 +1045,7 @@ async function uploadBookCover(file) {
     return data.url;
 }
 
-window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, renderAsaxiyBooks, uploadBookCover, compressImageForCover };
+window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, createBookSuggestionItem, createBookSuggestionEmpty, renderAsaxiyBooks, uploadBookCover, compressImageForCover };
 
 // ===== Iqtibos ko'rishlari =====
 // Feed'da iqtibos kartasi ekranga chiqishi bilan (foydalanuvchi ichiga kirmasa ham) ko'rish

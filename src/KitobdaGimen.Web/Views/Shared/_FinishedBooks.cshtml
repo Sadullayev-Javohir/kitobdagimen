@@ -26,7 +26,6 @@
                 <div class="finished-title">@goal.Book.Title</div>
                 <div class="muted finished-author">@goal.Book.Author</div>
                 <div class="muted finished-pages">@goal.TotalPages bet</div>
-                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(goal.Book.Source))
             </a>
             @if (finishedOwner)
             {

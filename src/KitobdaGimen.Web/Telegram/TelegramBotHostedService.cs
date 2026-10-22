@@ -176,13 +176,12 @@ public class TelegramBotHostedService : BackgroundService
         var commands = new object[]
         {
             new { command = "start", description = "🚀 Botni ishga tushirish va ro'yxatdan o'tish" },
-            new { command = "app", description = "🌐 KitobdagiMen Web Ilovasini (Mini App) ochish" },
+            new { command = "app", description = "🌐 Web ilovani ochish" },
             new { command = "login", description = "🔑 Veb-saytga kirish uchun 2 daqiqalik kod" },
             new { command = "kitoblar", description = "📚 O'qiyotgan kitoblarim va mutolaa rejasi" },
-            new { command = "bet", description = "📖 Bugun o'qilgan betlarni kiritish" },
+            new { command = "fikr", description = "✍️ Fikr bildirish (Taqriz va Iqtibos yozish)" },
             new { command = "challenge", description = "🏆 Challenge reytingi va sovg'a kitoblar" },
-            new { command = "iqtibos", description = "💬 Iqtiboslar o'qish va yangi iqtibos yozish" },
-            new { command = "taqriz", description = "✍️ Kitob taqrizlari va fikr bildirish" },
+            new { command = "almashish", description = "🔄 Kitob almashish e'lonlari" },
             new { command = "profil", description = "👤 Profilim va rasm o'rnatish" },
             new { command = "bugun", description = "📊 Bugun kim qancha kitob o'qidi" },
             new { command = "admin", description = "🛠 Admin va Challenge boshqaruvi" }
@@ -208,7 +207,7 @@ public class TelegramBotHostedService : BackgroundService
                 menu_button = new
                 {
                     type = "web_app",
-                    text = "🌐 KitobdagiMen App",
+                    text = "Web ilova",
                     web_app = new { url = _bot.WebAppUrl }
                 }
             }, ct);
@@ -824,12 +823,11 @@ public class TelegramBotHostedService : BackgroundService
         {
             rows.Add(new object[]
             {
-                new { text = "🌐 KitobdagiMen Web App", web_app = new { url = _bot.WebAppUrl } }
+                new { text = "🌐 Web ilova", web_app = new { url = _bot.WebAppUrl } }
             });
         }
 
-        rows.Add(new object[] { new { text = "📚 Kitoblarim" }, new { text = "📖 Bet kiritish" } });
-        rows.Add(new object[] { new { text = "✍️ Taqrizlar" }, new { text = "💬 Iqtiboslar" } });
+        rows.Add(new object[] { new { text = "📚 Kitoblarim" }, new { text = "✍️ Fikr bildirish" } });
         rows.Add(new object[] { new { text = "🏆 Challenge" }, new { text = "🔄 Kitob almashish" } });
         rows.Add(new object[] { new { text = "👤 Profilim" }, new { text = "🔑 Saytga kirish kodi" } });
 
@@ -851,8 +849,10 @@ public class TelegramBotHostedService : BackgroundService
     private static bool IsMenuCommand(string text) =>
         text is "📚 Kitoblarim" or "/kitoblar"
             or "📖 Bet kiritish" or "/bet"
-            or "✍️ Taqrizlar" or "/taqriz"
-            or "💬 Iqtiboslar" or "/iqtibos"
+            or "🌐 Web ilova" or "Web ilova"
+            or "✍️ Fikr bildirish" or "💭 Fikr bildirish" or "Fikr bildirish" or "/fikr"
+            or "✍️ Taqriz yozish" or "Taqriz yozish" or "✍️ Taqrizlar" or "/taqriz"
+            or "💬 Iqtibos yozish" or "Iqtibos yozish" or "💬 Iqtiboslar" or "/iqtibos"
             or "🏆 Challenge" or "/challenge"
             or "🔄 Kitob almashish" or "/almashish"
             or "👤 Profilim" or "/profil"
@@ -901,6 +901,8 @@ public class TelegramBotHostedService : BackgroundService
                 }
                 break;
 
+            case "🌐 Web ilova":
+            case "Web ilova":
             case "🔑 Saytga kirish kodi":
             case "/login":
             case "/app":
@@ -918,11 +920,22 @@ public class TelegramBotHostedService : BackgroundService
                 await PromptSelectBookForLoggingAsync(db, chatId, user, session, ct);
                 break;
 
+            case "✍️ Fikr bildirish":
+            case "💭 Fikr bildirish":
+            case "Fikr bildirish":
+            case "/fikr":
+                await PromptFeedbackMenuAsync(chatId, ct);
+                break;
+
+            case "✍️ Taqriz yozish":
+            case "Taqriz yozish":
             case "✍️ Taqrizlar":
             case "/taqriz":
                 await StartBookSelectionFlowAsync(db, chatId, user, session, "post", ct);
                 break;
 
+            case "💬 Iqtibos yozish":
+            case "Iqtibos yozish":
             case "💬 Iqtiboslar":
             case "/iqtibos":
                 await StartBookSelectionFlowAsync(db, chatId, user, session, "quote", ct);
@@ -958,6 +971,30 @@ public class TelegramBotHostedService : BackgroundService
                 await SendAdminDashboardAsync(db, chatId, user, ct);
                 break;
         }
+    }
+
+    // ── 0) 💭 Fikr bildirish (Taqriz / Iqtibos tanlovi) ──────────────────────────
+
+    private async Task PromptFeedbackMenuAsync(long chatId, CancellationToken ct)
+    {
+        var html = "💭 <b>Fikr bildirish</b>\n\n" +
+                   "Kitob bo'yicha qanday fikr yoki taassurot qoldirmoqchisiz?\n\n" +
+                   "✍️ <b>Taqriz yozish</b> — O'qigan kitobingiz haqida to'liq fikr va tavsiyalar\n" +
+                   "💬 <b>Iqtibos yozish</b> — Kitobdan sizga yoqqan ibratli parcha va jumlalar";
+
+        var markup = new
+        {
+            inline_keyboard = new object[][]
+            {
+                new object[]
+                {
+                    new { text = "✍️ Taqriz yozish", callback_data = "post:new" },
+                    new { text = "💬 Iqtibos yozish", callback_data = "quote:new" }
+                }
+            }
+        };
+
+        await _bot.SendHtmlAsync(chatId, html, markup, ct: ct);
     }
 
     // ── 1) 📚 Kitoblarim va Mutolaa Rejalari ──────────────────────────────────────
@@ -1409,7 +1446,7 @@ public class TelegramBotHostedService : BackgroundService
 
         inlineButtons.Add(new object[]
         {
-            new { text = "➕ Kitob e'lonini qo'shish (fotosurati bilan)", callback_data = "pb:new" }
+            new { text = "➕ Kitob e'lonini qo'shish", callback_data = "pb:new" }
         });
         inlineButtons.Add(new object[]
         {
@@ -1770,7 +1807,7 @@ public class TelegramBotHostedService : BackgroundService
         }
 
         // 4) Iqtiboslar (Like, Comment, New)
-        if (data == "quote:new")
+        if (data is "quote:new" or "feedback:quote")
         {
             await _bot.AnswerCallbackAsync(cbId, ct: ct);
             await StartBookSelectionFlowAsync(db, chatId, user, session, "quote", ct);
@@ -1816,10 +1853,17 @@ public class TelegramBotHostedService : BackgroundService
         }
 
         // 5) Taqrizlar / Postlar (Like, Comment, New)
-        if (data == "post:new")
+        if (data is "post:new" or "feedback:post")
         {
             await _bot.AnswerCallbackAsync(cbId, ct: ct);
             await StartBookSelectionFlowAsync(db, chatId, user, session, "post", ct);
+            return;
+        }
+
+        if (data == "feedback:menu")
+        {
+            await _bot.AnswerCallbackAsync(cbId, ct: ct);
+            await PromptFeedbackMenuAsync(chatId, ct);
             return;
         }
 
@@ -2640,18 +2684,8 @@ public class TelegramBotHostedService : BackgroundService
                 session.TempText = text;
                 if (session.SelectedBookId.HasValue || !string.IsNullOrWhiteSpace(session.TempCoverUrl))
                 {
-                    // Kitob Postgresdan tanlangan — muqova rasmi allaqachon mavjud, qayta so'ramaymiz!
-                    session.Step = SessionStep.NewQuoteImage;
-                    await _bot.SendHtmlAsync(chatId,
-                        "📸 <b>Iqtibosga mos estetik rasm yuborasizmi?</b>\n\n" +
-                        "Ushbu iqtibos uchun estetik rasm yuborishingiz mumkin (yoki darhol chop etish uchun tugmani bosing):",
-                        new
-                        {
-                            inline_keyboard = new object[][]
-                            {
-                                new object[] { new { text = "🚀 Darhol chop etish (rasmsiz)", callback_data = "quote:skip_image" } }
-                            }
-                        }, ct: ct);
+                    // Kitob bazada topilgan / tanlangan — rasm so'ramaymiz, iqtibosni darhol chop etamiz!
+                    await SaveNewQuoteAsync(db, chatId, user, session, session.TempCoverUrl, null, ct);
                 }
                 else
                 {
@@ -2715,18 +2749,8 @@ public class TelegramBotHostedService : BackgroundService
                 session.TempText = text;
                 if (session.SelectedBookId.HasValue || !string.IsNullOrWhiteSpace(session.TempCoverUrl))
                 {
-                    // Kitob Postgresdan tanlangan — muqova rasmi allaqachon mavjud, qayta so'ramaymiz!
-                    session.Step = SessionStep.NewPostReviewImage;
-                    await _bot.SendHtmlAsync(chatId,
-                        "📸 <b>Taqrizga mos rasm yuborasizmi?</b>\n\n" +
-                        "Ushbu taqrizingiz uchun estetik lavha yuborishingiz mumkin (yoki darhol chop etish uchun tugmani bosing):",
-                        new
-                        {
-                            inline_keyboard = new object[][]
-                            {
-                                new object[] { new { text = "🚀 Darhol chop etish (rasmsiz)", callback_data = "post:skip_review_image" } }
-                            }
-                        }, ct: ct);
+                    // Kitob bazada topilgan / tanlangan — rasm so'ramaymiz, taqrizni darhol chop etamiz!
+                    await SaveNewPostAsync(db, chatId, user, session, session.TempCoverUrl, null, ct);
                 }
                 else
                 {
@@ -3406,18 +3430,8 @@ public class TelegramBotHostedService : BackgroundService
                 break;
 
             case "physical":
-                session.Step = SessionStep.NewPhysBookCover;
-                await _bot.SendHtmlAsync(chatId,
-                    $"📖 <b>Tanlangan kitob:</b> «{TelegramBotService.Escape(book.Title)}» — <i>{TelegramBotService.Escape(book.Author)}</i>\n\n" +
-                    "📸 <b>Kitob fotosurati:</b>\nBoshqa kitobxonlar kitobingiz holatini ko'rishlari uchun uning <b>fotosuratini</b> yuboring:\n" +
-                    "<i>(Kitobxonlar kitob fotosuratini ko'rib o'qishga tanlashadi)</i>",
-                    new
-                    {
-                        inline_keyboard = new object[][]
-                        {
-                            new object[] { new { text = "⏭ Rasmsiz davom etish", callback_data = "pb:skip_cover" } }
-                        }
-                    }, ct: ct);
+                // Kitob bazada topilgan / tanlangan — rasm so'ramaymiz, darhol almashish kutubxonasiga joylaymiz!
+                await SaveNewPhysicalBookAsync(db, chatId, user, session, book.CoverUrl, ct);
                 break;
 
             case "reading":
@@ -3486,10 +3500,15 @@ public class TelegramBotHostedService : BackgroundService
         await db.SaveChangesAsync(ct);
         session.Step = SessionStep.None;
         session.SelectedBookId = null;
+        session.TempBookTitle = null;
+        session.TempBookAuthor = null;
+        session.TempCoverUrl = null;
+        session.TempText = null;
+        session.TargetFlow = null;
+        session.SearchMessageId = 0;
 
-        var photoInfo = !string.IsNullOrWhiteSpace(coverUrl) ? "fotosurati bilan " : "";
         await _bot.SendHtmlAsync(chatId,
-            $"✅ <b>Kitobingiz {photoInfo}almashish kutubxonasiga muvaffaqiyatli joylandi!</b>\n\n" +
+            $"✅ <b>Kitobingiz almashish kutubxonasiga muvaffaqiyatli joylandi!</b>\n\n" +
             $"📕 <b>{TelegramBotService.Escape(pb.ManualTitle)}</b> — <i>{TelegramBotService.Escape(pb.ManualAuthor)}</i>",
             BuildMainMenuKeyboard(user.Role >= UserRole.Admin), ct: ct);
     }
@@ -3543,8 +3562,13 @@ public class TelegramBotHostedService : BackgroundService
         db.Posts.Add(newPost);
         await db.SaveChangesAsync(ct);
         session.Step = SessionStep.None;
-        session.TempCoverUrl = null;
         session.SelectedBookId = null;
+        session.TempBookTitle = null;
+        session.TempBookAuthor = null;
+        session.TempCoverUrl = null;
+        session.TempText = null;
+        session.TargetFlow = null;
+        session.SearchMessageId = 0;
 
         await _bot.BroadcastPostToGroupAsync(newPost.Id, ct);
 
@@ -3604,8 +3628,13 @@ public class TelegramBotHostedService : BackgroundService
         db.Quotes.Add(quote);
         await db.SaveChangesAsync(ct);
         session.Step = SessionStep.None;
-        session.TempCoverUrl = null;
         session.SelectedBookId = null;
+        session.TempBookTitle = null;
+        session.TempBookAuthor = null;
+        session.TempCoverUrl = null;
+        session.TempText = null;
+        session.TargetFlow = null;
+        session.SearchMessageId = 0;
 
         await _bot.BroadcastQuoteToGroupAsync(quote.Id, ct);
 

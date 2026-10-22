@@ -1209,18 +1209,60 @@ textarea.input { resize: vertical; min-height: 90px; }
     background: var(--surface); border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm); margin-top: 6px; overflow: hidden;
     box-shadow: var(--shadow-md);
+    max-height: 380px;
+    overflow-y: auto;
 }
-.book-suggestions div { padding: 10px 14px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--border); }
-.book-suggestions div:last-child { border-bottom: none; }
-.book-suggestions div:hover { background: var(--bg-subtle); }
-.book-suggestions .book-suggest__src {
-    padding: 6px 14px; font-size: 11.5px; font-weight: 700; color: var(--text-muted);
-    text-transform: uppercase; letter-spacing: .04em; cursor: default;
-    background: var(--bg-subtle); border-top: 1px solid var(--border);
+.book-suggestions .book-suggest__item,
+.pb-suggestions .book-suggest__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
 }
-.book-suggestions .book-suggest__asaxiy { display: flex; align-items: center; gap: 10px; }
-.book-suggestions .book-suggest__asaxiy img { width: 32px; height: 44px; object-fit: cover; border-radius: 4px; flex: 0 0 auto; background: var(--bg-subtle); }
-.book-suggestions .book-suggest__asaxiy span { flex: 1 1 auto; }
+.book-suggestions .book-suggest__item:last-child,
+.pb-suggestions .book-suggest__item:last-child {
+    border-bottom: none;
+}
+.book-suggestions .book-suggest__item:hover,
+.pb-suggestions .book-suggest__item:hover {
+    background: var(--bg-subtle);
+}
+.book-suggestions .book-suggest__item img,
+.pb-suggestions .book-suggest__item img {
+    width: 36px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex: 0 0 auto;
+    background: var(--bg-subtle);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.book-suggestions .book-suggest__info,
+.pb-suggestions .book-suggest__info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.book-suggestions .book-suggest__title,
+.pb-suggestions .book-suggest__title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.book-suggestions .book-suggest__meta,
+.pb-suggestions .book-suggest__meta {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .book-suggestions .book-suggest__loading,
 .book-suggestions .book-suggest__empty,
 .pb-suggestions .book-suggest__loading,

@@ -25,16 +25,11 @@
     <div class="pb-add-panel" id="pbAddPanel" hidden>
         <label class="pb-field-label">Kitobni qidiring</label>
         <div class="pb-search-row">
-            <div class="search-box">
+            <div class="search-box" style="flex:1">
                 <span class="search-ico material-symbols-outlined">search</span>
                 <input class="input" type="search" id="pbSearchInput" autocomplete="off"
                        placeholder="Kitob nomi yoki muallif bo'yicha qidiring..." />
             </div>
-            <button type="button" class="btn btn-ghost btn-sm pb-refresh" data-asaxiy-refresh="#pbSearchInput"
-                    title="Kitob qidiruvi ishlamayaptimi? Bosing — qayta ishga tushadi.">
-                <span class="material-symbols-outlined ic-sm ic-baseline">refresh</span>
-                Kitoblarni yangilash
-            </button>
         </div>
         <div class="pb-suggestions" id="pbSuggestions" hidden></div>
 

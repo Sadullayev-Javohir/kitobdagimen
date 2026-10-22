@@ -49,9 +49,7 @@
     </header>
 
     <div data-view-panel>
-        <!-- Tana: kitob muqovasi + fikr. Butun tana havolasi cho'zilgan ko'rinmas <a> orqali
-             beriladi — chunki "Manba: asaxiy.uz" havolasini <a> ichiga <a> qilib joylash
-             noto'g'ri HTML bo'lib, grid'ni buzadi. -->
+        <!-- Tana: kitob muqovasi + fikr. Butun tana havolasi cho'zilgan ko'rinmas <a> orqali beriladi. -->
         <div class="post-body">
             <a class="post-body-link" href="@postUrl" aria-label="@Model.Book.Title"></a>
             <div class="post-cover">
@@ -63,7 +61,6 @@
             <div class="post-body-main">
                 <h2 class="post-book-title">@Model.Book.Title</h2>
                 <p class="post-book-author">@Model.Book.Author</p>
-                @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(Model.Book.Source))
                 <p class="post-text" data-post-text>@KitobdaGimen.Web.ViewHelpers.RichText(Model.ReviewText)</p>
             </div>
         </div>

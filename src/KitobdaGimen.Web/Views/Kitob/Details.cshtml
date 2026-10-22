@@ -76,7 +76,6 @@
             <div class="book-hero-info">
                 <h1>@Model.Title</h1>
                 <p class="book-hero-author">@Model.Author</p>
-                @Html.Raw(ViewHelpers.SourceCredit(Model.Source))
                 @if (!string.IsNullOrEmpty(Model.GenreName))
                 {
                     <div class="pd-genres">

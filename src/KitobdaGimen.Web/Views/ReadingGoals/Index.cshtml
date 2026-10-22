@@ -30,11 +30,6 @@
                 <div class="composer-book">
                     <input class="input" id="goalBookSearch" placeholder="Kitobni qidiring..." autocomplete="off" />
                     <button type="button" class="btn btn-outline btn-sm" id="goalNewBookToggle">Yangi kitob</button>
-                    <button type="button" class="btn btn-ghost btn-sm" data-asaxiy-refresh="#goalBookSearch"
-                            title="Kitob qidiruvi ishlamayaptimi? Bosing — qayta ishga tushadi.">
-                        <span class="material-symbols-outlined ic-sm ic-baseline">refresh</span>
-                        Kitoblarni yangilash
-                    </button>
                 </div>
                 <div class="book-suggestions" id="goalBookSuggestions" hidden></div>
 
@@ -102,7 +97,6 @@
                         <div class="rb-head">
                             <a class="rb-title" href="/reading-books/@goal.Id">@goal.Book.Title</a>
                             <div class="rb-author">@goal.Book.Author</div>
-                            @Html.Raw(KitobdaGimen.Web.ViewHelpers.SourceCredit(goal.Book.Source))
                         </div>
 
                         <div class="rb-track" role="progressbar" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100">
@@ -210,15 +204,16 @@
                 const res = await fetch(`/books/search?q=${encodeURIComponent(q)}`, { headers: { "X-Requested-With": "XMLHttpRequest" } });
                 if (!res.ok) return;
                 const books = await res.json();
+                if (suggestions.dataset.q !== q) return;
                 suggestions.innerHTML = "";
-                books.forEach(b => {
-                    const div = document.createElement("div");
-                    div.textContent = `${b.title} — ${b.author} (${b.totalPages} bet)`;
-                    div.addEventListener("click", () => pickBook(b));
-                    suggestions.appendChild(div);
-                });
-                suggestions.hidden = books.length === 0;
-                window.kitob.renderAsaxiyBooks(q, suggestions, pickBook);
+                if (!books || books.length === 0) {
+                    suggestions.appendChild(window.kitob.createBookSuggestionEmpty());
+                } else {
+                    books.forEach(b => {
+                        suggestions.appendChild(window.kitob.createBookSuggestionItem(b, pickBook));
+                    });
+                }
+                suggestions.hidden = false;
             } catch { /* tarmoq xatosi — jim o'tkazamiz */ }
         }, 250);
     });

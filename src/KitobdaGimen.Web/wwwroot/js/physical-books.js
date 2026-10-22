@@ -121,17 +121,16 @@
                 });
                 if (!res.ok) return;
                 const books = await res.json();
+                if (suggestions.dataset.q !== q) return;
                 suggestions.innerHTML = "";
-                books.forEach(b => {
-                    const div = document.createElement("div");
-                    div.className = "pb-suggestion";
-                    div.textContent = `${b.title} — ${b.author}`;
-                    div.addEventListener("click", () => pickBook(b));
-                    suggestions.appendChild(div);
-                });
+                if (!books || books.length === 0) {
+                    suggestions.appendChild(window.kitob.createBookSuggestionEmpty());
+                } else {
+                    books.forEach(b => {
+                        suggestions.appendChild(window.kitob.createBookSuggestionItem(b, pickBook));
+                    });
+                }
                 suggestions.hidden = false;
-                // Tashqi (asaxiy) natijalar — tanlanganda import qilinib, lokal kitob qaytadi.
-                kitob.renderAsaxiyBooks(q, suggestions, pickBook);
             } catch { /* tarmoq xatosi — jim */ }
         }, 250);
     });
