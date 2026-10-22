@@ -812,16 +812,26 @@ public class TelegramBotService : ITelegramBotService
             {
                 await SaveTelegramUsernameSettingAsync(db, post.UserId, fetchedUsername, ct);
             }
+            else
+            {
+                var savedTg = await db.AppSettings.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Key == $"Telegram:Username:{post.UserId}", ct);
+                if (!string.IsNullOrWhiteSpace(savedTg?.Value))
+                {
+                    fetchedUsername = savedTg.Value;
+                }
+            }
 
-            var authorMention = !string.IsNullOrWhiteSpace(fetchedUsername)
-                ? $"@{fetchedUsername.TrimStart('@')}"
-                : $"<a href=\"tg://user?id={userTgId}\">{Escape(post.User.FullName)}</a>";
+            var cleanUsername = fetchedUsername?.Trim().TrimStart('@');
+            var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
+                ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
+                : (userTgId > 0
+                    ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
+                    : $"<b>{Escape(post.User.FullName)}</b>");
 
             var cleanReview = TruncateText(StripHtml(post.ReviewText), 3500);
 
             var profileSlug = !string.IsNullOrWhiteSpace(post.User.Username) ? post.User.Username : post.User.Id.ToString();
-            var profileUrl = $"{WebAppUrl}/profile/{profileSlug}";
-            var profileMiniAppUrl = $"https://t.me/{BotUsername}?startapp=profile_{profileSlug}";
             var postDetailUrl = $"{WebAppUrl}/post/{profileSlug}/{post.Slug}";
             var authorSuffix = string.IsNullOrWhiteSpace(post.Book.Author) ? "" : $" — <i>{Escape(post.Book.Author)}</i>";
 
@@ -831,8 +841,7 @@ public class TelegramBotService : ITelegramBotService
             html.AppendLine($"«{Escape(cleanReview)}»");
             html.AppendLine();
             html.AppendLine($"📚 <b>Kitob:</b> «{Escape(post.Book.Title)}»{authorSuffix}");
-            html.AppendLine($"✍️ <b>Kitobxon:</b> {authorMention}");
-            html.AppendLine($"👤 <a href=\"{profileMiniAppUrl}\">Foydalanuvchi profili</a>");
+            html.AppendLine($"✍️ {authorLink}");
             html.AppendLine($"🔗 <b>Taqriz:</b> <a href=\"{postDetailUrl}\">Saytda to'liq o'qish</a>");
 
             var likeCount = await db.Likes.CountAsync(l => l.PostId == post.Id, ct);
@@ -978,16 +987,26 @@ public class TelegramBotService : ITelegramBotService
             {
                 await SaveTelegramUsernameSettingAsync(db, quote.UserId, fetchedUsername, ct);
             }
+            else
+            {
+                var savedTg = await db.AppSettings.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Key == $"Telegram:Username:{quote.UserId}", ct);
+                if (!string.IsNullOrWhiteSpace(savedTg?.Value))
+                {
+                    fetchedUsername = savedTg.Value;
+                }
+            }
 
-            var authorMention = !string.IsNullOrWhiteSpace(fetchedUsername)
-                ? $"@{fetchedUsername.TrimStart('@')}"
-                : $"<a href=\"tg://user?id={userTgId}\">{Escape(quote.User.FullName)}</a>";
+            var cleanUsername = fetchedUsername?.Trim().TrimStart('@');
+            var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
+                ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
+                : (userTgId > 0
+                    ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
+                    : $"<b>{Escape(quote.User.FullName)}</b>");
 
             var cleanText = TruncateText(StripHtml(quote.Text), 3500);
 
             var profileSlug = !string.IsNullOrWhiteSpace(quote.User.Username) ? quote.User.Username : quote.User.Id.ToString();
-            var profileUrl = $"{WebAppUrl}/profile/{profileSlug}";
-            var profileMiniAppUrl = $"https://t.me/{BotUsername}?startapp=profile_{profileSlug}";
             var quoteDetailUrl = $"{WebAppUrl}/iqtibos/{profileSlug}/{quote.Slug}";
             var authorSuffix = string.IsNullOrWhiteSpace(quote.Book.Author) ? "" : $" — <i>{Escape(quote.Book.Author)}</i>";
 
@@ -997,8 +1016,7 @@ public class TelegramBotService : ITelegramBotService
             html.AppendLine($"«{Escape(cleanText)}»");
             html.AppendLine();
             html.AppendLine($"📚 <b>Kitob:</b> «{Escape(quote.Book.Title)}»{authorSuffix}");
-            html.AppendLine($"✍️ <b>Kitobxon:</b> {authorMention}");
-            html.AppendLine($"👤 <a href=\"{profileMiniAppUrl}\">Foydalanuvchi profili</a>");
+            html.AppendLine($"✍️ {authorLink}");
             html.AppendLine($"🔗 <b>Iqtibos:</b> <a href=\"{quoteDetailUrl}\">Saytda ko'rish</a>");
 
             var likeCount = await db.QuoteLikes.CountAsync(l => l.QuoteId == quote.Id, ct);

@@ -222,12 +222,56 @@ public class ChallengeController : AppController
                 var pTitle = Request.Form[$"prizeTitle_{rank}"].ToString();
                 var pAuthor = Request.Form[$"prizeAuthor_{rank}"].ToString();
                 var pCover = Request.Form.Files.GetFile($"prizeCover_{rank}");
+                var pCoverUrl = Request.Form[$"prizeCoverUrl_{rank}"].ToString();
 
                 p.Title = string.IsNullOrWhiteSpace(pTitle) ? null : pTitle.Trim();
                 p.Author = string.IsNullOrWhiteSpace(pAuthor) ? null : pAuthor.Trim();
                 if (pCover is not null && pCover.Length > 0)
                 {
                     p.CoverUrl = await SaveGiftCoverAsync(pCover);
+                }
+                else if (!string.IsNullOrWhiteSpace(pCoverUrl))
+                {
+                    p.CoverUrl = pCoverUrl.Trim();
+                }
+
+                // Agar kitob nomi kiritilgan bo'lsa va bazada mavjud bo'lmasa, yangi kitob yaratamiz
+                if (!string.IsNullOrWhiteSpace(p.Title))
+                {
+                    var normTitle = TextNormalizer.NormalizeApostrophes(p.Title).ToLower();
+                    var normAuthor = TextNormalizer.NormalizeApostrophes(p.Author ?? "").ToLower();
+                    var existingBook = await _db.Books.FirstOrDefaultAsync(b =>
+                        b.Title.ToLower()
+                            .Replace("‘", "'")
+                            .Replace("’", "'")
+                            .Replace("ʻ", "'")
+                            .Replace("ʼ", "'")
+                            .Replace("`", "'")
+                            .Replace("´", "'")
+                            .Replace("ʹ", "'") == normTitle &&
+                        (string.IsNullOrEmpty(normAuthor) || b.Author.ToLower()
+                            .Replace("‘", "'")
+                            .Replace("’", "'")
+                            .Replace("ʻ", "'")
+                            .Replace("ʼ", "'")
+                            .Replace("`", "'")
+                            .Replace("´", "'")
+                            .Replace("ʹ", "'") == normAuthor), ct);
+
+                    if (existingBook is null)
+                    {
+                        var newBook = new KitobdaGimen.Domain.Entities.Book
+                        {
+                            Title = p.Title,
+                            Author = string.IsNullOrWhiteSpace(p.Author) ? "Muallif" : p.Author,
+                            CoverUrl = p.CoverUrl,
+                            TotalPages = 200,
+                            GenreId = 1,
+                            Source = null // Qo'lda yaratilgan kitob
+                        };
+                        _db.Books.Add(newBook);
+                        await _db.SaveChangesAsync(ct);
+                    }
                 }
             }
 
@@ -381,6 +425,16 @@ public class ChallengeController : AppController
                 savedCoverUrl = await SaveGiftCoverAsync(cover);
             }
 
+            var chosenCoverUrl = savedCoverUrl;
+            if (string.IsNullOrWhiteSpace(chosenCoverUrl))
+            {
+                var cUrl = Request.Form["coverUrl"].ToString();
+                if (!string.IsNullOrWhiteSpace(cUrl))
+                {
+                    chosenCoverUrl = cUrl.Trim();
+                }
+            }
+
             await Mediator.Send(new SetWinnerGiftBookCommand
             {
                 Year = year,
@@ -388,8 +442,47 @@ public class ChallengeController : AppController
                 Rank = rank <= 0 ? 1 : rank,
                 GiftBookTitle = title,
                 GiftBookAuthor = author,
-                GiftBookCoverUrl = savedCoverUrl
+                GiftBookCoverUrl = chosenCoverUrl
             });
+
+            // Agar kitob bazada mavjud bo'lmasa, avtomatik yangi kitob yaratamiz
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                var normTitle = TextNormalizer.NormalizeApostrophes(title).ToLower();
+                var normAuthor = TextNormalizer.NormalizeApostrophes(author ?? "").ToLower();
+                var existingBook = await _db.Books.FirstOrDefaultAsync(b =>
+                    b.Title.ToLower()
+                        .Replace("‘", "'")
+                        .Replace("’", "'")
+                        .Replace("ʻ", "'")
+                        .Replace("ʼ", "'")
+                        .Replace("`", "'")
+                        .Replace("´", "'")
+                        .Replace("ʹ", "'") == normTitle &&
+                    (string.IsNullOrEmpty(normAuthor) || b.Author.ToLower()
+                        .Replace("‘", "'")
+                        .Replace("’", "'")
+                        .Replace("ʻ", "'")
+                        .Replace("ʼ", "'")
+                        .Replace("`", "'")
+                        .Replace("´", "'")
+                        .Replace("ʹ", "'") == normAuthor));
+
+                if (existingBook is null)
+                {
+                    var newBook = new KitobdaGimen.Domain.Entities.Book
+                    {
+                        Title = title.Trim(),
+                        Author = string.IsNullOrWhiteSpace(author) ? "Muallif" : author.Trim(),
+                        CoverUrl = chosenCoverUrl,
+                        TotalPages = 200,
+                        GenreId = 1,
+                        Source = null
+                    };
+                    _db.Books.Add(newBook);
+                    await _db.SaveChangesAsync();
+                }
+            }
 
             TempData["ChallengeMsg"] = "Sovg'a kitob saqlandi.";
         }

@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Books.Dtos;
 using Mapster;
@@ -22,9 +23,7 @@ public class GetBooksQueryHandler : IRequestHandler<GetBooksQuery, IReadOnlyList
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            var term = request.Search.Trim().ToLower();
-            query = query.Where(b =>
-                b.Title.ToLower().Contains(term) || b.Author.ToLower().Contains(term));
+            query = query.WhereMatchesBookSearch(request.Search);
         }
 
         return await query

@@ -13,6 +13,7 @@ using KitobdaGimen.Application.Features.Home.Queries.GetBackgroundVideoUrl;
 using KitobdaGimen.Application.Features.Admin.Queries.GetServerSnapshot;
 using KitobdaGimen.Domain.Entities;
 using KitobdaGimen.Domain.Enums;
+using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,7 @@ public class AdminController : AppController
         ViewData["TotalGoals"] = await _db.ReadingGoals.CountAsync();
         ViewData["TotalComments"] = await _db.Comments.CountAsync() + await _db.QuoteComments.CountAsync();
         ViewData["TotalBooks"] = await _db.Books.CountAsync();
+        ViewData["ManualBooksCount"] = await _db.Books.CountAsync(b => b.Source == null || b.Source != "asaxiy.uz");
 
         var serverSnapshot = await Mediator.Send(new GetServerSnapshotQuery());
         ViewData["ServerSnapshot"] = serverSnapshot;
@@ -541,6 +543,100 @@ public class AdminController : AppController
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Foydalanuvchilar yoki admin tomonidan qo'lda yaratilgan kitoblar ro'yxati (/admin/manual-books).
+    /// </summary>
+    [HttpGet("manual-books")]
+    public async Task<IActionResult> ManualBooks(string? search = null)
+    {
+        var myRole = await _db.Users
+            .Where(u => u.Id == CurrentUserId)
+            .Select(u => u.Role)
+            .FirstOrDefaultAsync();
+
+        if (myRole < UserRole.Admin)
+        {
+            return Forbid();
+        }
+
+        var query = _db.Books.AsNoTracking()
+            .Where(b => b.Source == null || b.Source != "asaxiy.uz");
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.WhereMatchesBookSearch(search);
+        }
+
+        var list = await query
+            .OrderByDescending(b => b.Id)
+            .Select(b => new ManualBookItemDto
+            {
+                Id = b.Id,
+                Title = b.Title,
+                Author = b.Author,
+                CoverUrl = b.CoverUrl,
+                TotalPages = b.TotalPages,
+                PostsCount = b.Posts.Count,
+                QuotesCount = b.Quotes.Count,
+                GoalsCount = b.ReadingGoals.Count,
+                PhysicalBooksCount = _db.PhysicalBooks.Count(pb => pb.BookId == b.Id)
+            })
+            .ToListAsync();
+
+        ViewBag.Search = search;
+        ViewBag.IsSuperAdmin = myRole == UserRole.SuperAdmin;
+        return View(list);
+    }
+
+    /// <summary>
+    /// Qo'lda yaratilgan kitobni o'chirish.
+    /// </summary>
+    [HttpPost("delete-book/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteBook(int id)
+    {
+        var myRole = await _db.Users
+            .Where(u => u.Id == CurrentUserId)
+            .Select(u => u.Role)
+            .FirstOrDefaultAsync();
+
+        if (myRole < UserRole.Admin)
+        {
+            return Forbid();
+        }
+
+        var book = await _db.Books.FirstOrDefaultAsync(b => b.Id == id);
+        if (book is null)
+        {
+            TempData["AdminError"] = "Kitob topilmadi yoki allaqachon o'chirilgan.";
+            return RedirectToAction(nameof(ManualBooks));
+        }
+
+        var title = book.Title;
+
+        // Bog'langan ma'lumotlarni xavfsiz tozalash
+        var posts = await _db.Posts.Where(p => p.BookId == id).ToListAsync();
+        _db.Posts.RemoveRange(posts);
+
+        var quotes = await _db.Quotes.Where(q => q.BookId == id).ToListAsync();
+        _db.Quotes.RemoveRange(quotes);
+
+        var goals = await _db.ReadingGoals.Where(g => g.BookId == id).ToListAsync();
+        _db.ReadingGoals.RemoveRange(goals);
+
+        var physicalBooks = await _db.PhysicalBooks.Where(pb => pb.BookId == id).ToListAsync();
+        foreach (var pb in physicalBooks)
+        {
+            pb.BookId = null;
+        }
+
+        _db.Books.Remove(book);
+        await _db.SaveChangesAsync();
+
+        TempData["AdminSuccess"] = $"«{title}» kitobi va unga bog'langan ma'lumotlar muvaffaqiyatli o'chirildi.";
+        return RedirectToAction(nameof(ManualBooks));
     }
 
     private static async Task<string?> SaveCoverWebpAsync(byte[] bytes, string coversDir)

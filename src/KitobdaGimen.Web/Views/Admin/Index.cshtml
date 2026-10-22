@@ -18,6 +18,7 @@
     var totalGoals = (int)(ViewData["TotalGoals"] ?? 0);
     var totalComments = (int)(ViewData["TotalComments"] ?? 0);
     var totalBooks = (int)(ViewData["TotalBooks"] ?? 0);
+    var manualBooksCount = (int)(ViewData["ManualBooksCount"] ?? 0);
     var serverSnapshot = ViewData["ServerSnapshot"] as ServerSnapshot;
 
     var isDbUp = serverSnapshot?.Database.Up ?? true;
@@ -83,6 +84,10 @@
                 <a href="/admin/allusers" class="btn btn-outline" style="gap:6px">
                     <span class="material-symbols-outlined ic-20">group</span>
                     Foydalanuvchilar
+                </a>
+                <a href="/admin/manual-books" class="btn btn-outline" style="gap:6px">
+                    <span class="material-symbols-outlined ic-20">library_books</span>
+                    Qo'lda kiritilgan kitoblar (@manualBooksCount)
                 </a>
                 <a href="/yil-yakuni/preview" target="_blank" rel="noopener" class="btn btn-ghost" style="gap:6px">
                     <span class="material-symbols-outlined ic-20">celebration</span>
@@ -295,6 +300,21 @@
                 <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
             </a>
         }
+
+        @* Manual Books *@
+        <a class="adm-hub-tile" href="/admin/manual-books">
+            <div class="adm-tile-icon" style="background:rgba(59, 130, 246, 0.12); color:#2563EB;">
+                <span class="material-symbols-outlined">library_books</span>
+            </div>
+            <div class="adm-tile-body">
+                <div class="adm-tile-label">
+                    Qo'lda kiritilgan kitoblar
+                    <span style="font-size:12px; font-weight:700; background:rgba(59, 130, 246, 0.15); color:#2563EB; padding:2px 8px; border-radius:12px; margin-left:6px;">@manualBooksCount ta</span>
+                </div>
+                <div class="adm-tile-desc">Foydalanuvchilar va adminlar kiritgan kitoblar hamda o'chirish huquqi</div>
+            </div>
+            <span class="material-symbols-outlined adm-tile-chevron">chevron_right</span>
+        </a>
 
         @* Challenge Admin *@
         <a class="adm-hub-tile" href="/challenge/admin">

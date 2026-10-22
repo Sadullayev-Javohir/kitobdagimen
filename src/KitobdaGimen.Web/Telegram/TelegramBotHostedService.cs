@@ -1141,7 +1141,6 @@ public class TelegramBotHostedService : BackgroundService
                 ? $"<a href=\"tg://user?id={uTgId}\">Kitobxon</a>"
                 : $"<b>{TelegramBotService.Escape(q.User.FullName)}</b>";
             sb.AppendLine($"✍️ {authorLink}");
-            sb.AppendLine($"👤 <a href=\"{profileMiniAppUrl}\">Foydalanuvchi profili</a>");
 
             var markup = new
             {
@@ -1253,7 +1252,6 @@ public class TelegramBotHostedService : BackgroundService
                 ? $"<a href=\"tg://user?id={uTgId}\">Kitobxon</a>"
                 : $"<b>{TelegramBotService.Escape(p.User.FullName)}</b>";
             sb.AppendLine($"✍️ {authorLink}");
-            sb.AppendLine($"👤 <a href=\"{profileMiniAppUrl}\">Foydalanuvchi profili</a>");
 
             var markup = new
             {
@@ -2331,12 +2329,11 @@ public class TelegramBotHostedService : BackgroundService
         if (data.StartsWith("admin:prize:", StringComparison.Ordinal) &&
             int.TryParse(data["admin:prize:".Length..], out var rank))
         {
-            session.TempPrizeRank = Math.Clamp(rank, 1, 3);
-            session.Step = SessionStep.AdminSetPrizeTitle;
+            var pRank = Math.Clamp(rank, 1, 3);
+            session.TempPrizeRank = pRank;
+            session.SearchMessageId = 0;
             await _bot.AnswerCallbackAsync(cbId, ct: ct);
-            await _bot.SendHtmlAsync(chatId,
-                $"🎁 <b>{session.TempPrizeRank}-o'rin uchun sovg'a kitob nomini kiriting:</b>\n" +
-                "<i>(Masalan: Atom odatlari)</i>", ct: ct);
+            await PromptSearchBookAsync(chatId, session, $"prize_{pRank}", ct);
             return;
         }
 
@@ -2522,6 +2519,42 @@ public class TelegramBotHostedService : BackgroundService
                             inline_keyboard = new object[][]
                             {
                                 new object[] { new { text = "⏭ Rasmsiz davom etish", callback_data = "pb:skip_cover" } }
+                            }
+                        }, ct: ct);
+                }
+                else if (session.TargetFlow?.StartsWith("prize_") == true)
+                {
+                    var pRank = int.TryParse(session.TargetFlow["prize_".Length..], out var pr) ? pr : session.TempPrizeRank;
+                    session.TempPrizeRank = pRank;
+
+                    var cfgPrize = await ChallengeConfigStore.GetOrDefaultAsync(db, ct);
+                    var prize = cfgPrize.GetPrize(pRank);
+                    prize.Title = session.TempBookTitle;
+                    prize.Author = session.TempBookAuthor;
+                    await ChallengeConfigStore.SaveAsync(db, cfgPrize, ct);
+
+                    var newBook = new Book
+                    {
+                        Title = session.TempBookTitle ?? "Kitob",
+                        Author = session.TempBookAuthor ?? "Muallif",
+                        TotalPages = 200,
+                        GenreId = 1
+                    };
+                    db.Books.Add(newBook);
+                    await db.SaveChangesAsync(ct);
+
+                    session.SelectedBookId = newBook.Id;
+                    session.Step = SessionStep.AdminSetPrizeCover;
+
+                    await _bot.SendHtmlAsync(chatId,
+                        $"✅ <b>{pRank}-o'rin uchun yangi kitob yaratildi va sovg'aga biriktirildi!</b>\n\n" +
+                        $"<blockquote>🏆 <b>{pRank}-o'rin:</b> «{TelegramBotService.Escape(newBook.Title)}» — <i>{TelegramBotService.Escape(newBook.Author)}</i></blockquote>\n\n" +
+                        "🖼 Agar muqova rasmini ham biriktirmoqchi bo'lsangiz, hozir <b>rasm yuboring</b>:",
+                        new
+                        {
+                            inline_keyboard = new object[][]
+                            {
+                                new object[] { new { text = "⏭ O'tkazib yuborish (Boshqaruv paneli)", callback_data = "admin:menu" } }
                             }
                         }, ct: ct);
                 }
@@ -3234,6 +3267,9 @@ public class TelegramBotHostedService : BackgroundService
             "quote" => "💬 <b>Iqtibos uchun kitob qidirish:</b>",
             "post" => "✍️ <b>Taqriz uchun kitob qidirish:</b>",
             "physical" => "🔄 <b>Almashish uchun kitob qidirish:</b>",
+            "prize_1" => "🥇 <b>1-o'rin sovg'asi uchun kitob qidirish:</b>",
+            "prize_2" => "🥈 <b>2-o'rin sovg'asi uchun kitob qidirish:</b>",
+            "prize_3" => "🥉 <b>3-o'rin sovg'asi uchun kitob qidirish:</b>",
             _ => "📚 <b>Mutolaa uchun kitob qidirish:</b>"
         };
 
@@ -3283,24 +3319,41 @@ public class TelegramBotHostedService : BackgroundService
 
         var flow = session.TargetFlow ?? "reading";
 
-        // So'zlarga ajratamiz (1-2 ta so'zdan qidirish uchun)
-        var words = query.Split(new[] { ' ', ',', '-', '—', '.' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        // So'zlarga ajratamiz (1-2 ta so'zdan qidirish uchun) va tutuq/apostroflarni normallashtiramiz
+        var normQuery = TextNormalizer.NormalizeApostrophes(query);
+        var words = normQuery.Split(new[] { ' ', ',', '-', '—', '.' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(w => w.Length >= 2)
             .ToArray();
 
         if (words.Length == 0)
         {
-            words = new[] { query };
+            words = new[] { normQuery };
         }
 
-        // PostgreSQL qidiruvi (ILIKE orqali case-insensitive)
+        // PostgreSQL qidiruvi (barcha tutuq belgilari va apostroflar hisobga olingan holda)
         var baseQuery = db.Books.AsNoTracking().AsQueryable();
         foreach (var word in words)
         {
-            var pattern = $"%{word}%";
+            var w = word.ToLower();
             baseQuery = baseQuery.Where(b =>
-                EF.Functions.ILike(b.Title, pattern) ||
-                EF.Functions.ILike(b.Author, pattern));
+                b.Title.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'")
+                    .Contains(w) ||
+                b.Author.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'")
+                    .Contains(w));
         }
 
         var foundBooks = await baseQuery
@@ -3311,9 +3364,27 @@ public class TelegramBotHostedService : BackgroundService
         // Agar barcha so'zlar bo'yicha topilmasa va 2+ so'z kiritilgan bo'lsa, birinchi so'z bo'yicha qidirib ko'ramiz
         if (foundBooks.Count == 0 && words.Length > 1)
         {
-            var firstPattern = $"%{words[0]}%";
+            var firstWord = words[0].ToLower();
             foundBooks = await db.Books.AsNoTracking()
-                .Where(b => EF.Functions.ILike(b.Title, firstPattern) || EF.Functions.ILike(b.Author, firstPattern))
+                .Where(b =>
+                    b.Title.ToLower()
+                        .Replace("‘", "'")
+                        .Replace("’", "'")
+                        .Replace("ʻ", "'")
+                        .Replace("ʼ", "'")
+                        .Replace("`", "'")
+                        .Replace("´", "'")
+                        .Replace("ʹ", "'")
+                        .Contains(firstWord) ||
+                    b.Author.ToLower()
+                        .Replace("‘", "'")
+                        .Replace("’", "'")
+                        .Replace("ʻ", "'")
+                        .Replace("ʼ", "'")
+                        .Replace("`", "'")
+                        .Replace("´", "'")
+                        .Replace("ʹ", "'")
+                        .Contains(firstWord))
                 .OrderByDescending(b => b.ReadingGoals.Count + b.Posts.Count)
                 .Take(5)
                 .ToListAsync(ct);
@@ -3413,6 +3484,38 @@ public class TelegramBotHostedService : BackgroundService
 
         switch (flow)
         {
+            case "prize_1":
+            case "prize_2":
+            case "prize_3":
+                var rank = int.Parse(flow["prize_".Length..]);
+                session.TempPrizeRank = rank;
+
+                var chCfg = await ChallengeConfigStore.GetOrDefaultAsync(db, ct);
+                var prize = chCfg.GetPrize(rank);
+                prize.Title = book.Title;
+                prize.Author = book.Author;
+                if (!string.IsNullOrWhiteSpace(book.CoverUrl))
+                {
+                    prize.CoverUrl = book.CoverUrl;
+                }
+                await ChallengeConfigStore.SaveAsync(db, chCfg, ct);
+
+                session.Step = SessionStep.AdminSetPrizeCover;
+                await _bot.SendHtmlAsync(chatId,
+                    $"✅ <b>{rank}-o'rin sovg'asi sifatida tanlandi!</b>\n\n" +
+                    $"<blockquote>🏆 <b>{rank}-o'rin:</b> «{TelegramBotService.Escape(book.Title)}» — <i>{TelegramBotService.Escape(book.Author)}</i>\n" +
+                    (!string.IsNullOrWhiteSpace(book.CoverUrl) ? "🖼 Muqova: biriktirildi" : "🖼 Muqova: hozircha yo'q") +
+                    "</blockquote>\n\n" +
+                    "🖼 Agar boshqa muqova rasmini yuklamoqchi bo'lsangiz, hozir <b>rasm yuboring</b> yoki menyuga qayting:",
+                    new
+                    {
+                        inline_keyboard = new object[][]
+                        {
+                            new object[] { new { text = "🔙 Boshqaruv paneli", callback_data = "admin:menu" } }
+                        }
+                    }, ct: ct);
+                break;
+
             case "quote":
                 session.Step = SessionStep.NewQuoteText;
                 await _bot.SendHtmlAsync(chatId,
@@ -3468,8 +3571,16 @@ public class TelegramBotHostedService : BackgroundService
 
         if (pbBook is null)
         {
-            var titleLower = (session.TempBookTitle ?? "").ToLower();
-            pbBook = await db.Books.FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower, ct);
+            var normTitle = TextNormalizer.NormalizeApostrophes(session.TempBookTitle).ToLower();
+            pbBook = await db.Books.FirstOrDefaultAsync(b =>
+                b.Title.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'") == normTitle, ct);
         }
 
         if (pbBook is null)
@@ -3524,8 +3635,16 @@ public class TelegramBotHostedService : BackgroundService
 
         if (postBook is null)
         {
-            var titleLower = (session.TempBookTitle ?? "").ToLower();
-            postBook = await db.Books.FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower, ct);
+            var normTitle = TextNormalizer.NormalizeApostrophes(session.TempBookTitle).ToLower();
+            postBook = await db.Books.FirstOrDefaultAsync(b =>
+                b.Title.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'") == normTitle, ct);
         }
 
         var cover = !string.IsNullOrWhiteSpace(bookCoverUrl) ? bookCoverUrl : "/img/default-book-cover.webp";
@@ -3589,8 +3708,16 @@ public class TelegramBotHostedService : BackgroundService
 
         if (quoteBook is null)
         {
-            var titleLower = (session.TempBookTitle ?? "").ToLower();
-            quoteBook = await db.Books.FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower, ct);
+            var normTitle = TextNormalizer.NormalizeApostrophes(session.TempBookTitle).ToLower();
+            quoteBook = await db.Books.FirstOrDefaultAsync(b =>
+                b.Title.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'") == normTitle, ct);
         }
 
         var cover = !string.IsNullOrWhiteSpace(bookCoverUrl) ? bookCoverUrl : "/img/default-book-cover.webp";

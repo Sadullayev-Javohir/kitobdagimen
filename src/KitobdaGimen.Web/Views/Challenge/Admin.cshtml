@@ -128,20 +128,29 @@
                                     <span>@rankBadge</span>
                                 </span>
                             </div>
-                            <div class="ch-admin-field">
-                                <label>
-                                    <span class="material-symbols-outlined ic-sm">menu_book</span>
-                                    Kitob nomi
-                                </label>
-                                <input class="input" type="text" name="prizeTitle_@r" value="@p.Title" placeholder="Masalan: Atom odatlari" />
+                            <div class="ch-admin-field ch-book-field" data-rank="@r">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="margin-bottom:0;">
+                                        <span class="material-symbols-outlined ic-sm">menu_book</span>
+                                        Kitob nomi
+                                    </label>
+                                    <button type="button" class="btn btn-ghost btn-xs ch-create-book-btn" data-target-rank="@r" style="font-size:12px; padding:2px 8px; height:auto; color:var(--primary); font-weight:600;">
+                                        <span class="material-symbols-outlined ic-14">add</span> Yangi yaratish
+                                    </button>
+                                </div>
+                                <div style="position:relative;">
+                                    <input class="input ch-book-search-input" type="text" name="prizeTitle_@r" id="prizeTitle_@r" value="@p.Title" placeholder="Kitob nomini qidiring (masalan: Atom odatlari)..." autocomplete="off" />
+                                    <div class="ch-book-suggestions" id="prizeSuggestions_@r" hidden></div>
+                                </div>
                             </div>
                             <div class="ch-admin-field">
                                 <label>
                                     <span class="material-symbols-outlined ic-sm">person</span>
                                     Muallif
                                 </label>
-                                <input class="input" type="text" name="prizeAuthor_@r" value="@p.Author" placeholder="Masalan: Jeyms Klir" />
+                                <input class="input ch-book-author-input" type="text" name="prizeAuthor_@r" id="prizeAuthor_@r" value="@p.Author" placeholder="Masalan: Jeyms Klir" />
                             </div>
+                            <input type="hidden" name="prizeCoverUrl_@r" id="prizeCoverUrl_@r" value="@p.CoverUrl" />
                             <div class="ch-admin-field">
                                 <label>
                                     <span class="material-symbols-outlined ic-sm">photo</span>
@@ -336,15 +345,24 @@
                         <input type="hidden" name="month" value="@Model.Month" />
                         <input type="hidden" name="rank" value="@win.Rank" />
                         <div class="ch-admin-grid-2">
-                            <div class="ch-admin-field">
-                                <label>Kitob nomi</label>
-                                <input class="input" type="text" name="title" value="@win.GiftBookTitle" placeholder="Masalan: Atom odatlari" required />
+                            <div class="ch-admin-field ch-gift-field" data-gift-rank="@win.Rank">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label style="margin-bottom:0;">Kitob nomi</label>
+                                    <button type="button" class="btn btn-ghost btn-xs ch-create-book-gift-btn" data-gift-rank="@win.Rank" style="font-size:12px; padding:2px 8px; height:auto; color:var(--primary); font-weight:600;">
+                                        <span class="material-symbols-outlined ic-14">add</span> Yangi yaratish
+                                    </button>
+                                </div>
+                                <div style="position:relative;">
+                                    <input class="input ch-gift-search-input" type="text" name="title" id="giftTitle_@win.Rank" value="@win.GiftBookTitle" placeholder="Masalan: Atom odatlari" required autocomplete="off" />
+                                    <div class="ch-book-suggestions" id="giftSuggestions_@win.Rank" hidden></div>
+                                </div>
                             </div>
                             <div class="ch-admin-field">
                                 <label>Muallif</label>
-                                <input class="input" type="text" name="author" value="@win.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
+                                <input class="input ch-gift-author-input" type="text" name="author" id="giftAuthor_@win.Rank" value="@win.GiftBookAuthor" placeholder="Masalan: Jeyms Klir" />
                             </div>
                         </div>
+                        <input type="hidden" name="coverUrl" id="giftCoverUrl_@win.Rank" value="@win.GiftBookCoverUrl" />
                         <div class="ch-admin-field" style="margin-bottom:14px">
                             <label>
                                 <span class="material-symbols-outlined ic-sm">photo</span>
@@ -508,6 +526,44 @@
         </div>
     </div>
 }
+
+@* Yangi kitob yaratish modali *@
+<div class="modal-backdrop" id="chCreateBookModal" hidden style="position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.65); display:none; align-items:center; justify-content:center; padding:16px;">
+    <div class="modal-box" style="background:var(--surface); border:1px solid var(--border); border-radius:14px; max-width:440px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.3); position:relative;">
+        <button type="button" class="btn btn-ghost btn-sm" id="chCloseNewBookModal" style="position:absolute; right:14px; top:14px;" title="Yopish">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <h3 style="margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+            <span class="material-symbols-outlined" style="color:var(--primary)">add_box</span>
+            Yangi kitob yaratish
+        </h3>
+        <p class="muted" style="font-size:13px; margin-bottom:18px;">
+            Kitob bazada topilmasa, ma'lumotlarini kiriting — u avtomatik ravishda bazaga qo'shiladi va tanlanadi.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+                <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Kitob nomi *</label>
+                <input class="input" type="text" id="chNewBookTitle" placeholder="Masalan: O'tkan kunlar" style="width:100%;" required />
+            </div>
+            <div>
+                <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Muallif *</label>
+                <input class="input" type="text" id="chNewBookAuthor" placeholder="Masalan: Abdulla Qodiriy" style="width:100%;" required />
+            </div>
+            <div>
+                <label style="font-size:13px; font-weight:600; margin-bottom:4px; display:block;">Sahifalar soni</label>
+                <input class="input" type="number" id="chNewBookPages" value="200" min="1" max="10000" style="width:100%;" />
+            </div>
+            <div id="chNewBookError" style="color:var(--danger); font-size:13px; display:none;"></div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                <button type="button" class="btn btn-outline btn-sm" id="chCancelNewBookModal">Bekor qilish</button>
+                <button type="button" class="btn btn-primary btn-sm" id="chSaveNewBookBtn" style="gap:6px;">
+                    <span class="material-symbols-outlined ic-16">save</span>
+                    Saqlash va biriktirish
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <link rel="stylesheet" href="/css/challenge.css" asp-append-version="true" />
 

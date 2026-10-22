@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Books.Dtos;
 using KitobdaGimen.Domain.Entities;
@@ -22,13 +23,27 @@ public class CreateBookCommandHandler : IRequestHandler<CreateBookCommand, BookD
         var author = request.Author.Trim();
 
         // Reuse an existing identical book to avoid duplicate catalogue entries.
-        // Case-insensitive: matching by exact case previously let "Kitob Nomi" and
-        // "kitob nomi" create separate Book rows, silently splitting that book's
-        // reviews/quotes across two records.
-        var titleLower = title.ToLower();
-        var authorLower = author.ToLower();
+        // Apostroflar va tutuq belgilari har xil kiritilganda ham bir xil kitob deb bilamiz.
+        var normTitle = TextNormalizer.NormalizeApostrophes(title).ToLower();
+        var normAuthor = TextNormalizer.NormalizeApostrophes(author).ToLower();
         var existing = await _db.Books
-            .FirstOrDefaultAsync(b => b.Title.ToLower() == titleLower && b.Author.ToLower() == authorLower, cancellationToken);
+            .FirstOrDefaultAsync(b =>
+                b.Title.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'") == normTitle &&
+                b.Author.ToLower()
+                    .Replace("‘", "'")
+                    .Replace("’", "'")
+                    .Replace("ʻ", "'")
+                    .Replace("ʼ", "'")
+                    .Replace("`", "'")
+                    .Replace("´", "'")
+                    .Replace("ʹ", "'") == normAuthor, cancellationToken);
 
         var cover = !string.IsNullOrWhiteSpace(request.CoverUrl) ? request.CoverUrl : "/img/default-book-cover.webp";
 

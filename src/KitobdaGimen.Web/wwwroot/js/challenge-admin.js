@@ -209,4 +209,252 @@
     }
 
     document.querySelectorAll("[data-ch-uploader]").forEach(initFileUploader);
+
+    // ── Kitob qidirish va yangi yaratish (Challenge Admin) ──────────────────────────
+    let activeTargetContext = null;
+
+    const newBookModal = document.getElementById("chCreateBookModal");
+    const nbTitle = document.getElementById("chNewBookTitle");
+    const nbAuthor = document.getElementById("chNewBookAuthor");
+    const nbPages = document.getElementById("chNewBookPages");
+    const nbError = document.getElementById("chNewBookError");
+    const nbSaveBtn = document.getElementById("chSaveNewBookBtn");
+
+    function openNewBookModal(context, initialTitle) {
+        activeTargetContext = context;
+        if (nbTitle) nbTitle.value = initialTitle || "";
+        if (nbAuthor) nbAuthor.value = "";
+        if (nbPages) nbPages.value = "200";
+        if (nbError) { nbError.textContent = ""; nbError.style.display = "none"; }
+        if (newBookModal) {
+            newBookModal.style.display = "flex";
+            newBookModal.hidden = false;
+        }
+        if (nbTitle) setTimeout(function () { nbTitle.focus(); }, 100);
+    }
+
+    function closeNewBookModal() {
+        if (newBookModal) {
+            newBookModal.style.display = "none";
+            newBookModal.hidden = true;
+        }
+        activeTargetContext = null;
+    }
+
+    if (document.getElementById("chCloseNewBookModal")) {
+        document.getElementById("chCloseNewBookModal").addEventListener("click", closeNewBookModal);
+    }
+    if (document.getElementById("chCancelNewBookModal")) {
+        document.getElementById("chCancelNewBookModal").addEventListener("click", closeNewBookModal);
+    }
+
+    if (nbSaveBtn) {
+        nbSaveBtn.addEventListener("click", async function () {
+            const title = (nbTitle ? nbTitle.value : "").trim();
+            const author = (nbAuthor ? nbAuthor.value : "").trim();
+            const pages = parseInt(nbPages ? nbPages.value : "200", 10) || 200;
+
+            if (!title) {
+                showNbError("Kitob nomini kiriting.");
+                return;
+            }
+            if (!author) {
+                showNbError("Kitob muallifini kiriting.");
+                return;
+            }
+
+            nbSaveBtn.disabled = true;
+            nbSaveBtn.textContent = "Saqlanmoqda...";
+
+            try {
+                const res = await fetch("/books/create", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        author: author,
+                        totalPages: pages,
+                        genreId: 1
+                    })
+                });
+
+                if (!res.ok) {
+                    throw new Error("Kitob yaratishda xatolik yuz berdi.");
+                }
+
+                const createdBook = await res.json();
+                if (activeTargetContext) {
+                    applySelectedBook(activeTargetContext, createdBook);
+                }
+                closeNewBookModal();
+            } catch (err) {
+                showNbError(err.message || "Kitob yaratishda xatolik yuz berdi.");
+            } finally {
+                nbSaveBtn.disabled = false;
+                nbSaveBtn.innerHTML = '<span class="material-symbols-outlined ic-16">save</span> Saqlash va biriktirish';
+            }
+        });
+    }
+
+    function showNbError(msg) {
+        if (nbError) {
+            nbError.textContent = msg;
+            nbError.style.display = "block";
+        }
+    }
+
+    function applySelectedBook(ctx, book) {
+        if (!ctx || !book) return;
+        if (ctx.titleInput) ctx.titleInput.value = book.title || "";
+        if (ctx.authorInput) ctx.authorInput.value = book.author || "";
+        if (ctx.coverInput && book.coverUrl) ctx.coverInput.value = book.coverUrl;
+
+        if (ctx.previewImg && book.coverUrl) {
+            ctx.previewImg.src = book.coverUrl;
+            if (ctx.previewContainer) ctx.previewContainer.style.display = "flex";
+        }
+    }
+
+    function setupBookAutocomplete(titleInput, authorInput, coverInput, suggestionsBox, previewImg, previewContainer, context) {
+        if (!titleInput || !suggestionsBox) return;
+
+        let searchTimer = null;
+
+        titleInput.addEventListener("input", function () {
+            const q = titleInput.value.trim();
+            if (q.length < 2) {
+                suggestionsBox.hidden = true;
+                suggestionsBox.innerHTML = "";
+                return;
+            }
+
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(async function () {
+                try {
+                    const res = await fetch("/books/search?q=" + encodeURIComponent(q), {
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    });
+                    if (!res.ok) return;
+                    const books = await res.json();
+
+                    suggestionsBox.innerHTML = "";
+
+                    if (!books || books.length === 0) {
+                        const emptyDiv = document.createElement("div");
+                        emptyDiv.className = "ch-book-sug-empty";
+                        emptyDiv.innerHTML =
+                            '<div>⚠️ Bazada <b>«' + esc(q) + '»</b> kitobi topilmadi.</div>' +
+                            '<button type="button" class="btn btn-primary btn-xs ch-book-sug-new-btn">' +
+                            '<span class="material-symbols-outlined ic-14">add</span> Yangi kitob yaratish</button>';
+                        emptyDiv.querySelector(".ch-book-sug-new-btn").addEventListener("click", function (e) {
+                            e.preventDefault();
+                            suggestionsBox.hidden = true;
+                            openNewBookModal(context, q);
+                        });
+                        suggestionsBox.appendChild(emptyDiv);
+                    } else {
+                        books.forEach(function (b) {
+                            const item = document.createElement("div");
+                            item.className = "ch-book-sug-item";
+                            const cover = b.coverUrl || "/img/default-book-cover.webp";
+                            item.innerHTML =
+                                '<img class="ch-book-sug-cover" src="' + esc(cover) + '" alt="" />' +
+                                '<div class="ch-book-sug-info">' +
+                                '<div class="ch-book-sug-title">' + esc(b.title) + '</div>' +
+                                '<div class="ch-book-sug-author">' + esc(b.author || "") + '</div>' +
+                                '</div>';
+                            item.addEventListener("click", function () {
+                                applySelectedBook(context, b);
+                                suggestionsBox.hidden = true;
+                            });
+                            suggestionsBox.appendChild(item);
+                        });
+
+                        const footerDiv = document.createElement("div");
+                        footerDiv.style.cssText = "padding:8px 12px; border-top:1px dashed var(--border); text-align:center;";
+                        footerDiv.innerHTML =
+                            '<button type="button" class="btn btn-ghost btn-xs" style="color:var(--primary); font-size:12px;">' +
+                            '<span class="material-symbols-outlined ic-14">add</span> Ro\'yxatda yo\'qmi? Yangi yaratish</button>';
+                        footerDiv.querySelector("button").addEventListener("click", function (e) {
+                            e.preventDefault();
+                            suggestionsBox.hidden = true;
+                            openNewBookModal(context, q);
+                        });
+                        suggestionsBox.appendChild(footerDiv);
+                    }
+
+                    suggestionsBox.hidden = false;
+                } catch (e) {
+                    // xato bo'lsa jim o'tkazamiz
+                }
+            }, 250);
+        });
+
+        document.addEventListener("click", function (e) {
+            if (!titleInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.hidden = true;
+            }
+        });
+    }
+
+    // 1-, 2-, 3-o'rin sovg'a kitoblari uchun ulash
+    [1, 2, 3].forEach(function (rank) {
+        const titleInput = document.getElementById("prizeTitle_" + rank);
+        const authorInput = document.getElementById("prizeAuthor_" + rank);
+        const coverInput = document.getElementById("prizeCoverUrl_" + rank);
+        const suggestionsBox = document.getElementById("prizeSuggestions_" + rank);
+        const card = titleInput ? titleInput.closest(".ch-prize-card") : null;
+        const previewImg = card ? card.querySelector(".ch-prize-cover-img") : null;
+        const previewContainer = card ? card.querySelector(".ch-prize-cover-preview") : null;
+
+        const context = {
+            type: "prize",
+            rank: rank,
+            titleInput: titleInput,
+            authorInput: authorInput,
+            coverInput: coverInput,
+            previewImg: previewImg,
+            previewContainer: previewContainer
+        };
+
+        setupBookAutocomplete(titleInput, authorInput, coverInput, suggestionsBox, previewImg, previewContainer, context);
+
+        const newBtn = card ? card.querySelector('.ch-create-book-btn[data-target-rank="' + rank + '"]') : null;
+        if (newBtn) {
+            newBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                openNewBookModal(context, titleInput ? titleInput.value.trim() : "");
+            });
+        }
+    });
+
+    // Har bir g'olibga sovg'a berish formalari uchun ulash
+    document.querySelectorAll(".ch-gift-form").forEach(function (form) {
+        const titleInput = form.querySelector(".ch-gift-search-input");
+        const authorInput = form.querySelector(".ch-gift-author-input");
+        const coverInput = form.querySelector('input[name="coverUrl"]');
+        const suggestionsBox = form.querySelector(".ch-book-suggestions");
+        const rankBtn = form.querySelector(".ch-create-book-gift-btn");
+
+        const context = {
+            type: "gift",
+            titleInput: titleInput,
+            authorInput: authorInput,
+            coverInput: coverInput,
+            previewImg: null,
+            previewContainer: null
+        };
+
+        setupBookAutocomplete(titleInput, authorInput, coverInput, suggestionsBox, null, null, context);
+
+        if (rankBtn) {
+            rankBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                openNewBookModal(context, titleInput ? titleInput.value.trim() : "");
+            });
+        }
+    });
 })();

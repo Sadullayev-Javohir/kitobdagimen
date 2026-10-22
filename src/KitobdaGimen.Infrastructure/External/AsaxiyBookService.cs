@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -147,7 +148,7 @@ public class AsaxiyBookService : IAsaxiyBookService
 
     public async Task<IReadOnlyList<AsaxiyBookResult>> SearchAsync(string query, CancellationToken ct = default)
     {
-        query = (query ?? string.Empty).Trim();
+        query = TextNormalizer.NormalizeApostrophes(query ?? string.Empty).Trim();
         if (query.Length < 2)
         {
             return Array.Empty<AsaxiyBookResult>();

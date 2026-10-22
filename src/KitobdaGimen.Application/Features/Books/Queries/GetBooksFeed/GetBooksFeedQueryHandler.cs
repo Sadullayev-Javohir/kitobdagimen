@@ -1,3 +1,4 @@
+using KitobdaGimen.Application.Common;
 using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Common.Models;
 using MediatR;
@@ -23,8 +24,7 @@ public class GetBooksFeedQueryHandler : IRequestHandler<GetBooksFeedQuery, Paged
 
         if (isSearch)
         {
-            var term = request.Search.Trim().ToLower();
-            query = query.Where(b => b.Title.ToLower().Contains(term) || b.Author.ToLower().Contains(term));
+            query = query.WhereMatchesBookSearch(request.Search);
         }
         else
         {
