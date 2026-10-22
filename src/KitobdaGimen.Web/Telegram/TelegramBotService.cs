@@ -828,11 +828,11 @@ public class TelegramBotService : ITelegramBotService
                 cleanUsername = post.User.Username.Trim().TrimStart('@');
             }
 
-            var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
-                ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
+            var authorText = !string.IsNullOrWhiteSpace(cleanUsername)
+                ? $"✍️ <b>Kitobxon:</b> @{cleanUsername}"
                 : (userTgId > 0
-                    ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
-                    : "Kitobxon");
+                    ? $"✍️ <b>Kitobxon:</b> <a href=\"tg://user?id={userTgId}\">{Escape(post.User.FullName)}</a>"
+                    : $"✍️ <b>Kitobxon:</b> <b>{Escape(post.User.FullName)}</b>");
 
             var cleanReview = TruncateText(StripHtml(post.ReviewText), 3500);
 
@@ -846,7 +846,7 @@ public class TelegramBotService : ITelegramBotService
             html.AppendLine($"«{Escape(cleanReview)}»");
             html.AppendLine();
             html.AppendLine($"📚 <b>Kitob:</b> «{Escape(post.Book.Title)}»{authorSuffix}");
-            html.AppendLine($"✍️ {authorLink}");
+            html.AppendLine(authorText);
             html.AppendLine($"🔗 <b>Taqriz:</b> <a href=\"{postDetailUrl}\">Saytda to'liq o'qish</a>");
 
             var likeCount = await db.Likes.CountAsync(l => l.PostId == post.Id, ct);
@@ -1008,11 +1008,11 @@ public class TelegramBotService : ITelegramBotService
                 cleanUsername = quote.User.Username.Trim().TrimStart('@');
             }
 
-            var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
-                ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
+            var authorText = !string.IsNullOrWhiteSpace(cleanUsername)
+                ? $"✍️ <b>Kitobxon:</b> @{cleanUsername}"
                 : (userTgId > 0
-                    ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
-                    : "Kitobxon");
+                    ? $"✍️ <b>Kitobxon:</b> <a href=\"tg://user?id={userTgId}\">{Escape(quote.User.FullName)}</a>"
+                    : $"✍️ <b>Kitobxon:</b> <b>{Escape(quote.User.FullName)}</b>");
 
             var cleanText = TruncateText(StripHtml(quote.Text), 3500);
 
@@ -1026,7 +1026,7 @@ public class TelegramBotService : ITelegramBotService
             html.AppendLine($"«{Escape(cleanText)}»");
             html.AppendLine();
             html.AppendLine($"📚 <b>Kitob:</b> «{Escape(quote.Book.Title)}»{authorSuffix}");
-            html.AppendLine($"✍️ {authorLink}");
+            html.AppendLine(authorText);
             html.AppendLine($"🔗 <b>Iqtibos:</b> <a href=\"{quoteDetailUrl}\">Saytda ko'rish</a>");
 
             var likeCount = await db.QuoteLikes.CountAsync(l => l.QuoteId == quote.Id, ct);
