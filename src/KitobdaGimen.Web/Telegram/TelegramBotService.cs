@@ -1190,7 +1190,6 @@ public class TelegramBotService : ITelegramBotService
             html.AppendLine($"👑 <b>Kun Qahramoni:</b> {authorText}");
             html.AppendLine();
             html.AppendLine("✨ <i>Ushbu kitobxon bugun platformamizda \"Kun Qahramoni\" premium maqomiga ega bo'ldi!</i>");
-            html.AppendLine($"🔗 <b>Jackpot zali:</b> <a href=\"{WebAppUrl}/jackpot\">Saytda to'liq o'qish va tabriklash</a>");
 
             var likeCount = jackpot.Likes.Count;
             var likeBtnText = likeCount > 0 ? $"❤️ Yoqdi ({likeCount})" : "❤️ Yoqdi";
