@@ -1,0 +1,411 @@
+@using KitobdaGimen.Application.Features.Jackpot.Dtos
+@using KitobdaGimen.Application.Features.Auth.Dtos
+@model DailyJackpotDto?
+@{
+    ViewData["Title"] = "Jackpot Zali — Kun Taqrizi va Iqtibosi";
+    var me = ViewBag.CurrentUser as UserDto;
+    var isAdmin = ViewBag.IsAdmin as bool? ?? false;
+    var history = ViewBag.History as IReadOnlyList<DailyJackpotDto> ?? Array.Empty<DailyJackpotDto>();
+}
+
+<div class="jackpot-page">
+    <div class="jackpot-header">
+        <span class="jackpot-crown-pill">
+            <span class="material-symbols-outlined">casino</span>
+            Kunlik Omadli Tanlov
+        </span>
+        <h1>🎰 JACKPOT ZALI 👑</h1>
+        <p class="jackpot-subtitle">
+            Har kuni 23:59 da platformadagi barcha taqriz va iqtiboslar orasidan random bittasi tanlanadi.
+            G'olib 24 soat davomida "Kun Qahramoni" premium maqomiga ega bo'ladi!
+        </p>
+
+        @if (isAdmin)
+        {
+            <div style="margin-top: 14px;">
+                <form method="post" action="/jackpot/reroll" onsubmit="return confirm('Haqiqatan ham bugungi g\'olibni tasodifiy qayta tanlamoqchimisiz?');" style="display: inline-block;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-secondary" style="font-size: 13px; font-weight: 700; border-radius: 9999px; padding: 6px 16px; background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; color: #b45309;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">casino</span>
+                        Qayta random tanlash (Admin)
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+
+    @if (Model != null)
+    {
+        var isPost = Model.Type == "post";
+        var cover = !string.IsNullOrWhiteSpace(Model.BookCoverUrl) ? Model.BookCoverUrl : "/img/default-book-cover.webp";
+        var authorInitial = KitobdaGimen.Web.ViewHelpers.Initial(Model.UserFullName);
+
+        <!-- Bosh Jackpot Kartasi -->
+        <section class="jackpot-hero-card" id="jackpotMainCard" data-jackpot-id="@Model.Id">
+            <div class="jackpot-hero-author-box">
+                <div class="jackpot-hero-author-left">
+                    <div class="jackpot-hero-avatar-wrap">
+                        @if (!string.IsNullOrWhiteSpace(Model.UserAvatarUrl))
+                        {
+                            <img class="jackpot-hero-avatar" src="@Model.UserAvatarUrl" alt="@Model.UserFullName" referrerpolicy="no-referrer" />
+                        }
+                        else
+                        {
+                            <span class="jackpot-hero-avatar">@authorInitial</span>
+                        }
+                        <span class="jackpot-hero-crown-large">👑</span>
+                    </div>
+                    <div>
+                        <h2 class="jackpot-hero-author-title">
+                            @Model.UserFullName
+                            @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(Model.UserName))
+                        </h2>
+                        <div class="jackpot-hero-author-sub">
+                            <span class="daily-hero-badge">Kun Qahramoni</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.UserName))
+                            {
+                                <span>@@@Model.UserName</span>
+                            }
+                            <span>· @Model.FormattedDate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="jackpot-hero-author-right">
+                    <span class="feed-jackpot-pill" style="font-size: 12px; padding: 5px 12px;">
+                        <span class="material-symbols-outlined">@(isPost ? "rate_review" : "format_quote")</span>
+                        @Model.Title
+                    </span>
+                </div>
+            </div>
+
+            <!-- Kitob ma'lumotlari -->
+            <div class="jackpot-hero-book-box">
+                <img class="jackpot-hero-book-cover" src="@cover" alt="@Model.BookTitle" />
+                <div class="jackpot-hero-book-info">
+                    <h3>@Model.BookTitle</h3>
+                    @if (!string.IsNullOrWhiteSpace(Model.BookAuthor))
+                    {
+                        <p>Muallif: <strong>@Model.BookAuthor</strong></p>
+                    }
+                </div>
+            </div>
+
+            <!-- Asosiy matn -->
+            <div class="jackpot-hero-text-box">
+                <p class="jackpot-hero-text">@Model.Content</p>
+            </div>
+
+            <!-- Amallar: Like, Likerlar, Asl post havolasi -->
+            <div class="jackpot-hero-actions">
+                <div class="jackpot-hero-actions-left">
+                    <button type="button" class="jackpot-like-btn @(Model.IsLikedByMe ? "is-liked" : "")" id="jackpotLikeBtn" onclick="toggleJackpotLike(@Model.Id)">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">favorite</span>
+                        <span id="jackpotLikeText">@(Model.IsLikedByMe ? "Yoqdi" : "Yoqdi")</span>
+                        <strong id="jackpotLikeCount">(@Model.LikeCount)</strong>
+                    </button>
+
+                    <button type="button" class="jackpot-likers-trigger" onclick="openJackpotLikers(@Model.Id)">
+                        Kimlar yoqtirdi?
+                    </button>
+                </div>
+
+                <a href="@Model.TargetUrl" class="jackpot-original-link" target="_blank">
+                    <span>Asl @(isPost ? "taqrizni" : "iqtibosni") ko'rish</span>
+                    <span class="material-symbols-outlined" style="font-size: 16px;">arrow_outward</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Izohlar va tabriklar bo'limi -->
+        <section class="jackpot-comments-section">
+            <h3 class="jackpot-comments-title">
+                <span class="material-symbols-outlined" style="color: #f59e0b;">forum</span>
+                Fikrlar va tabriklar (<span id="jackpotCommentCount">@Model.CommentCount</span>)
+            </h3>
+
+            @if (me != null)
+            {
+                <form class="jackpot-comment-form" onsubmit="submitJackpotComment(event, @Model.Id)">
+                    <textarea class="jackpot-comment-input" id="jackpotCommentInput" placeholder="Kun g'olibiga tabrik yoki fikringizni yozing..." rows="2" required></textarea>
+                    <button type="submit" class="jackpot-comment-send" id="jackpotCommentSubmit">
+                        <span class="material-symbols-outlined">send</span>
+                        <span>Yuborish</span>
+                    </button>
+                </form>
+            }
+            else
+            {
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+                    Fikr bildirish uchun <a href="/auth/google" style="color: #f59e0b; font-weight: 700;">tizimga kiring</a>.
+                </p>
+            }
+
+            <div class="jackpot-comments-list" id="jackpotCommentsList">
+                @if (Model.Comments.Count == 0)
+                {
+                    <div id="jackpotNoComments" style="text-align: center; padding: 24px 0; color: var(--text-secondary); font-size: 13.5px;">
+                        <i>Hozircha izohlar yo'q. Birinchi bo'lib tabrik yoki fikringizni qoldiring!</i>
+                    </div>
+                }
+                else
+                {
+                    foreach (var c in Model.Comments)
+                    {
+                        var cInitial = KitobdaGimen.Web.ViewHelpers.Initial(c.UserFullName);
+                        <div class="jackpot-comment-item">
+                            @if (!string.IsNullOrWhiteSpace(c.UserAvatarUrl))
+                            {
+                                <img class="jackpot-comment-avatar" src="@c.UserAvatarUrl" alt="@c.UserFullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="jackpot-comment-avatar" style="background: #e5e7eb; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">@cInitial</span>
+                            }
+                            <div class="jackpot-comment-content">
+                                <div class="jackpot-comment-author-row">
+                                    <span class="jackpot-comment-author-name">@c.UserFullName</span>
+                                    <span class="jackpot-comment-time">@c.TimeAgo</span>
+                                </div>
+                                <p class="jackpot-comment-text">@c.Text</p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 20px; margin-bottom: 30px;">
+            <span class="material-symbols-outlined" style="font-size: 48px; color: #f59e0b;">hourglass_empty</span>
+            <h3 style="margin-top: 10px;">Bugungi Jackpot hali aniqlanmoqda...</h3>
+            <p style="color: var(--text-secondary); font-size: 14px;">Kuni bo'yi taqriz yoki iqtibos yozing va bugungi omadli g'olibga aylaning!</p>
+        </div>
+    }
+
+    <!-- O'tgan kunlar g'oliblari arxivi -->
+    <section class="jackpot-history-section">
+        <h3 class="jackpot-history-title">
+            <span class="material-symbols-outlined" style="color: #f59e0b;">history_toggle_off</span>
+            O'tgan kunlar g'oliblari (Jackpot tarixi)
+        </h3>
+
+        @if (history.Count == 0)
+        {
+            <p style="color: var(--text-secondary); font-size: 13.5px;">Hozircha o'tgan g'oliblar tarixi mavjud emas.</p>
+        }
+        else
+        {
+            <div class="jackpot-history-grid">
+                @foreach (var item in history)
+                {
+                    var isPost = item.Type == "post";
+                    var authorInitial = KitobdaGimen.Web.ViewHelpers.Initial(item.UserFullName);
+
+                    <div class="jackpot-history-card">
+                        <div class="jackpot-history-card-top">
+                            <span class="jackpot-history-date">@item.FormattedDate</span>
+                            <span class="jackpot-history-type-badge">
+                                @(isPost ? "Kun taqrizi" : "Kun iqtibosi")
+                            </span>
+                        </div>
+
+                        <div class="jackpot-history-card-author">
+                            @if (!string.IsNullOrWhiteSpace(item.UserAvatarUrl))
+                            {
+                                <img class="jackpot-history-card-avatar" src="@item.UserAvatarUrl" alt="@item.UserFullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="jackpot-history-card-avatar" style="background: #fde68a; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #92400e;">@authorInitial</span>
+                            }
+                            <span class="jackpot-history-card-author-name">@item.UserFullName 👑</span>
+                        </div>
+
+                        <p class="jackpot-history-card-text">@item.Content</p>
+
+                        <div class="jackpot-history-card-footer">
+                            <span>❤️ @item.LikeCount · 💬 @item.CommentCount</span>
+                            <a href="@item.TargetUrl" style="color: #d97706; font-weight: 700; text-decoration: none; font-size: 12px;">O'qish →</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<!-- Likerlar Modali -->
+<div class="likes-modal-backdrop" id="jackpotLikersModal" style="display: none;" onclick="closeJackpotLikers(event)">
+    <div class="likes-modal-dialog" onclick="event.stopPropagation()">
+        <div class="likes-modal-header">
+            <h3 class="likes-modal-title">Yoqtirgan kitobxonlar</h3>
+            <button type="button" class="likes-modal-close" onclick="closeJackpotLikers()" aria-label="Yopish">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="likes-modal-body" id="jackpotLikersBody">
+            <div style="text-align: center; padding: 20px;">Yuklanmoqda...</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function toggleJackpotLike(id) {
+        const btn = document.getElementById('jackpotLikeBtn');
+        const countEl = document.getElementById('jackpotLikeCount');
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        try {
+            const res = await fetch(`/jackpot/${id}/like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token || ''
+                }
+            });
+
+            if (res.status === 401) {
+                window.location.href = '/auth/google';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success) {
+                if (data.isLiked) {
+                    btn.classList.add('is-liked');
+                } else {
+                    btn.classList.remove('is-liked');
+                }
+                countEl.textContent = `(${data.count})`;
+            }
+        } catch (e) {
+            console.error('Like toggle error', e);
+        }
+    }
+
+    async function submitJackpotComment(e, id) {
+        e.preventDefault();
+        const input = document.getElementById('jackpotCommentInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        const submitBtn = document.getElementById('jackpotCommentSubmit');
+        submitBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/jackpot/${id}/comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token || ''
+                },
+                body: JSON.stringify({ text })
+            });
+
+            if (res.status === 401) {
+                window.location.href = '/auth/google';
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success && data.comment) {
+                input.value = '';
+                const c = data.comment;
+                const noComments = document.getElementById('jackpotNoComments');
+                if (noComments) noComments.remove();
+
+                const list = document.getElementById('jackpotCommentsList');
+                const countEl = document.getElementById('jackpotCommentCount');
+                if (countEl) {
+                    const currentCount = parseInt(countEl.textContent || '0', 10);
+                    countEl.textContent = currentCount + 1;
+                }
+
+                const item = document.createElement('div');
+                item.className = 'jackpot-comment-item';
+                const avatarHtml = c.userAvatarUrl 
+                    ? `<img class="jackpot-comment-avatar" src="${c.userAvatarUrl}" alt="${c.userFullName}" referrerpolicy="no-referrer" />`
+                    : `<span class="jackpot-comment-avatar" style="background:#e5e7eb; display:inline-flex; align-items:center; justify-content:center; font-weight:700;">${(c.userFullName || '?')[0].toUpperCase()}</span>`;
+
+                item.innerHTML = `
+                    ${avatarHtml}
+                    <div class="jackpot-comment-content">
+                        <div class="jackpot-comment-author-row">
+                            <span class="jackpot-comment-author-name">${c.userFullName}</span>
+                            <span class="jackpot-comment-time">${c.timeAgo}</span>
+                        </div>
+                        <p class="jackpot-comment-text">${escapeHtml(c.text)}</p>
+                    </div>
+                `;
+                list.appendChild(item);
+            }
+        } catch (err) {
+            console.error('Comment submit error', err);
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
+    async function openJackpotLikers(id) {
+        const modal = document.getElementById('jackpotLikersModal');
+        const body = document.getElementById('jackpotLikersBody');
+        modal.style.display = 'flex';
+        body.innerHTML = '<div style="text-align: center; padding: 24px; color: var(--text-secondary);">Yuklanmoqda...</div>';
+
+        try {
+            const res = await fetch(`/jackpot/${id}/likers`);
+            const likers = await res.json();
+
+            if (!likers || likers.length === 0) {
+                body.innerHTML = '<div class="likes-modal-empty"><p>Hozircha hech kim like bosmagan.</p></div>';
+                return;
+            }
+
+            let html = '<div class="likes-modal-list">';
+            for (const l of likers) {
+                const initial = (l.userFullName || '?')[0].toUpperCase();
+                const avatar = l.userAvatarUrl
+                    ? `<img class="likes-modal-avatar" src="${l.userAvatarUrl}" alt="${l.userFullName}" referrerpolicy="no-referrer" />`
+                    : `<span class="likes-modal-avatar-initial">${initial}</span>`;
+                const profileSlug = l.userName || l.userId;
+
+                html += `
+                    <div class="likes-modal-item">
+                        <a href="/profile/${profileSlug}" class="likes-modal-user">
+                            ${avatar}
+                            <div class="likes-modal-meta">
+                                <span class="likes-modal-name">${escapeHtml(l.userFullName)}</span>
+                                ${l.userName ? `<span class="likes-modal-handle">@@${escapeHtml(l.userName)}</span>` : ''}
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            body.innerHTML = html;
+        } catch (e) {
+            body.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Xatolik yuz berdi.</div>';
+        }
+    }
+
+    function closeJackpotLikers(e) {
+        if (!e || e.target.id === 'jackpotLikersModal' || e.target.closest('.likes-modal-close')) {
+            document.getElementById('jackpotLikersModal').style.display = 'none';
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+}

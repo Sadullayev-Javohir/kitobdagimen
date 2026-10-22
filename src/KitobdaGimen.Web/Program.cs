@@ -221,6 +221,13 @@ if (hangfireEnabled)
         job => job.RunAsync(CancellationToken.None),
         "*/15 * * * *",
         new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    // Har kuni 23:59 (O'zbekiston vaqti UTC+5 -> 18:59 UTC) da Kun taqrizi yoki Kun iqtibosi (Jackpot) tanlanadi.
+    RecurringJob.AddOrUpdate<DailyJackpotJob>(
+        DailyJackpotJob.RecurringJobId,
+        job => job.RunAsync(CancellationToken.None),
+        "59 18 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 }
 
 app.Run();

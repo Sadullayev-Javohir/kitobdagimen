@@ -1,4 +1,5 @@
 using KitobdaGimen.Application.Common;
+using KitobdaGimen.Application.Common.Interfaces;
 using KitobdaGimen.Application.Features.Auth.Queries.GetCurrentUser;
 using KitobdaGimen.Application.Features.Challenge.Dtos;
 using KitobdaGimen.Application.Features.Challenge.Queries.GetChallengeStandings;
@@ -19,6 +20,13 @@ namespace KitobdaGimen.Web.Controllers;
 [Authorize]
 public class FeedController : AppController
 {
+    private readonly IDailyJackpotService _jackpotService;
+
+    public FeedController(IDailyJackpotService jackpotService)
+    {
+        _jackpotService = jackpotService;
+    }
+
     /// <summary>Initial number of posts rendered with the page; the rest stream in on scroll.</summary>
     private const int FeedPageSize = 4;
 
@@ -67,10 +75,18 @@ public class FeedController : AppController
         }
         catch { }
 
+        KitobdaGimen.Application.Features.Jackpot.Dtos.DailyJackpotDto? dailyJackpot = null;
+        try
+        {
+            dailyJackpot = await _jackpotService.GetTodayJackpotAsync(me?.Id);
+        }
+        catch { }
+
         var isAdmin = me != null && me.Role >= UserRole.Admin;
         ViewData["IsAdmin"] = isAdmin;
         ViewData["Search"] = q;
         ViewData["ShowAuthorActions"] = true;
+        ViewData["TodayHeroUserId"] = dailyJackpot?.UserId;
 
         var vm = new FeedPageViewModel
         {
@@ -80,6 +96,7 @@ public class FeedController : AppController
             ActiveGoal = activeGoal,
             TopReaders = topReaders,
             ExchangeBooks = exchangeBooks,
+            DailyJackpot = dailyJackpot,
             Search = q,
             IsAdmin = isAdmin
         };
@@ -92,6 +109,7 @@ public class FeedController : AppController
     {
         var feed = await Mediator.Send(new GetFeedQuery { Search = q, Page = page, PageSize = FeedPageSize });
         ViewData["ShowAuthorActions"] = true;
+        ViewData["TodayHeroUserId"] = await _jackpotService.GetTodayHeroUserIdAsync();
         await SetIsAdminAsync();
         return PartialView("_FeedCards", feed.Items);
     }

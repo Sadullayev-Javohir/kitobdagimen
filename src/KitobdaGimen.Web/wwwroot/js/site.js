@@ -33,6 +33,22 @@
         burger.addEventListener("click", () => navLinks.classList.toggle("open"));
     }
 
+    // Like bosganlar modali (LinkedIn uslubida) ochish — hisoblagich bosilganda
+    document.addEventListener("click", (e) => {
+        const openLikesBtn = e.target.closest("[data-open-likes]");
+        if (!openLikesBtn) return;
+        const count = parseInt(openLikesBtn.textContent.trim(), 10) || 0;
+        if (count > 0 && window.openLikesModal) {
+            e.preventDefault();
+            e.stopPropagation();
+            const type = openLikesBtn.getAttribute("data-open-likes") || "post";
+            const id = openLikesBtn.getAttribute("data-target-id");
+            if (id) {
+                window.openLikesModal(type, id);
+            }
+        }
+    }, true);
+
     // Like tugmalari (feed, profil, post detali) — delegatsiya
     document.addEventListener("click", async (e) => {
         const btn = e.target.closest("[data-like]");
@@ -362,6 +378,23 @@
 function antiforgeryToken() {
     const el = document.querySelector('input[name="__RequestVerificationToken"]');
     return el ? el.value : "";
+}
+
+// Soddalashtirilgan AJAX GET yordamchisi (JSON qaytaradi)
+async function apiGet(url) {
+    const res = await fetch(url, {
+        method: "GET",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        credentials: "include"
+    });
+    if (!res.ok) {
+        let message = "Xatolik yuz berdi.";
+        try { const data = await res.json(); message = data.message || message; } catch { /* ignore */ }
+        throw new Error(message);
+    }
+    return await res.json();
 }
 
 // Soddalashtirilgan AJAX POST yordamchisi (JSON qaytaradi)
@@ -1675,4 +1708,164 @@ initNotifications();
         attributes: true, 
         attributeFilter: ['style'] 
     });
+})();
+
+// ===== LinkedIn uslubidagi "Yoqtirganlar" (Likes) Modali =====
+(function () {
+    const modal = document.getElementById("likesModal");
+    if (!modal) return;
+
+    const listEl = document.getElementById("likesModalList");
+    const loaderEl = document.getElementById("likesModalLoader");
+    const emptyEl = document.getElementById("likesModalEmpty");
+    const totalCountEl = document.getElementById("likesModalTotalCount");
+    const closeBtn = document.getElementById("likesModalClose");
+    const bodyEl = document.getElementById("likesModalBody");
+
+    let currentType = "post"; // "post" yoki "quote"
+    let currentTargetId = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let isLoading = false;
+
+    function escapeHtml(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>"']/g, function (m) {
+            return {
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[m];
+        });
+    }
+
+    function openLikesModal(type, targetId) {
+        currentType = type;
+        currentTargetId = targetId;
+        currentPage = 1;
+        totalPages = 1;
+        listEl.innerHTML = "";
+        totalCountEl.textContent = "";
+        emptyEl.hidden = true;
+        loaderEl.hidden = false;
+        modal.hidden = false;
+        document.body.style.overflow = "hidden";
+
+        loadLikesPage(1);
+    }
+
+    function closeLikesModal() {
+        modal.hidden = true;
+        document.body.style.overflow = "";
+        currentTargetId = null;
+    }
+
+    async function loadLikesPage(page) {
+        if (isLoading) return;
+        isLoading = true;
+        loaderEl.hidden = false;
+
+        try {
+            const endpoint = currentType === "quote" 
+                ? `/quotes/${currentTargetId}/likes?page=${page}&pageSize=20`
+                : `/posts/${currentTargetId}/likes?page=${page}&pageSize=20`;
+
+            const data = await apiGet(endpoint);
+            if (!data) return;
+
+            totalPages = data.totalPages || 1;
+            currentPage = data.page || 1;
+            totalCountEl.textContent = `(${data.totalCount || 0})`;
+
+            if (page === 1 && (!data.items || data.items.length === 0)) {
+                emptyEl.hidden = false;
+            } else if (data.items && data.items.length > 0) {
+                renderUsers(data.items);
+            }
+        } catch (err) {
+            console.error("Like bosganlarni yuklashda xatolik:", err);
+        } finally {
+            isLoading = false;
+            loaderEl.hidden = true;
+        }
+    }
+
+    function renderUsers(items) {
+        const fragment = document.createDocumentFragment();
+
+        items.forEach(user => {
+            const row = document.createElement("div");
+            row.className = "likes-user-row";
+
+            const profileUrl = user.username ? `/profile/${encodeURIComponent(user.username)}` : `/profile/${user.id}`;
+            const initial = (user.fullName || "?").trim().charAt(0).toUpperCase();
+
+            const avatarHtml = user.avatarUrl 
+                ? `<img class="avatar" src="${escapeHtml(user.avatarUrl)}" alt="${escapeHtml(user.fullName)}" referrerpolicy="no-referrer" />`
+                : `<span class="avatar">${escapeHtml(initial)}</span>`;
+
+            const storyWrapClass = user.hasActiveStory ? "likes-user-avatar-wrap has-story" : "likes-user-avatar-wrap";
+            const storyAttr = user.hasActiveStory ? `data-open-story="${user.id}" role="button" tabindex="0"` : "";
+
+            let actionHtml = "";
+            if (!user.isCurrentUser) {
+                const followClass = user.isFollowedByCurrentUser ? "btn-outline" : "btn-primary";
+                const followText = user.isFollowedByCurrentUser ? "Kuzatilmoqda" : "Kuzatish";
+                actionHtml = `
+                    <div class="likes-user-action">
+                        <button type="button" class="btn btn-sm ${followClass}" data-follow="${user.id}" data-follow-source="likes-modal">
+                            ${followText}
+                        </button>
+                    </div>`;
+            }
+
+            const usernameHtml = user.username ? `<span class="likes-user-username">@${escapeHtml(user.username)}</span>` : "";
+            const bioHtml = user.bio ? `<p class="likes-user-bio" title="${escapeHtml(user.bio)}">${escapeHtml(user.bio)}</p>` : "";
+
+            row.innerHTML = `
+                <a href="${profileUrl}" class="${storyWrapClass}" ${storyAttr}>
+                    ${avatarHtml}
+                </a>
+                <div class="likes-user-info">
+                    <div class="likes-user-name-line">
+                        <a href="${profileUrl}" class="likes-user-name">${escapeHtml(user.fullName)}</a>
+                        ${usernameHtml}
+                    </div>
+                    ${bioHtml}
+                </div>
+                ${actionHtml}
+            `;
+
+            fragment.appendChild(row);
+        });
+
+        listEl.appendChild(fragment);
+    }
+
+    // Cheksiz aylantirish (Infinite scroll)
+    bodyEl.addEventListener("scroll", () => {
+        if (isLoading || currentPage >= totalPages) return;
+        if (bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 40) {
+            loadLikesPage(currentPage + 1);
+        }
+    });
+
+    closeBtn.addEventListener("click", closeLikesModal);
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            closeLikesModal();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !modal.hidden) {
+            closeLikesModal();
+        }
+    });
+
+    window.openLikesModal = openLikesModal;
+    window.closeLikesModal = closeLikesModal;
 })();

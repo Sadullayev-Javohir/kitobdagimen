@@ -5,6 +5,18 @@
  * server yuborgan bildirishnomalar telefon bildirishnoma tovoqchasida (TWA orqali) chiqadi.
  */
 (function () {
+    // Localhost / Development muhitida Web Push obunasi kerak emas (duplicate bildirishnomalarni oldini olish uchun).
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.ready.then(function (reg) {
+                reg.pushManager.getSubscription().then(function (sub) {
+                    if (sub) { sub.unsubscribe().catch(function () { }); }
+                }).catch(function () { });
+            }).catch(function () { });
+        }
+        return;
+    }
+
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
         return;
     }

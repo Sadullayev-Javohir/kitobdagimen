@@ -39,6 +39,9 @@ public interface IAppDbContext
     DbSet<AppSetting> AppSettings { get; }
     DbSet<PhysicalBook> PhysicalBooks { get; }
     DbSet<PhysicalBookReservation> PhysicalBookReservations { get; }
+    DbSet<DailyJackpot> DailyJackpots { get; }
+    DbSet<DailyJackpotLike> DailyJackpotLikes { get; }
+    DbSet<DailyJackpotComment> DailyJackpotComments { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

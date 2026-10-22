@@ -187,21 +187,21 @@
                     <div class="lp-stat">
                         <span class="lp-stat-icon"><span class="material-symbols-outlined">group</span></span>
                         <div>
-                            <span class="lp-stat-num" data-count="@stats.UserCount">0</span>
-                            <span class="lp-stat-label">Kitobxonlar jamoasi</span>
+                            <span class="lp-stat-num" data-count="@stats.UserCount">@stats.UserCount.ToString("N0")</span>
+                            <span class="lp-stat-label">Kitobxonlar</span>
                         </div>
                     </div>
                     <div class="lp-stat">
                         <span class="lp-stat-icon"><span class="material-symbols-outlined">menu_book</span></span>
                         <div>
-                            <span class="lp-stat-num" data-count="@stats.BooksRead">0</span>
+                            <span class="lp-stat-num" data-count="@stats.BooksRead">@stats.BooksRead.ToString("N0")</span>
                             <span class="lp-stat-label">O'qib tugatilgan kitoblar</span>
                         </div>
                     </div>
                     <div class="lp-stat">
                         <span class="lp-stat-icon"><span class="material-symbols-outlined">auto_stories</span></span>
                         <div>
-                            <span class="lp-stat-num" data-count="@stats.PagesRead">0</span>
+                            <span class="lp-stat-num" data-count="@stats.PagesRead">@stats.PagesRead.ToString("N0")</span>
                             <span class="lp-stat-label">Jami o'qilgan betlar</span>
                         </div>
                     </div>

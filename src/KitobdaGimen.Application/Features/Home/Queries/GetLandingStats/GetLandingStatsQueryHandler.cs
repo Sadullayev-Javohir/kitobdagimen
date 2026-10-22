@@ -22,6 +22,7 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
     public async Task<LandingStatsDto> Handle(GetLandingStatsQuery request, CancellationToken ct)
     {
         var todayUz = UzDate(DateTime.UtcNow);
+        var currentUserCount = await _db.Users.CountAsync(ct);
 
         if (!request.ForceRefresh)
         {
@@ -36,9 +37,15 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
                 try { cached = JsonSerializer.Deserialize<LandingStatsDto>(cachedJson); }
                 catch (JsonException) { /* buzilgan snapshot — qayta hisoblaymiz */ }
 
-                // Snapshot bugunga tegishli bo'lsa — shuni qaytaramiz (kunlik yangilanish).
+                // Snapshot bugunga tegishli bo'lsa — kitoblar va sahifalar keshdan olinadi,
+                // lekin foydalanuvchilar soni doimo bazadagi real son bilan sinxron bo'ladi (admin va landing bir xil bo'lishi uchun).
                 if (cached is not null && UzDate(cached.UpdatedAtUtc) == todayUz)
                 {
+                    if (cached.UserCount != currentUserCount)
+                    {
+                        cached = cached with { UserCount = currentUserCount };
+                        await SaveSnapshotAsync(cached, ct);
+                    }
                     return cached;
                 }
             }
@@ -46,7 +53,7 @@ public class GetLandingStatsQueryHandler : IRequestHandler<GetLandingStatsQuery,
 
         var fresh = new LandingStatsDto
         {
-            UserCount = await _db.Users.CountAsync(ct),
+            UserCount = currentUserCount,
             BooksRead = await _db.ReadingGoals
                 .CountAsync(g => g.Book.TotalPages > 0 && g.CurrentPage >= g.Book.TotalPages, ct),
             PagesRead = await _db.ReadingProgress

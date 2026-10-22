@@ -121,7 +121,14 @@
                 {
                     <button type="button" class="pd-action-btn like-btn @(q.IsLikedByCurrentUser ? "liked" : "")" data-like-quote="@q.Id">
                         <span class="material-symbols-outlined">favorite</span>
-                        <span>Yoqdi (<span class="like-count">@q.LikeCount</span>)</span>
+                        <span>Yoqdi (<span class="like-count" data-open-likes="quote" data-target-id="@q.Id" role="button" tabindex="0" title="Kimlar yoqtirganini ko'rish">@q.LikeCount</span>)</span>
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="pd-action-btn" data-open-likes="quote" data-target-id="@q.Id" title="Kimlar yoqtirganini ko'rish">
+                        <span class="material-symbols-outlined">favorite_border</span>
+                        <span>Yoqtirishlar (<span class="like-count">@q.LikeCount</span>)</span>
                     </button>
                 }
                 <button type="button" class="pd-action-btn" data-share-url="@quoteShareUrl">

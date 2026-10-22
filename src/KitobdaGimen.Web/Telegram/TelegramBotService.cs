@@ -55,7 +55,9 @@ public class TelegramBotService : ITelegramBotService
             : Settings.BotUsername.TrimStart('@');
 
     public string WebAppUrl =>
-        string.IsNullOrWhiteSpace(Settings.WebAppUrl)
+        string.IsNullOrWhiteSpace(Settings.WebAppUrl) ||
+        Settings.WebAppUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+        Settings.WebAppUrl.Contains("127.0.0.1")
             ? "https://kitobdagimen.uz"
             : Settings.WebAppUrl.TrimEnd('/');
 
@@ -1125,6 +1127,154 @@ public class TelegramBotService : ITelegramBotService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Quote #{QuoteId} Telegram xabarini o'chirishda xatolik.", quoteId);
+        }
+    }
+
+    public async Task BroadcastJackpotToGroupAsync(int jackpotId, CancellationToken ct = default)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var target = await GetGroupTargetAsync(db, ct);
+            if (target is null) return;
+
+            var jackpot = await db.DailyJackpots
+                .Include(j => j.User)
+                .Include(j => j.Post!).ThenInclude(p => p.Book)
+                .Include(j => j.Quote!).ThenInclude(q => q.Book)
+                .Include(j => j.Likes)
+                .FirstOrDefaultAsync(j => j.Id == jackpotId, ct);
+
+            if (jackpot is null) return;
+
+            var isPost = jackpot.Type == "post";
+            var book = isPost ? jackpot.Post?.Book : jackpot.Quote?.Book;
+            var rawText = isPost ? (jackpot.Post?.ReviewText ?? "") : (jackpot.Quote?.Text ?? "");
+            var cleanText = TruncateText(StripHtml(rawText), 3500);
+
+            var bookTitle = book?.Title ?? "Noma'lum kitob";
+            var authorSuffix = string.IsNullOrWhiteSpace(book?.Author) ? "" : $" — <i>{Escape(book.Author)}</i>";
+
+            // Telegram profilini aniqlash
+            string authorText;
+            var savedTg = await db.AppSettings.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Key == $"Telegram:Username:{jackpot.UserId}", ct);
+            var cleanTgUsername = savedTg?.Value?.Trim().TrimStart('@');
+            if (string.IsNullOrWhiteSpace(cleanTgUsername) && !string.IsNullOrWhiteSpace(jackpot.User.Username))
+            {
+                cleanTgUsername = jackpot.User.Username.Trim().TrimStart('@');
+            }
+
+            if (!string.IsNullOrWhiteSpace(cleanTgUsername))
+            {
+                authorText = $"🌟 <b>{Escape(jackpot.User.FullName)}</b> (@{cleanTgUsername}) 👑";
+            }
+            else if (TryExtractTelegramId(jackpot.User.GoogleId, out var tgId) && tgId > 0)
+            {
+                authorText = $"🌟 <a href=\"tg://user?id={tgId}\">{Escape(jackpot.User.FullName)}</a> 👑";
+            }
+            else
+            {
+                authorText = $"🌟 <b>{Escape(jackpot.User.FullName)}</b> 👑";
+            }
+
+            var headerTitle = isPost ? "🎰 <b>KUN TAQRIZI (JACKPOT)</b> 👑" : "🎰 <b>KUN IQTIBOSI (JACKPOT)</b> 👑";
+
+            var html = new StringBuilder();
+            html.AppendLine(headerTitle);
+            html.AppendLine();
+            html.AppendLine($"«{Escape(cleanText)}»");
+            html.AppendLine();
+            html.AppendLine($"📚 <b>Kitob:</b> «{Escape(bookTitle)}»{authorSuffix}");
+            html.AppendLine($"👑 <b>Kun Qahramoni:</b> {authorText}");
+            html.AppendLine();
+            html.AppendLine("✨ <i>Ushbu kitobxon bugun platformamizda \"Kun Qahramoni\" premium maqomiga ega bo'ldi!</i>");
+            html.AppendLine($"🔗 <b>Jackpot zali:</b> <a href=\"{WebAppUrl}/jackpot\">Saytda to'liq o'qish va tabriklash</a>");
+
+            var likeCount = jackpot.Likes.Count;
+            var likeBtnText = likeCount > 0 ? $"❤️ Yoqdi ({likeCount})" : "❤️ Yoqdi";
+
+            var markup = new
+            {
+                inline_keyboard = new object[][]
+                {
+                    new object[]
+                    {
+                        new { text = likeBtnText, callback_data = $"jackpot:like:{jackpot.Id}" },
+                        new { text = "💬 Fikr bildirish", url = $"https://t.me/{BotUsername}?start=jackpot_comment_{jackpot.Id}" }
+                    },
+                    new object[]
+                    {
+                        new { text = "👑 Jackpot zaliga o'tish", url = $"{WebAppUrl}/jackpot" }
+                    }
+                }
+            };
+
+            var res = await SendHtmlAsync(
+                target.Value.ChatId,
+                html.ToString(),
+                markup,
+                disableWebPreview: true,
+                messageThreadId: target.Value.TopicId,
+                ct: ct);
+
+            var sentMsgId = res?["result"]?["message_id"]?.GetValue<int>();
+            if (sentMsgId.HasValue && sentMsgId.Value > 0)
+            {
+                var realChatId = res?["result"]?["chat"]?["id"]?.GetValue<long>() ?? target.Value.ChatId;
+                jackpot.TelegramChatId = realChatId != 0 ? realChatId : target.Value.ChatId;
+                jackpot.TelegramMessageId = sentMsgId.Value;
+                await db.SaveChangesAsync(ct);
+            }
+
+            _logger.LogInformation("Daily Jackpot #{JackpotId} Telegram guruhiga yuborildi (TgMsgId={MsgId}).", jackpotId, sentMsgId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Daily Jackpot #{JackpotId} Telegram guruhiga yuborishda xatolik.", jackpotId);
+        }
+    }
+
+    public async Task SyncJackpotLikesInGroupAsync(int jackpotId, int likeCount, CancellationToken ct = default)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var jackpot = await db.DailyJackpots
+                .AsNoTracking()
+                .Where(j => j.Id == jackpotId)
+                .Select(j => new { j.TelegramChatId, j.TelegramMessageId })
+                .FirstOrDefaultAsync(ct);
+
+            if (jackpot?.TelegramChatId is not long chatId || jackpot.TelegramMessageId is not int msgId || msgId <= 0)
+            {
+                return;
+            }
+
+            var likeText = likeCount > 0 ? $"❤️ Yoqdi ({likeCount})" : "❤️ Yoqdi";
+            var markup = new
+            {
+                inline_keyboard = new object[][]
+                {
+                    new object[]
+                    {
+                        new { text = likeText, callback_data = $"jackpot:like:{jackpotId}" },
+                        new { text = "💬 Fikr bildirish", url = $"https://t.me/{BotUsername}?start=jackpot_comment_{jackpotId}" }
+                    },
+                    new object[]
+                    {
+                        new { text = "👑 Jackpot zaliga o'tish", url = $"{WebAppUrl}/jackpot" }
+                    }
+                }
+            };
+
+            await EditReplyMarkupAsync(chatId, msgId, markup, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Guruhdagi jackpot like tugmasini yangilashda xatolik: JackpotId={JackpotId}", jackpotId);
         }
     }
 

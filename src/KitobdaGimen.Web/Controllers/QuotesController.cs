@@ -10,6 +10,7 @@ using KitobdaGimen.Application.Features.Quotes.Commands.ToggleSaveQuote;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetAllQuotes;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteById;
 using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteBySlug;
+using KitobdaGimen.Application.Features.Quotes.Queries.GetQuoteLikes;
 using KitobdaGimen.Domain.Enums;
 using KitobdaGimen.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -155,6 +156,22 @@ public class QuotesController : AppController
     {
         var viewCount = await Mediator.Send(new RecordQuoteViewCommand(id));
         return Json(new { viewCount });
+    }
+
+    /// <summary>
+    /// Iqtibosga like bosgan foydalanuvchilar ro'yxati (LinkedIn kabi).
+    /// </summary>
+    [HttpGet("{id:int}/likes")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Likes(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await Mediator.Send(new GetQuoteLikesQuery
+        {
+            QuoteId = id,
+            Page = page,
+            PageSize = pageSize
+        });
+        return Json(result);
     }
 
     [HttpPost("{id:int}/like")]

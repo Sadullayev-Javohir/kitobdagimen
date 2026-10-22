@@ -10,6 +10,7 @@ using KitobdaGimen.Application.Features.Posts.Commands.UpdatePost;
 using KitobdaGimen.Application.Features.Posts.Dtos;
 using KitobdaGimen.Application.Features.Posts.Queries.GetPostById;
 using KitobdaGimen.Application.Features.Posts.Queries.GetPostBySlug;
+using KitobdaGimen.Application.Features.Posts.Queries.GetPostLikes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SixLabors.ImageSharp;
@@ -207,6 +208,22 @@ public class PostsController : AppController
             var url = $"/uploads/posts/{fileName}";
             return Json(new { url });
         }
+    }
+
+    /// <summary>
+    /// Taqrizga (postga) like bosgan foydalanuvchilar ro'yxati (LinkedIn kabi).
+    /// </summary>
+    [HttpGet("{id:int}/likes")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Likes(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await Mediator.Send(new GetPostLikesQuery
+        {
+            PostId = id,
+            Page = page,
+            PageSize = pageSize
+        });
+        return Json(result);
     }
 
     [HttpPost("{id:int}/like")]

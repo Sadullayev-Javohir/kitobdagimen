@@ -37,6 +37,7 @@ public static class DependencyInjection
                     errorCodesToAdd: null)));
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IDailyJackpotService, KitobdaGimen.Infrastructure.Services.DailyJackpotService>();
 
         // Web Push (VAPID) — real device push notifications (TWA delegates them to the
         // Android notification tray).

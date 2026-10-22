@@ -28,8 +28,13 @@
         }
         <div class="meta">
             <div class="name-row">
+                @{
+                    var todayHeroUserId = ViewData["TodayHeroUserId"] as int?;
+                    var isAuthorTodayHero = todayHeroUserId.HasValue && todayHeroUserId.Value == Model.Author.Id;
+                }
                 <a class="name" href="@ViewHelpers.ProfileUrl(Model.Author.Username, Model.Author.Id)">@Model.Author.FullName</a>
                 @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(Model.Author.Username))
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.DailyHeroCrown(isAuthorTodayHero))
                 <span class="badge badge-post"><span class="material-symbols-outlined">article</span>Taqriz</span>
                 @if (showAuthorActions && Model.IsAuthor)
                 {
@@ -100,7 +105,7 @@
     <footer class="post-actions">
         <button class="action-btn like-btn @(Model.IsLikedByCurrentUser ? "liked" : "")" data-like="@Model.Id" aria-label="Yoqtirish">
             <span class="material-symbols-outlined">favorite</span>
-            <span class="like-count">@Model.LikeCount</span>
+            <span class="like-count" data-open-likes="post" data-target-id="@Model.Id" role="button" tabindex="0" title="Kimlar yoqtirganini ko'rish">@Model.LikeCount</span>
         </button>
         <a class="action-btn" href="@postUrl" aria-label="Izohlar">
             <span class="material-symbols-outlined">chat_bubble</span>

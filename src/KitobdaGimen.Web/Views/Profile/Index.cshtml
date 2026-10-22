@@ -4,6 +4,7 @@
 @inject ISender Mediator
 @inject ICurrentUserService CurrentUser
 @inject ITelegramBotService TelegramBot
+@inject IDailyJackpotService DailyJackpotService
 @model ProfilePageViewModel
 @{
     var p = Model.Profile;
@@ -17,6 +18,7 @@
     // Shareable, registration-free link to this profile. Prefer the unique username; fall back to id.
     var shareSegment = string.IsNullOrWhiteSpace(p.Username) ? p.Id.ToString() : p.Username;
     var shareUrl = $"{Context.Request.Scheme}://{Context.Request.Host}/u/{shareSegment}";
+    var isDailyHero = await DailyJackpotService.IsUserTodayHeroAsync(p.Id);
 
     // --- SEO: ommaviy profil (/u/...) Google'da indekslanadi; maxfiy /profile EMAS (layout uni noindex qiladi) ---
     var isPublicProfileView = string.Equals(
@@ -53,6 +55,18 @@
 }
 
 <div class="container page">
+    @if (isDailyHero)
+    {
+        <div class="daily-hero-profile-banner">
+            <div class="daily-hero-banner-icon">👑</div>
+            <div class="daily-hero-banner-content">
+                <h4>🌟 BUGUNGI KUN QAHRAMONI (JACKPOT G'OLIBI) 👑</h4>
+                <p>Ushbu kitobxon bugun platformamizda eng omadli ishtirokchi bo'lib, uning asari "Kun tanlovi" deb e'lon qilindi!</p>
+            </div>
+            <a href="/jackpot" class="daily-hero-banner-link">Jackpot Zali →</a>
+        </div>
+    }
+
     <!-- Profil sarlavhasi -->
     <section class="profile-hero">
         @if (p.HasStory)
@@ -63,12 +77,16 @@
         }
         else
         {
-            <div class="profile-ring">
+            <div class="profile-ring @(isDailyHero ? "daily-hero-ring" : "")" style="@(isDailyHero ? "border: 3px solid #f59e0b; box-shadow: 0 0 16px rgba(245, 158, 11, 0.6);" : "")">
                 @avatarInner
             </div>
         }
         <div class="profile-hero-info">
-            <h1>@p.FullName @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(p.Username))</h1>
+            <h1>
+                @p.FullName 
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(p.Username))
+                @Html.Raw(KitobdaGimen.Web.ViewHelpers.DailyHeroBadge(isDailyHero))
+            </h1>
             @if (!string.IsNullOrWhiteSpace(p.Username))
             {
                 <p class="muted" style="margin:-2px 0 10px">@@@p.Username</p>
@@ -290,10 +308,10 @@
                                 </a>
                                 <div class="quote-foot">
                                     <div class="flex items-center gap-8">
-                                        <span class="action-btn" title="Saqlanganlar">
-                                            <span class="material-symbols-outlined">bookmark</span>
-                                            <span class="save-count">@q.SaveCount</span>
-                                        </span>
+                                        <button type="button" class="action-btn like-btn @(q.IsLikedByCurrentUser ? "liked" : "")" data-like-quote="@q.Id" aria-label="Yoqtirish">
+                                            <span class="material-symbols-outlined">favorite</span>
+                                            <span class="like-count" data-open-likes="quote" data-target-id="@q.Id" role="button" tabindex="0" title="Kimlar yoqtirganini ko'rish">@q.LikeCount</span>
+                                        </button>
                                         @if (p.IsCurrentUser)
                                         {
                                             <button type="button" class="action-btn danger" data-delete-quote="@q.Id" title="O'chirish">

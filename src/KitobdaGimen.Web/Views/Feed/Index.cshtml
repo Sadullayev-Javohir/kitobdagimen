@@ -102,29 +102,85 @@
                 }
             </div>
 
-            <!-- Shaxsiy bo'limlar va tezkor amallar (o'ng panelni takrorlamaydi) -->
+            <!-- Kun iqtibosi yoki Kun taqrizi (Daily Jackpot kartasi) -->
+            @if (Model.DailyJackpot != null)
+            {
+                var dj = Model.DailyJackpot;
+                var djInitial = KitobdaGimen.Web.ViewHelpers.Initial(dj.UserFullName);
+                var djCover = !string.IsNullOrWhiteSpace(dj.BookCoverUrl) ? dj.BookCoverUrl : "/img/default-book-cover.webp";
+                var djIsPost = dj.Type == "post";
+                var djTitle = djIsPost ? "Kun taqrizi" : "Kun iqtibosi";
+
+                <a href="/jackpot" class="feed-jackpot-card" title="Kunlik Jackpot sahifasiga o'tish">
+                    <div class="feed-jackpot-badge-row">
+                        <span class="feed-jackpot-pill">
+                            <span class="material-symbols-outlined">@(djIsPost ? "rate_review" : "format_quote")</span>
+                            @djTitle
+                        </span>
+                        <span class="feed-jackpot-tag">
+                            <span>🎰 Jackpot</span>
+                        </span>
+                    </div>
+
+                    <div class="feed-jackpot-author">
+                        <div class="feed-jackpot-avatar-wrap">
+                            @if (!string.IsNullOrWhiteSpace(dj.UserAvatarUrl))
+                            {
+                                <img class="feed-jackpot-avatar" src="@dj.UserAvatarUrl" alt="@dj.UserFullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="feed-jackpot-avatar">@djInitial</span>
+                            }
+                            <span class="feed-jackpot-crown-mini" title="Bugungi Kun Qahramoni">👑</span>
+                        </div>
+                        <div class="feed-jackpot-author-meta">
+                            <span class="feed-jackpot-author-name">@dj.UserFullName</span>
+                            <span class="feed-jackpot-author-sub">
+                                <span class="material-symbols-outlined" style="font-size: 13px;">military_tech</span>
+                                Kun Qahramoni
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="feed-jackpot-book">
+                        <img class="feed-jackpot-book-cover" src="@djCover" alt="@dj.BookTitle" />
+                        <div class="feed-jackpot-book-info">
+                            <span class="feed-jackpot-book-title" title="@dj.BookTitle">@dj.BookTitle</span>
+                            @if (!string.IsNullOrWhiteSpace(dj.BookAuthor))
+                            {
+                                <span class="feed-jackpot-book-author">@dj.BookAuthor</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="feed-jackpot-body">
+                        <p class="feed-jackpot-text">@dj.Content</p>
+                    </div>
+
+                    <div class="feed-jackpot-footer">
+                        <div class="feed-jackpot-stats">
+                            <span><span class="material-symbols-outlined" style="font-size: 14px; color: #ef4444;">favorite</span> @dj.LikeCount</span>
+                            <span><span class="material-symbols-outlined" style="font-size: 14px; color: #3b82f6;">chat_bubble</span> @dj.CommentCount</span>
+                        </div>
+                        <span class="feed-jackpot-cta">
+                            Jackpot zali
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </span>
+                    </div>
+                </a>
+            }
+
+            <!-- Shaxsiy bo'limlar -->
             <div class="feed-quick-card">
-                <div class="feed-quick-actions">
-                    <button type="button" class="feed-quick-compose-btn is-primary" onclick="document.getElementById('chooseTaqriz')?.click()">
-                        <span class="material-symbols-outlined">edit_note</span>
-                        <span>Taqriz yozish</span>
-                    </button>
-                    <button type="button" class="feed-quick-compose-btn is-accent" onclick="document.getElementById('chooseIqtibos')?.click()">
-                        <span class="material-symbols-outlined">format_quote</span>
-                        <span>Iqtibos</span>
-                    </button>
-                </div>
-
-                <div class="feed-quick-divider"></div>
-
                 <nav class="feed-quick-nav" aria-label="Shaxsiy bo'limlar">
-                    <a href="/reading-books" class="feed-quick-item">
-                        <span class="feed-quick-icon is-emerald">
-                            <span class="material-symbols-outlined">bookmarks</span>
+                    <a href="/jackpot" class="feed-quick-item">
+                        <span class="feed-quick-icon" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
+                            <span class="material-symbols-outlined">military_tech</span>
                         </span>
                         <span class="feed-quick-text">
-                            <strong>Shaxsiy kutubxona</strong>
-                            <small>Faol va tugatilgan kitoblar</small>
+                            <strong>Jackpot zali</strong>
+                            <small>Kunlik omadli taqriz va iqtiboslar</small>
                         </span>
                     </a>
                     <a href="/Quotes" class="feed-quick-item">

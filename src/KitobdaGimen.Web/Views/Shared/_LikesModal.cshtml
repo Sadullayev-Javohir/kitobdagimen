@@ -1,0 +1,41 @@
+<!-- LinkedIn uslubidagi "Yoqtirganlar" (Likes) Modali -->
+<div id="likesModal" class="likes-modal-backdrop" hidden>
+    <div class="likes-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="likesModalTitle">
+        <div class="likes-modal-header">
+            <h3 class="likes-modal-title" id="likesModalTitle">
+                Yoqtirganlar <span class="likes-modal-counter muted" id="likesModalTotalCount"></span>
+            </h3>
+            <button type="button" class="likes-modal-close" id="likesModalClose" aria-label="Yopish">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <div class="likes-modal-body" id="likesModalBody">
+            <div class="likes-modal-list" id="likesModalList"></div>
+
+            <!-- Yuklanish indikatori -->
+            <div class="likes-modal-loader" id="likesModalLoader" hidden>
+                <div class="likes-skeleton-row">
+                    <div class="skeleton likes-sk-avatar"></div>
+                    <div class="likes-sk-info">
+                        <div class="skeleton likes-sk-name"></div>
+                        <div class="skeleton likes-sk-bio"></div>
+                    </div>
+                </div>
+                <div class="likes-skeleton-row">
+                    <div class="skeleton likes-sk-avatar"></div>
+                    <div class="likes-sk-info">
+                        <div class="skeleton likes-sk-name"></div>
+                        <div class="skeleton likes-sk-bio"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bo'sh holat -->
+            <div class="likes-modal-empty" id="likesModalEmpty" hidden>
+                <span class="material-symbols-outlined muted">favorite_border</span>
+                <p>Hozircha hech kim yoqtirmagan.</p>
+            </div>
+        </div>
+    </div>
+</div>

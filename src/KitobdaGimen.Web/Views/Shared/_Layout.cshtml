@@ -17,6 +17,9 @@
     // Mobil pastki navigatsiya: kirgan foydalanuvchida va chrome ko'rinadigan barcha sahifalarda
     var showBottomNav = isAuth && !hideChrome;
     var mobilePath = (Context.Request.Path.Value ?? "").ToLowerInvariant();
+    var isProfilePage = string.Equals(currentController, "Profile", StringComparison.OrdinalIgnoreCase)
+        || mobilePath == "/profile"
+        || mobilePath.StartsWith("/profile");
     // Qidiruv ikoni Feed, Profil, Kutubxona, Kitoblar, Challenge, Almashish va post detali sahifalarida ko'rsatilmaydi.
     var hideSearch = (ViewData["HideSearch"] as bool? ?? false)
         || string.Equals(currentController, "Feed", StringComparison.OrdinalIgnoreCase)
@@ -235,6 +238,10 @@
                             <span class="material-symbols-outlined">military_tech</span>
                             <span class="nav-link-label">Challenge</span>
                         </a>
+                        <a href="/jackpot" class="@(mobilePath.StartsWith("/jackpot") ? "active" : "")" title="Jackpot" aria-label="Jackpot">
+                            <span class="material-symbols-outlined">casino</span>
+                            <span class="nav-link-label">Jackpot</span>
+                        </a>
                     </nav>
 
                     <div class="nav-actions">
@@ -269,23 +276,16 @@
                                 <span class="material-symbols-outlined">shield_person</span>
                             </a>
                         }
-                        <a href="/profile" class="nav-profile-link" title="Profil" aria-label="Profil">
-                            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
-                            {
-                                <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
-                            }
-                            else
-                            {
-                                <span class="avatar">@initial</span>
-                            }
-                        </a>
-                        <form method="post" action="/auth/logout" class="nav-logout-form"
-                              onsubmit="try{window.kitobPush&&window.kitobPush.disable();}catch(e){}">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="nav-icon-btn" title="Chiqish" aria-label="Chiqish">
-                                <span class="material-symbols-outlined">logout</span>
-                            </button>
-                        </form>
+                        @if (isProfilePage)
+                        {
+                            <form method="post" action="/auth/logout" class="nav-logout-form"
+                                  onsubmit="try{window.kitobPush&&window.kitobPush.disable();}catch(e){}">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="nav-icon-btn" title="Chiqish" aria-label="Chiqish">
+                                    <span class="material-symbols-outlined">logout</span>
+                                </button>
+                            </form>
+                        }
                         <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
                             <span class="material-symbols-outlined">menu</span>
                         </button>
@@ -314,6 +314,10 @@
                         <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
                             <span class="material-symbols-outlined">military_tech</span>
                             <span class="nav-link-label">Challenge</span>
+                        </a>
+                        <a href="/jackpot" class="@(mobilePath.StartsWith("/jackpot") ? "active" : "")" title="Jackpot" aria-label="Jackpot">
+                            <span class="material-symbols-outlined">casino</span>
+                            <span class="nav-link-label">Jackpot</span>
                         </a>
                         <a href="/qollanma" class="@(mobilePath.StartsWith("/qollanma") ? "active" : "")" title="Qo'llanma" aria-label="Qo'llanma">
                             <span class="material-symbols-outlined">help_outline</span>
@@ -363,6 +367,10 @@
             <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
                 <span class="material-symbols-outlined">military_tech</span>
                 <span class="bn-label">Challenge</span>
+            </a>
+            <a href="/jackpot" class="@(mobilePath.StartsWith("/jackpot") ? "active" : "")" title="Jackpot" aria-label="Jackpot">
+                <span class="material-symbols-outlined">casino</span>
+                <span class="bn-label">Jackpot</span>
             </a>
         </nav>
     }
@@ -558,6 +566,7 @@
             }
         })();
     </script>
+    <partial name="_LikesModal" />
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 

@@ -69,6 +69,12 @@ public interface ITelegramBotService
     /// <summary>Shares a quote (Quote) to the linked KitobdagiMen Telegram group.</summary>
     Task BroadcastQuoteToGroupAsync(int quoteId, CancellationToken ct = default);
 
+    /// <summary>Shares the daily jackpot (Kun taqrizi yoki Kun iqtibosi) to the linked KitobdagiMen Telegram group.</summary>
+    Task BroadcastJackpotToGroupAsync(int jackpotId, CancellationToken ct = default);
+
+    /// <summary>Updates the like button count on the Telegram group message for a daily jackpot.</summary>
+    Task SyncJackpotLikesInGroupAsync(int jackpotId, int likeCount, CancellationToken ct = default);
+
     /// <summary>Updates the like button count on the Telegram group message for a quote.</summary>
     Task SyncQuoteLikesInGroupAsync(int quoteId, int likeCount, CancellationToken ct = default);
 

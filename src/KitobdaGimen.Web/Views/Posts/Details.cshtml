@@ -143,7 +143,14 @@
                 {
                     <button type="button" class="pd-action-btn like-btn @(Model.Post.IsLikedByCurrentUser ? "liked" : "")" data-like="@Model.Post.Id">
                         <span class="material-symbols-outlined">favorite</span>
-                        <span>Yoqdi (<span class="like-count">@Model.Post.LikeCount</span>)</span>
+                        <span>Yoqdi (<span class="like-count" data-open-likes="post" data-target-id="@Model.Post.Id" role="button" tabindex="0" title="Kimlar yoqtirganini ko'rish">@Model.Post.LikeCount</span>)</span>
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="pd-action-btn" data-open-likes="post" data-target-id="@Model.Post.Id" title="Kimlar yoqtirganini ko'rish">
+                        <span class="material-symbols-outlined">favorite_border</span>
+                        <span>Yoqtirishlar (<span class="like-count">@Model.Post.LikeCount</span>)</span>
                     </button>
                 }
                 <button type="button" class="pd-action-btn" data-share-url="@postShareUrl">

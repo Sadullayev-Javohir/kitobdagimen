@@ -47,6 +47,9 @@ public class TestDbContext : DbContext, IAppDbContext
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<PhysicalBook> PhysicalBooks => Set<PhysicalBook>();
     public DbSet<PhysicalBookReservation> PhysicalBookReservations => Set<PhysicalBookReservation>();
+    public DbSet<DailyJackpot> DailyJackpots => Set<DailyJackpot>();
+    public DbSet<DailyJackpotLike> DailyJackpotLikes => Set<DailyJackpotLike>();
+    public DbSet<DailyJackpotComment> DailyJackpotComments => Set<DailyJackpotComment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

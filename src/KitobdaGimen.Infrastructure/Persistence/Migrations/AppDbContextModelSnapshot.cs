@@ -280,6 +280,112 @@ namespace KitobdaGimen.Infrastructure.Persistence.Migrations
                     b.ToTable("Conversations");
                 });
 
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int?>("PostId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("QuoteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SelectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long?>("TelegramChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("TelegramMessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("QuoteId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DailyJackpots");
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpotComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DailyJackpotId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyJackpotId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DailyJackpotComments");
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpotLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DailyJackpotId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("DailyJackpotId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("DailyJackpotLikes");
+                });
+
             modelBuilder.Entity("KitobdaGimen.Domain.Entities.Follow", b =>
                 {
                     b.Property<int>("Id")
@@ -1268,6 +1374,69 @@ namespace KitobdaGimen.Infrastructure.Persistence.Migrations
                     b.Navigation("User2");
                 });
 
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpot", b =>
+                {
+                    b.HasOne("KitobdaGimen.Domain.Entities.Post", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("KitobdaGimen.Domain.Entities.Quote", "Quote")
+                        .WithMany()
+                        .HasForeignKey("QuoteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("KitobdaGimen.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("Quote");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpotComment", b =>
+                {
+                    b.HasOne("KitobdaGimen.Domain.Entities.DailyJackpot", "DailyJackpot")
+                        .WithMany("Comments")
+                        .HasForeignKey("DailyJackpotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KitobdaGimen.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyJackpot");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpotLike", b =>
+                {
+                    b.HasOne("KitobdaGimen.Domain.Entities.DailyJackpot", "DailyJackpot")
+                        .WithMany("Likes")
+                        .HasForeignKey("DailyJackpotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("KitobdaGimen.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyJackpot");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("KitobdaGimen.Domain.Entities.Follow", b =>
                 {
                     b.HasOne("KitobdaGimen.Domain.Entities.User", "Follower")
@@ -1677,6 +1846,13 @@ namespace KitobdaGimen.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("KitobdaGimen.Domain.Entities.Conversation", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.DailyJackpot", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("Likes");
                 });
 
             modelBuilder.Entity("KitobdaGimen.Domain.Entities.Genre", b =>

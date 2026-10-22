@@ -34,6 +34,20 @@ public static class ViewHelpers
             : HtmlString.Empty;
 
     /// <summary>
+    /// Renders the glowing gold "Kun Qahramoni" (Daily Jackpot Winner) badge.
+    /// `@Html.Raw(KitobdaGimen.Web.ViewHelpers.DailyHeroBadge(isDailyHero))`
+    /// </summary>
+    public static IHtmlContent DailyHeroBadge(bool isDailyHero)
+        => isDailyHero
+            ? new HtmlString("<span class=\"badge daily-hero-badge\" title=\"Bugungi Kun Qahramoni (Jackpot g'olibi)\"><span class=\"material-symbols-outlined\">military_tech</span>Kun Qahramoni 👑</span>")
+            : HtmlString.Empty;
+
+    public static IHtmlContent DailyHeroCrown(bool isDailyHero)
+        => isDailyHero
+            ? new HtmlString("<span class=\"daily-hero-crown\" title=\"Bugungi Kun Qahramoni (Jackpot g'olibi)\">👑</span>")
+            : HtmlString.Empty;
+
+    /// <summary>
     /// Kitob manbasi — saytda manba (asaxiy.uz) yozuvlari ko'rsatilmaydi.
     /// </summary>
     public static IHtmlContent SourceCredit(string? source)
