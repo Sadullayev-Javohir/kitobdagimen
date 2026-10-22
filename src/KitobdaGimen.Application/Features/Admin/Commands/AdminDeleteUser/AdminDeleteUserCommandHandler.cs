@@ -36,9 +36,7 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
 
         var userId = user.Id;
 
-        // Dependent rows with Restrict FKs are removed explicitly before the user; rows that cascade
-        // from a parent (comments on this user's posts, messages in this user's conversations, etc.)
-        // are handled by the database. Mirrors the user-initiated DeleteAccount logic.
+        // 1. Stories: likes/views/stories
         _db.StoryLikes.RemoveRange(await _db.StoryLikes
             .Where(x => x.UserId == userId || x.Story.UserId == userId).ToListAsync(cancellationToken));
         _db.StoryViews.RemoveRange(await _db.StoryViews
@@ -46,65 +44,66 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
         _db.Stories.RemoveRange(await _db.Stories
             .Where(s => s.UserId == userId).ToListAsync(cancellationToken));
 
+        // 2. Posts & engagement: likes, views, comments
         _db.Likes.RemoveRange(await _db.Likes
             .Where(l => l.UserId == userId || l.Post.UserId == userId).ToListAsync(cancellationToken));
         _db.PostViews.RemoveRange(await _db.PostViews
             .Where(v => v.UserId == userId || v.Post.UserId == userId).ToListAsync(cancellationToken));
-
         _db.Comments.RemoveRange(await _db.Comments
             .Where(c => c.UserId == userId || c.Post.UserId == userId ||
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
 
-        // Message reactions left by this user (Restrict FK). Reactions on this user's messages
-        // cascade from the conversation delete below, but reactions the user placed elsewhere must
-        // be removed explicitly or the User delete is blocked.
+        // 3. Messages & Conversations
         _db.MessageReactions.RemoveRange(await _db.MessageReactions
             .Where(r => r.UserId == userId).ToListAsync(cancellationToken));
-
-        // Messages sent by this user (SenderId has Restrict FK). Must be removed explicitly
-        // before deleting conversations, or the User delete is blocked.
         _db.Messages.RemoveRange(await _db.Messages
             .Where(m => m.SenderId == userId).ToListAsync(cancellationToken));
-
         _db.Conversations.RemoveRange(await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId).ToListAsync(cancellationToken));
 
+        // 4. Social: Follows, Connections, Notifications
         _db.Follows.RemoveRange(await _db.Follows
             .Where(f => f.FollowerId == userId || f.FollowingId == userId).ToListAsync(cancellationToken));
-
         _db.Connections.RemoveRange(await _db.Connections
             .Where(c => c.RequesterId == userId || c.AddresseeId == userId).ToListAsync(cancellationToken));
-
         _db.Notifications.RemoveRange(await _db.Notifications
             .Where(n => n.RecipientId == userId || n.ActorId == userId).ToListAsync(cancellationToken));
 
+        // 5. Quotes & engagement: saved, likes, comments, views
         _db.SavedQuotes.RemoveRange(await _db.SavedQuotes
             .Where(sq => sq.UserId == userId).ToListAsync(cancellationToken));
-
-        // Quote likes placed by this user (Restrict FK). Likes on the user's own quotes cascade
-        // when the quotes are removed; likes on other users' quotes must be removed explicitly.
         _db.QuoteLikes.RemoveRange(await _db.QuoteLikes
-            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
-
-        // Quote comments authored by the user, on the user's quotes, or replying to the user's
-        // comments (Restrict FKs — mirror the post-comment cleanup above).
+            .Where(l => l.UserId == userId || l.Quote.UserId == userId).ToListAsync(cancellationToken));
         _db.QuoteComments.RemoveRange(await _db.QuoteComments
             .Where(c => c.UserId == userId || c.Quote.UserId == userId ||
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
+        _db.QuoteViews.RemoveRange(await _db.QuoteViews
+            .Where(v => v.UserId == userId || v.Quote.UserId == userId).ToListAsync(cancellationToken));
 
-        // Challenge winner likes placed by this user (Restrict FK). Likes on the user's own
-        // winner rows cascade from the winner; likes elsewhere must be removed explicitly.
+        // 6. Physical Books & Reservations
+        var reservedByThisUser = await _db.PhysicalBookReservations
+            .Include(r => r.PhysicalBook)
+            .Where(r => r.ReserverId == userId && r.PhysicalBook.OwnerId != userId)
+            .ToListAsync(cancellationToken);
+        foreach (var res in reservedByThisUser)
+        {
+            if (res.PhysicalBook != null && res.PhysicalBook.Status == PhysicalBookStatus.BandQilindi)
+            {
+                res.PhysicalBook.Status = PhysicalBookStatus.Mavjud;
+            }
+        }
+        _db.PhysicalBookReservations.RemoveRange(await _db.PhysicalBookReservations
+            .Where(r => r.ReserverId == userId || r.PhysicalBook.OwnerId == userId).ToListAsync(cancellationToken));
+        _db.PhysicalBooks.RemoveRange(await _db.PhysicalBooks
+            .Where(b => b.OwnerId == userId).ToListAsync(cancellationToken));
+
+        // 7. Challenge Winners & Likes
         _db.ChallengeWinnerLikes.RemoveRange(await _db.ChallengeWinnerLikes
             .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
-
-        // Challenge winner entries for this user (though UserId has Cascade, explicitly remove
-        // to avoid multi-path cascade issues and to clear GiftedByUserId references).
         _db.ChallengeWinners.RemoveRange(await _db.ChallengeWinners
             .Where(w => w.UserId == userId).ToListAsync(cancellationToken));
-
-        // Also nullify GiftedByUserId where this user gifted books to other winners.
         var winnersGiftedByUser = await _db.ChallengeWinners
             .Where(w => w.GiftedByUserId == userId).ToListAsync(cancellationToken);
         foreach (var w in winnersGiftedByUser)
@@ -116,13 +115,29 @@ public class AdminDeleteUserCommandHandler : IRequestHandler<AdminDeleteUserComm
             w.GiftBookCoverUrl = null;
         }
 
+        // 8. Push subscriptions, Reading Goals & Progress, User Genres
         _db.PushSubscriptions.RemoveRange(await _db.PushSubscriptions
             .Where(ps => ps.UserId == userId).ToListAsync(cancellationToken));
 
+        _db.ReadingProgress.RemoveRange(await _db.ReadingProgress
+            .Where(rp => rp.ReadingGoal.UserId == userId).ToListAsync(cancellationToken));
+        _db.ReadingGoals.RemoveRange(await _db.ReadingGoals
+            .Where(rg => rg.UserId == userId).ToListAsync(cancellationToken));
+
+        _db.UserGenres.RemoveRange(await _db.UserGenres
+            .Where(ug => ug.UserId == userId).ToListAsync(cancellationToken));
+
+        // 9. Posts & Quotes
         _db.Posts.RemoveRange(await _db.Posts.Where(p => p.UserId == userId).ToListAsync(cancellationToken));
         _db.Quotes.RemoveRange(await _db.Quotes.Where(q => q.UserId == userId).ToListAsync(cancellationToken));
-        _db.ReadingGoals.RemoveRange(await _db.ReadingGoals.Where(rg => rg.UserId == userId).ToListAsync(cancellationToken));
-        _db.UserGenres.RemoveRange(await _db.UserGenres.Where(ug => ug.UserId == userId).ToListAsync(cancellationToken));
+
+        // 10. AppSettings (Telegram Username mapping)
+        var tgSetting = await _db.AppSettings
+            .FirstOrDefaultAsync(s => s.Key == $"Telegram:Username:{userId}", cancellationToken);
+        if (tgSetting != null)
+        {
+            _db.AppSettings.Remove(tgSetting);
+        }
 
         _db.Users.Remove(user);
         await _db.SaveChangesAsync(cancellationToken);

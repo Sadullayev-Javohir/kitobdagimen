@@ -1,6 +1,7 @@
 using FluentValidation.Results;
 using KitobdaGimen.Application.Common.Exceptions;
 using KitobdaGimen.Application.Common.Interfaces;
+using KitobdaGimen.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ValidationException = KitobdaGimen.Application.Common.Exceptions.ValidationException;
@@ -42,12 +43,6 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
             });
         }
 
-        // Most FKs into User use DeleteBehavior.Restrict (to avoid multiple cascade paths), so we
-        // remove the dependent rows explicitly before the user. We delete via tracked entities and
-        // let a single SaveChanges order the deletes; rows that cascade from a parent we delete here
-        // (comments on this user's posts, messages in this user's conversations, progress of this
-        // user's goals, saves of this user's quotes) are handled by the database.
-
         // Stories: likes/views first, then the stories.
         _db.StoryLikes.RemoveRange(await _db.StoryLikes
             .Where(x => x.UserId == userId || x.Story.UserId == userId).ToListAsync(cancellationToken));
@@ -68,14 +63,15 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
 
-        // Message reactions left by this user (Restrict FK). Reactions on this user's messages
-        // cascade from the conversation delete below, but reactions the user placed elsewhere must
-        // be removed explicitly or the User delete is blocked.
+        // Message reactions left by this user (Restrict FK).
         _db.MessageReactions.RemoveRange(await _db.MessageReactions
             .Where(r => r.UserId == userId).ToListAsync(cancellationToken));
 
-        // Conversations the user takes part in (messages + their reactions cascade from the
-        // conversation at the DB).
+        // Messages sent by this user
+        _db.Messages.RemoveRange(await _db.Messages
+            .Where(m => m.SenderId == userId).ToListAsync(cancellationToken));
+
+        // Conversations the user takes part in
         _db.Conversations.RemoveRange(await _db.Conversations
             .Where(c => c.User1Id == userId || c.User2Id == userId).ToListAsync(cancellationToken));
 
@@ -83,40 +79,90 @@ public class DeleteAccountCommandHandler : IRequestHandler<DeleteAccountCommand,
         _db.Follows.RemoveRange(await _db.Follows
             .Where(f => f.FollowerId == userId || f.FollowingId == userId).ToListAsync(cancellationToken));
 
-        // Chat connections (invites) in either direction — Restrict FKs, so must be removed explicitly.
+        // Chat connections (invites) in either direction
         _db.Connections.RemoveRange(await _db.Connections
             .Where(c => c.RequesterId == userId || c.AddresseeId == userId).ToListAsync(cancellationToken));
 
-        // Notifications addressed to the user (cascade FK) or where the user is the actor (no FK).
+        // Notifications addressed to the user or where the user is the actor
         _db.Notifications.RemoveRange(await _db.Notifications
             .Where(n => n.RecipientId == userId || n.ActorId == userId).ToListAsync(cancellationToken));
 
-        // Quotes saved by this user (saves on the user's own quotes cascade from the quote).
+        // Quotes saved by this user
         _db.SavedQuotes.RemoveRange(await _db.SavedQuotes
             .Where(sq => sq.UserId == userId).ToListAsync(cancellationToken));
 
-        // Quote likes placed by this user (Restrict FK). Likes on the user's own quotes cascade
-        // when the quotes are removed; likes on other users' quotes must be removed explicitly.
+        // Quote likes
         _db.QuoteLikes.RemoveRange(await _db.QuoteLikes
-            .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
+            .Where(l => l.UserId == userId || l.Quote.UserId == userId).ToListAsync(cancellationToken));
 
-        // Quote comments authored by the user, on the user's quotes, or replying to the user's
-        // comments (Restrict FKs — mirror the post-comment cleanup above).
+        // Quote comments
         _db.QuoteComments.RemoveRange(await _db.QuoteComments
             .Where(c => c.UserId == userId || c.Quote.UserId == userId ||
                         (c.ParentCommentId != null && c.ParentComment!.UserId == userId))
             .ToListAsync(cancellationToken));
 
-        // Challenge winner likes placed by this user (Restrict FK). Likes on the user's own
-        // winner rows cascade from the winner; likes elsewhere must be removed explicitly.
+        // Quote views
+        _db.QuoteViews.RemoveRange(await _db.QuoteViews
+            .Where(v => v.UserId == userId || v.Quote.UserId == userId).ToListAsync(cancellationToken));
+
+        // Physical Books & Reservations
+        var reservedByThisUser = await _db.PhysicalBookReservations
+            .Include(r => r.PhysicalBook)
+            .Where(r => r.ReserverId == userId && r.PhysicalBook.OwnerId != userId)
+            .ToListAsync(cancellationToken);
+        foreach (var res in reservedByThisUser)
+        {
+            if (res.PhysicalBook != null && res.PhysicalBook.Status == PhysicalBookStatus.BandQilindi)
+            {
+                res.PhysicalBook.Status = PhysicalBookStatus.Mavjud;
+            }
+        }
+        _db.PhysicalBookReservations.RemoveRange(await _db.PhysicalBookReservations
+            .Where(r => r.ReserverId == userId || r.PhysicalBook.OwnerId == userId).ToListAsync(cancellationToken));
+        _db.PhysicalBooks.RemoveRange(await _db.PhysicalBooks
+            .Where(b => b.OwnerId == userId).ToListAsync(cancellationToken));
+
+        // Challenge winner likes
         _db.ChallengeWinnerLikes.RemoveRange(await _db.ChallengeWinnerLikes
             .Where(l => l.UserId == userId).ToListAsync(cancellationToken));
 
-        // Owned content that cascades its own dependents.
+        // Challenge winners
+        _db.ChallengeWinners.RemoveRange(await _db.ChallengeWinners
+            .Where(w => w.UserId == userId).ToListAsync(cancellationToken));
+        var winnersGiftedByUser = await _db.ChallengeWinners
+            .Where(w => w.GiftedByUserId == userId).ToListAsync(cancellationToken);
+        foreach (var w in winnersGiftedByUser)
+        {
+            w.GiftedByUserId = null;
+            w.GiftedAt = null;
+            w.GiftBookTitle = null;
+            w.GiftBookAuthor = null;
+            w.GiftBookCoverUrl = null;
+        }
+
+        // Push subscriptions, Reading Goals & Progress, User Genres
+        _db.PushSubscriptions.RemoveRange(await _db.PushSubscriptions
+            .Where(ps => ps.UserId == userId).ToListAsync(cancellationToken));
+
+        _db.ReadingProgress.RemoveRange(await _db.ReadingProgress
+            .Where(rp => rp.ReadingGoal.UserId == userId).ToListAsync(cancellationToken));
+        _db.ReadingGoals.RemoveRange(await _db.ReadingGoals
+            .Where(rg => rg.UserId == userId).ToListAsync(cancellationToken));
+
+        _db.UserGenres.RemoveRange(await _db.UserGenres
+            .Where(ug => ug.UserId == userId).ToListAsync(cancellationToken));
+
+        // Owned content
         _db.Posts.RemoveRange(await _db.Posts.Where(p => p.UserId == userId).ToListAsync(cancellationToken));
         _db.Quotes.RemoveRange(await _db.Quotes.Where(q => q.UserId == userId).ToListAsync(cancellationToken));
-        _db.ReadingGoals.RemoveRange(await _db.ReadingGoals.Where(rg => rg.UserId == userId).ToListAsync(cancellationToken));
-        _db.UserGenres.RemoveRange(await _db.UserGenres.Where(ug => ug.UserId == userId).ToListAsync(cancellationToken));
+
+        // AppSettings (Telegram Username mapping)
+        var tgSetting = await _db.AppSettings
+            .FirstOrDefaultAsync(s => s.Key == $"Telegram:Username:{userId}", cancellationToken);
+        if (tgSetting != null)
+        {
+            _db.AppSettings.Remove(tgSetting);
+        }
 
         _db.Users.Remove(user);
 
