@@ -823,11 +823,16 @@ public class TelegramBotService : ITelegramBotService
             }
 
             var cleanUsername = fetchedUsername?.Trim().TrimStart('@');
+            if (string.IsNullOrWhiteSpace(cleanUsername) && !string.IsNullOrWhiteSpace(post.User.Username))
+            {
+                cleanUsername = post.User.Username.Trim().TrimStart('@');
+            }
+
             var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
                 ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
                 : (userTgId > 0
                     ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
-                    : $"<b>{Escape(post.User.FullName)}</b>");
+                    : "Kitobxon");
 
             var cleanReview = TruncateText(StripHtml(post.ReviewText), 3500);
 
@@ -998,11 +1003,16 @@ public class TelegramBotService : ITelegramBotService
             }
 
             var cleanUsername = fetchedUsername?.Trim().TrimStart('@');
+            if (string.IsNullOrWhiteSpace(cleanUsername) && !string.IsNullOrWhiteSpace(quote.User.Username))
+            {
+                cleanUsername = quote.User.Username.Trim().TrimStart('@');
+            }
+
             var authorLink = !string.IsNullOrWhiteSpace(cleanUsername)
                 ? $"<a href=\"https://t.me/{cleanUsername}\">Kitobxon</a>"
                 : (userTgId > 0
                     ? $"<a href=\"tg://user?id={userTgId}\">Kitobxon</a>"
-                    : $"<b>{Escape(quote.User.FullName)}</b>");
+                    : "Kitobxon");
 
             var cleanText = TruncateText(StripHtml(quote.Text), 3500);
 
