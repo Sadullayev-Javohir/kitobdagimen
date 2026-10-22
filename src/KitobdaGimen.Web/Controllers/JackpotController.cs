@@ -23,6 +23,7 @@ public class JackpotController : AppController
         var todayJackpot = await _jackpotService.GetTodayJackpotAsync(me?.Id);
         var history = await _jackpotService.GetHistoryAsync(me?.Id, limit: 30);
 
+        ViewData["HideSearch"] = true;
         ViewBag.CurrentUser = me;
         ViewBag.IsAdmin = me != null && me.Role >= UserRole.Admin;
         ViewBag.History = history;
@@ -82,6 +83,32 @@ public class JackpotController : AppController
     {
         var likers = await _jackpotService.GetLikersAsync(id);
         return Json(likers);
+    }
+
+    [HttpGet]
+    [Route("/jackpot/{id:int}/likes")]
+    public async Task<IActionResult> GetLikes(int id, int page = 1, int pageSize = 20)
+    {
+        var likers = await _jackpotService.GetLikersAsync(id);
+        var totalCount = likers.Count;
+        var paged = likers.Skip((page - 1) * pageSize).Take(pageSize).Select(l => new
+        {
+            id = l.UserId,
+            username = l.UserName,
+            fullName = l.UserFullName,
+            avatarUrl = l.UserAvatarUrl,
+            isDailyHero = l.IsDailyHero,
+            likedAt = l.LikedAt
+        }).ToList();
+
+        return Json(new
+        {
+            items = paged,
+            page,
+            pageSize,
+            totalCount,
+            totalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        });
     }
 
     [HttpPost]

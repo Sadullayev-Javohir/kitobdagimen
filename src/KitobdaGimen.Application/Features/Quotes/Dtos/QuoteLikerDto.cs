@@ -13,5 +13,6 @@ public record QuoteLikerDto
     public bool IsFollowedByCurrentUser { get; init; }
     public bool IsCurrentUser { get; init; }
     public bool HasActiveStory { get; init; }
+    public bool IsDailyHero { get; init; }
     public DateTime LikedAt { get; init; }
 }

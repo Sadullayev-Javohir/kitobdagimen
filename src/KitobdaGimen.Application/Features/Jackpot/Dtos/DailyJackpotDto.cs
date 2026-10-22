@@ -49,5 +49,6 @@ public class JackpotLikerDto
     public string? UserName { get; set; }
     public string UserFullName { get; set; } = null!;
     public string? UserAvatarUrl { get; set; }
+    public bool IsDailyHero { get; set; }
     public DateTime LikedAt { get; set; }
 }

@@ -38,48 +38,12 @@ public class QuotesController : AppController
         return isAdmin;
     }
 
-    /// <summary>Sara iqtiboslar sahifasi — barcha kitobxonlarning iqtiboslari, qidiruv va saralash bilan.</summary>
+    /// <summary>Sara iqtiboslar sahifasi olib tashlangan — /feed ga yo'naltiriladi.</summary>
     [AllowAnonymous]
     [HttpGet("")]
-    public async Task<IActionResult> Index(string? q, string sort = "latest", int page = 1)
+    public IActionResult Index()
     {
-        var isAuth = User.Identity?.IsAuthenticated ?? false;
-        var cleanSort = (sort ?? "latest").Trim().ToLowerInvariant();
-
-        if (cleanSort == "mine" && !isAuth)
-        {
-            var returnUrl = $"/Quotes?sort=mine{(string.IsNullOrEmpty(q) ? "" : $"&q={Uri.EscapeDataString(q)}")}";
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
-                return Json(new { requireLogin = true, loginUrl = $"/login?returnUrl={Uri.EscapeDataString(returnUrl)}" });
-            }
-            return Redirect($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
-        }
-
-        var quotes = await Mediator.Send(new GetAllQuotesQuery
-        {
-            Search = q,
-            Sort = cleanSort,
-            Page = page,
-            PageSize = 12
-        });
-
-        var isAdmin = await SetIsAdminAsync();
-
-        var vm = new QuotesPageViewModel
-        {
-            Quotes = quotes,
-            Search = q,
-            Sort = cleanSort,
-            IsAdmin = isAdmin
-        };
-
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        {
-            return PartialView("_QuotesFeedSection", vm);
-        }
-
-        return View("Index", vm);
+        return RedirectPermanent("/feed");
     }
 
     /// <summary>Creates a quote (from the /Feed or /Quotes composer).</summary>

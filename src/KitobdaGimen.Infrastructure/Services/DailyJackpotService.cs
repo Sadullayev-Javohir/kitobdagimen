@@ -166,6 +166,13 @@ public class DailyJackpotService : IDailyJackpotService
 
     public async Task<IReadOnlyList<JackpotLikerDto>> GetLikersAsync(int jackpotId, CancellationToken ct = default)
     {
+        var today = UzTime.Today;
+        var todayHeroUserId = await _db.DailyJackpots
+            .AsNoTracking()
+            .Where(j => j.Date == today)
+            .Select(j => (int?)j.UserId)
+            .FirstOrDefaultAsync(ct);
+
         var likers = await _db.DailyJackpotLikes
             .AsNoTracking()
             .Where(l => l.DailyJackpotId == jackpotId)
@@ -177,6 +184,7 @@ public class DailyJackpotService : IDailyJackpotService
                 UserName = l.User.Username,
                 UserFullName = l.User.FullName,
                 UserAvatarUrl = l.User.AvatarUrl,
+                IsDailyHero = todayHeroUserId.HasValue && l.UserId == todayHeroUserId.Value,
                 LikedAt = l.CreatedAt
             })
             .ToListAsync(ct);

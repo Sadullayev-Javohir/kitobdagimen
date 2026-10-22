@@ -1770,6 +1770,8 @@ initNotifications();
         try {
             const endpoint = currentType === "quote" 
                 ? `/quotes/${currentTargetId}/likes?page=${page}&pageSize=20`
+                : currentType === "jackpot"
+                ? `/jackpot/${currentTargetId}/likes?page=${page}&pageSize=20`
                 : `/posts/${currentTargetId}/likes?page=${page}&pageSize=20`;
 
             const data = await apiGet(endpoint);
@@ -1796,15 +1798,16 @@ initNotifications();
         const fragment = document.createDocumentFragment();
 
         items.forEach(user => {
+            const isHero = !!user.isDailyHero;
             const row = document.createElement("div");
-            row.className = "likes-user-row";
+            row.className = isHero ? "likes-user-row is-daily-hero" : "likes-user-row";
 
             const profileUrl = user.username ? `/profile/${encodeURIComponent(user.username)}` : `/profile/${user.id}`;
             const initial = (user.fullName || "?").trim().charAt(0).toUpperCase();
 
             const avatarHtml = user.avatarUrl 
-                ? `<img class="avatar" src="${escapeHtml(user.avatarUrl)}" alt="${escapeHtml(user.fullName)}" referrerpolicy="no-referrer" />`
-                : `<span class="avatar">${escapeHtml(initial)}</span>`;
+                ? `<img class="avatar ${isHero ? 'hero-avatar' : ''}" src="${escapeHtml(user.avatarUrl)}" alt="${escapeHtml(user.fullName)}" referrerpolicy="no-referrer" />`
+                : `<span class="avatar ${isHero ? 'hero-avatar' : ''}">${escapeHtml(initial)}</span>`;
 
             const storyWrapClass = user.hasActiveStory ? "likes-user-avatar-wrap has-story" : "likes-user-avatar-wrap";
             const storyAttr = user.hasActiveStory ? `data-open-story="${user.id}" role="button" tabindex="0"` : "";
@@ -1821,6 +1824,7 @@ initNotifications();
                     </div>`;
             }
 
+            const heroBadgeHtml = isHero ? `<span class="daily-hero-badge" style="font-size: 10px; padding: 2px 7px; margin-left: 6px; box-shadow: 0 0 8px rgba(245,158,11,0.5);">👑 Kun Qahramoni</span>` : "";
             const usernameHtml = user.username ? `<span class="likes-user-username">@${escapeHtml(user.username)}</span>` : "";
             const bioHtml = user.bio ? `<p class="likes-user-bio" title="${escapeHtml(user.bio)}">${escapeHtml(user.bio)}</p>` : "";
 
@@ -1831,6 +1835,7 @@ initNotifications();
                 <div class="likes-user-info">
                     <div class="likes-user-name-line">
                         <a href="${profileUrl}" class="likes-user-name">${escapeHtml(user.fullName)}</a>
+                        ${heroBadgeHtml}
                         ${usernameHtml}
                     </div>
                     ${bioHtml}

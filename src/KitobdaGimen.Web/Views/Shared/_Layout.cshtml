@@ -30,7 +30,9 @@
         || string.Equals(currentController, "Challenge", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "Posts", StringComparison.OrdinalIgnoreCase)
         || string.Equals(currentController, "PhysicalBooks", StringComparison.OrdinalIgnoreCase)
-        || mobilePath.StartsWith("/almashish");
+        || string.Equals(currentController, "Jackpot", StringComparison.OrdinalIgnoreCase)
+        || mobilePath.StartsWith("/almashish")
+        || mobilePath.StartsWith("/jackpot");
 
     // --- SEO (Google, Telegram, Facebook, Twitter uchun) ---
     var seoReq = Context.Request;

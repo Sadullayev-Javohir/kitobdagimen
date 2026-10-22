@@ -27,6 +27,12 @@ public class GetQuoteLikesQueryHandler : IRequestHandler<GetQuoteLikesQuery, Pag
         var currentUserId = _currentUser.UserId;
         var viewerEmail = _currentUser.Email?.ToLowerInvariant();
         var now = DateTime.UtcNow;
+        var today = UzTime.Today;
+
+        var todayHeroUserId = await _db.DailyJackpots
+            .Where(j => j.Date == today)
+            .Select(j => (int?)j.UserId)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var source = _db.QuoteLikes
             .Where(l => l.QuoteId == request.QuoteId)
@@ -52,6 +58,7 @@ public class GetQuoteLikesQueryHandler : IRequestHandler<GetQuoteLikesQuery, Pag
                     l.User.Followers.Any(x => x.FollowerId == currentUserId),
                 IsCurrentUser = currentUserId != null && l.User.Id == currentUserId,
                 HasActiveStory = l.User.Stories.Any(s => s.ExpiresAt > now),
+                IsDailyHero = todayHeroUserId.HasValue && l.User.Id == todayHeroUserId.Value,
                 LikedAt = l.CreatedAt
             })
             .ToListAsync(cancellationToken);
