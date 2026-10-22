@@ -42,6 +42,8 @@ public interface IAppDbContext
     DbSet<DailyJackpot> DailyJackpots { get; }
     DbSet<DailyJackpotLike> DailyJackpotLikes { get; }
     DbSet<DailyJackpotComment> DailyJackpotComments { get; }
+    DbSet<MorningQuote> MorningQuotes { get; }
+    DbSet<MorningQuoteVote> MorningQuoteVotes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

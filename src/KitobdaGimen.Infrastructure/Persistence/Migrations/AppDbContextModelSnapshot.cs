@@ -616,6 +616,76 @@ namespace KitobdaGimen.Infrastructure.Persistence.Migrations
                     b.ToTable("MessageReactions");
                 });
 
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.MorningQuote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OrderIndex")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderIndex");
+
+                    b.ToTable("MorningQuotes", (string)null);
+                });
+
+            modelBuilder.Entity("KitobdaGimen.Domain.Entities.MorningQuoteVote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsPositive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("TelegramUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("VotedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatId", "MessageId", "IsPositive");
+
+                    b.HasIndex("ChatId", "MessageId", "TelegramUserId")
+                        .IsUnique();
+
+                    b.ToTable("MorningQuoteVotes", (string)null);
+                });
+
             modelBuilder.Entity("KitobdaGimen.Domain.Entities.Notification", b =>
                 {
                     b.Property<int>("Id")

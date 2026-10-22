@@ -1697,7 +1697,7 @@ public class TelegramBotService : ITelegramBotService
             }
 
             var html =
-                "🕗 <b>KECHKI MUTOLAA ESLATMASI (20:00)</b>\n" +
+                "🕗 <b>KECHKI MUTOLAA ESLATMASI</b>\n" +
                 "━━━━━━━━━━━━━━━━━━━━\n" +
                 $"👋 Salom, <b>{Escape(user.FullName)}</b>!\n\n" +
                 "<blockquote>«Bugun o'qilgan 20 bet — ertangi g'alabangizning poydevori.»</blockquote>\n\n" +
@@ -1724,6 +1724,94 @@ public class TelegramBotService : ITelegramBotService
 
         _logger.LogInformation("20:00 kunlik mutolaa eslatmasi {Count} ta Telegram foydalanuvchisiga yuborildi.", sentCount);
         return sentCount;
+    }
+
+    // ── Soat 05:30 — Erta tonggi motivatsion iqtibos (guruh va foydalanuvchilar) ──
+
+    public async Task<bool> BroadcastMorningQuoteAsync(
+        string text, string author, string? source, CancellationToken ct = default)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+
+        var sourceText = !string.IsNullOrWhiteSpace(source)
+            ? $"\n📚 <i>«{Escape(source)}» kitobidan</i>"
+            : string.Empty;
+
+        var html =
+            "🌅 <b>ERTA TONGGI MUTOLAA VA ILHOM</b>\n" +
+            "━━━━━━━━━━━━━━━━━━━━\n" +
+            $"<blockquote>«{Escape(text)}»</blockquote>\n\n" +
+            $"✍️ <b>{Escape(author)}</b>{sourceText}\n" +
+            "━━━━━━━━━━━━━━━━━━━━\n" +
+            "☀️ <i>Xayrli tong, aziz kitobxon! Yangi kun, yangi imkoniyat va yangi sahifalar muborak bo'lsin. Ko'rpani tark eting, aqlni uyg'oting — erta tonggi mutolaa barakasidan bahramand bo'ling! 📖✨</i>";
+
+        var markup = new
+        {
+            inline_keyboard = new object[][]
+            {
+                new object[]
+                {
+                    new { text = "➕ 0", callback_data = "mq:vote:plus" },
+                    new { text = "➖ 0", callback_data = "mq:vote:minus" }
+                }
+            }
+        };
+
+        var target = await GetGroupTargetAsync(db, ct);
+        var broadcastSuccess = false;
+
+        if (target.HasValue)
+        {
+            var res = await SendHtmlAsync(
+                target.Value.ChatId,
+                html,
+                markup,
+                disableWebPreview: true,
+                messageThreadId: target.Value.TopicId,
+                ct: ct);
+
+            broadcastSuccess = res?["ok"]?.GetValue<bool>() == true;
+            if (broadcastSuccess)
+            {
+                _logger.LogInformation("05:30 erta tonggi iqtibos KitobdagiMen Telegram guruhiga muvaffaqiyatli yuborildi.");
+            }
+            else
+            {
+                _logger.LogWarning("05:30 erta tonggi iqtibosni guruhga yuborib bo'lmadi.");
+            }
+        }
+
+        // Shuningdek, botdan ro'yxatdan o'tgan foydalanuvchilarga ham shaxsiy tarzda yetkazish
+        try
+        {
+            var telegramUsers = await db.Users
+                .AsNoTracking()
+                .Where(u => !string.IsNullOrEmpty(u.GoogleId))
+                .Select(u => new { u.Id, u.GoogleId })
+                .ToListAsync(ct);
+
+            var sentCount = 0;
+            foreach (var user in telegramUsers)
+            {
+                if (TryExtractTelegramId(user.GoogleId, out var tgId))
+                {
+                    var userRes = await SendHtmlAsync(tgId, html, markup, ct: ct);
+                    if (userRes?["ok"]?.GetValue<bool>() == true)
+                    {
+                        sentCount++;
+                    }
+                }
+            }
+
+            _logger.LogInformation("05:30 erta tonggi iqtibos {Count} ta Telegram bot foydalanuvchisiga yuborildi.", sentCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "05:30 iqtibosini Telegram foydalanuvchilariga yuborishda xatolik yuz berdi.");
+        }
+
+        return broadcastSuccess;
     }
 
     // ── Soat 23:59 — "KitobdagiMen" guruhiga kunlik mutolaa hisoboti ─────────────
@@ -1814,7 +1902,7 @@ public class TelegramBotService : ITelegramBotService
         var dateLabel = $"{date.Day}-{ChallengeCalendar.MonthName(date.Month)}, {date.Year}";
 
         var sb = new StringBuilder();
-        sb.AppendLine("🌙 <b>«KITOBDAGIMEN» KUNLIK SARHISOBI (23:59)</b>");
+        sb.AppendLine("🌙 <b>«KITOBDAGIMEN» KUNLIK SARHISOBI</b>");
         sb.AppendLine($"📅 <b>Sana:</b> {dateLabel}");
         sb.AppendLine("━━━━━━━━━━━━━━━━━━━━");
 

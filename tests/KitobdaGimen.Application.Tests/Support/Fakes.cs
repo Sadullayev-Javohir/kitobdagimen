@@ -166,6 +166,7 @@ public class FakeTelegramBotService : ITelegramBotService
     public Task<System.Text.Json.Nodes.JsonNode?> EditReplyMarkupAsync(long chatId, int messageId, object replyMarkup, CancellationToken ct = default) => Task.FromResult<System.Text.Json.Nodes.JsonNode?>(null);
     public Task<bool> DeleteMessageAsync(long chatId, int messageId, CancellationToken ct = default) => Task.FromResult(true);
     public Task<int> SendDailyReadingRemindersAsync(CancellationToken ct = default) => Task.FromResult(0);
+    public Task<bool> BroadcastMorningQuoteAsync(string text, string author, string? source, CancellationToken ct = default) => Task.FromResult(true);
     public Task<bool> SendDailyGroupReportAsync(CancellationToken ct = default) => Task.FromResult(true);
     public Task BroadcastChallengeUpdateAsync(string messageHtml, CancellationToken ct = default) => Task.CompletedTask;
     public Task<int> BroadcastChallengeWinnersAsync(int year, int month, CancellationToken ct = default) => Task.FromResult(0);

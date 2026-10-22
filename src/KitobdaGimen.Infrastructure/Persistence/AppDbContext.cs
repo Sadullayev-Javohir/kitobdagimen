@@ -48,6 +48,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<DailyJackpot> DailyJackpots => Set<DailyJackpot>();
     public DbSet<DailyJackpotLike> DailyJackpotLikes => Set<DailyJackpotLike>();
     public DbSet<DailyJackpotComment> DailyJackpotComments => Set<DailyJackpotComment>();
+    public DbSet<MorningQuote> MorningQuotes => Set<MorningQuote>();
+    public DbSet<MorningQuoteVote> MorningQuoteVotes => Set<MorningQuoteVote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -25,6 +25,7 @@ public static class DbInitializer
         {
             await db.Database.MigrateAsync(ct);
             await SeedBooksAsync(db, logger, ct);
+            await SeedMorningQuotesAsync(db, logger, ct);
             await CleanupPreStartWinnersAsync(db, logger, ct);
         }
         catch (Exception ex)
@@ -80,5 +81,17 @@ public static class DbInitializer
             logger.LogInformation(
                 "Challenge boshlanishidan oldingi {Count} ta g'olib yozuvi o'chirildi.", removed);
         }
+    }
+
+    private static async Task SeedMorningQuotesAsync(AppDbContext db, ILogger logger, CancellationToken ct)
+    {
+        if (await db.MorningQuotes.AnyAsync(ct))
+        {
+            return;
+        }
+
+        db.MorningQuotes.AddRange(MorningQuoteSeedData.Quotes);
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("{Count} ta erta tonggi motivatsion iqtibos seed qilindi.", MorningQuoteSeedData.Quotes.Length);
     }
 }

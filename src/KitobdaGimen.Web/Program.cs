@@ -228,6 +228,14 @@ if (hangfireEnabled)
         job => job.RunAsync(CancellationToken.None),
         "59 18 * * *",
         new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+    // Erta tonggi motivatsiya: O'zbekiston vaqti bilan har kuni 05:30 da (UTC+5 -> 00:30 UTC).
+    // Kitobxonlarni erta uyg'onishga va mutolaaga chorlovchi sara iqtibos yuboriladi va bazadan olib tashlanadi.
+    RecurringJob.AddOrUpdate<MorningQuoteJob>(
+        MorningQuoteJob.RecurringJobId,
+        job => job.RunAsync(CancellationToken.None),
+        "30 0 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 }
 
 app.Run();

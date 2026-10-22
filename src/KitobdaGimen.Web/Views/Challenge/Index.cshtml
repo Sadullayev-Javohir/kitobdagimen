@@ -106,49 +106,6 @@
         </div>
     }
 
-    @* ================= 1-, 2-, 3-O'RIN SOVG'A KITOBLARI ================= *@
-    <section class="ch-section">
-        <div class="ch-section-head">
-            <h2 class="ch-h2">
-                <span class="material-symbols-outlined">redeem</span>
-                Sovg'alar
-            </h2>
-        </div>
-        <div class="ch-prizes-grid">
-            @for (var rank = 1; rank <= 3; rank++)
-            {
-                var prize = Model.Config.GetPrize(rank);
-                var rankClass = rank switch { 1 => "ch-rank-gold", 2 => "ch-rank-silver", _ => "ch-rank-bronze" };
-                var rankBadge = rank switch { 1 => "1-o'rin", 2 => "2-o'rin", _ => "3-o'rin" };
-                <div class="card ch-prize-card @rankClass">
-                    <div class="ch-prize-badge">
-                        @Html.Raw(MedalIcon(rank))
-                        <span>@rankBadge</span>
-                    </div>
-                    <div class="ch-prize-cover-wrap">
-                        @if (!string.IsNullOrEmpty(prize.CoverUrl))
-                        {
-                            <img class="ch-prize-cover" src="@prize.CoverUrl" alt="@prize.Title" referrerpolicy="no-referrer" />
-                        }
-                        else
-                        {
-                            <div class="ch-prize-cover ch-prize-placeholder">
-                                <span class="material-symbols-outlined">auto_stories</span>
-                            </div>
-                        }
-                    </div>
-                    <div class="ch-prize-info">
-                        <strong class="ch-prize-title">@(string.IsNullOrWhiteSpace(prize.Title) ? "Tez orada e'lon qilinadi" : prize.Title)</strong>
-                        @if (!string.IsNullOrEmpty(prize.Author))
-                        {
-                            <span class="muted ch-prize-author">@prize.Author</span>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    </section>
-
     @* ================= JORIY OY JONLI REYTING ================= *@
     <section class="ch-section">
         <div class="ch-section-head">
@@ -250,6 +207,49 @@
                 </div>
             }
         }
+    </section>
+
+    @* ================= 1-, 2-, 3-O'RIN SOVG'A KITOBLARI ================= *@
+    <section class="ch-section">
+        <div class="ch-section-head">
+            <h2 class="ch-h2">
+                <span class="material-symbols-outlined">redeem</span>
+                Sovg'alar
+            </h2>
+        </div>
+        <div class="ch-prizes-grid">
+            @for (var rank = 1; rank <= 3; rank++)
+            {
+                var prize = Model.Config.GetPrize(rank);
+                var rankClass = rank switch { 1 => "ch-rank-gold", 2 => "ch-rank-silver", _ => "ch-rank-bronze" };
+                var rankBadge = rank switch { 1 => "1-o'rin", 2 => "2-o'rin", _ => "3-o'rin" };
+                <div class="card ch-prize-card @rankClass">
+                    <div class="ch-prize-badge">
+                        @Html.Raw(MedalIcon(rank))
+                        <span>@rankBadge</span>
+                    </div>
+                    <div class="ch-prize-cover-wrap">
+                        @if (!string.IsNullOrEmpty(prize.CoverUrl))
+                        {
+                            <img class="ch-prize-cover" src="@prize.CoverUrl" alt="@prize.Title" referrerpolicy="no-referrer" />
+                        }
+                        else
+                        {
+                            <div class="ch-prize-cover ch-prize-placeholder">
+                                <span class="material-symbols-outlined">auto_stories</span>
+                            </div>
+                        }
+                    </div>
+                    <div class="ch-prize-info">
+                        <strong class="ch-prize-title">@(string.IsNullOrWhiteSpace(prize.Title) ? "Tez orada e'lon qilinadi" : prize.Title)</strong>
+                        @if (!string.IsNullOrEmpty(prize.Author))
+                        {
+                            <span class="muted ch-prize-author">@prize.Author</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
     </section>
 
     @* ================= E'LON QILINGAN G'OLIBLAR ================= *@

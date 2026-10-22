@@ -112,6 +112,9 @@ public interface ITelegramBotService
     /// <summary>Sends 20:00 personal reading reminders via Telegram DM to users who haven't read today.</summary>
     Task<int> SendDailyReadingRemindersAsync(CancellationToken ct = default);
 
+    /// <summary>Har kuni 05:30 da erta tonggi motivatsion iqtibosni Telegram guruhiga va bot foydalanuvchilariga e'lon qiladi.</summary>
+    Task<bool> BroadcastMorningQuoteAsync(string text, string author, string? source, CancellationToken ct = default);
+
     /// <summary>Sends 23:59 daily reading summary with @usernames to the KitobdagiMen Telegram group.</summary>
     Task<bool> SendDailyGroupReportAsync(CancellationToken ct = default);
 

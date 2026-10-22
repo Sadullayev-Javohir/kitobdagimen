@@ -1738,6 +1738,64 @@ public class TelegramBotHostedService : BackgroundService
         var mediator = scope.ServiceProvider.GetRequiredService<ISender>();
         var session = _sessions.GetOrAdd(tgUserId, _ => new UserBotSession());
 
+        // ── Erta tonggi motivatsion iqtibosga ovoz berish (+ qo'shilaman, - qo'shilmayman) ──
+        if (data is "mq:vote:plus" or "mq:vote:minus")
+        {
+            var isPositive = data == "mq:vote:plus";
+            var existingVote = await db.MorningQuoteVotes
+                .FirstOrDefaultAsync(v => v.ChatId == chatId && v.MessageId == messageId && v.TelegramUserId == tgUserId, ct);
+
+            string feedback;
+            if (existingVote is null)
+            {
+                db.MorningQuoteVotes.Add(new MorningQuoteVote
+                {
+                    ChatId = chatId,
+                    MessageId = messageId,
+                    TelegramUserId = tgUserId,
+                    IsPositive = isPositive,
+                    VotedAt = DateTime.UtcNow
+                });
+                feedback = isPositive ? "✅ Fikrga qo'shildingiz (+1)" : "❌ Fikrga qo'shilmadingiz (-1)";
+            }
+            else if (existingVote.IsPositive == isPositive)
+            {
+                // Bir xil tugmani qayta bossa - ovozni qaytarib olish
+                db.MorningQuoteVotes.Remove(existingVote);
+                feedback = "🔄 Ovozingiz qaytarib olindi";
+            }
+            else
+            {
+                // Boshqa tugmaga almashtirish
+                existingVote.IsPositive = isPositive;
+                existingVote.VotedAt = DateTime.UtcNow;
+                feedback = isPositive ? "✅ Fikringiz o'zgartirildi: (+1)" : "❌ Fikringiz o'zgartirildi: (-1)";
+            }
+
+            await db.SaveChangesAsync(ct);
+
+            var plusCount = await db.MorningQuoteVotes
+                .CountAsync(v => v.ChatId == chatId && v.MessageId == messageId && v.IsPositive, ct);
+            var minusCount = await db.MorningQuoteVotes
+                .CountAsync(v => v.ChatId == chatId && v.MessageId == messageId && !v.IsPositive, ct);
+
+            var newMarkup = new
+            {
+                inline_keyboard = new object[][]
+                {
+                    new object[]
+                    {
+                        new { text = $"➕ {plusCount}", callback_data = "mq:vote:plus" },
+                        new { text = $"➖ {minusCount}", callback_data = "mq:vote:minus" }
+                    }
+                }
+            };
+
+            await _bot.EditReplyMarkupAsync(chatId, messageId, newMarkup, ct);
+            await _bot.AnswerCallbackAsync(cbId, feedback, showAlert: false, ct: ct);
+            return;
+        }
+
         // Guruh a'zoligini tasdiqlash tugmasi
         if (data == "sub:check")
         {
