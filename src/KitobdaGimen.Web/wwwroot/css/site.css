@@ -5589,20 +5589,24 @@ img#storyImgPreviewImg,
     box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s, border-color 0.25s;
     text-decoration: none !important;
     display: block;
     color: inherit;
 }
 [data-theme="dark"] .feed-jackpot-card {
-    background: linear-gradient(145deg, rgba(30, 27, 24, 0.95) 0%, rgba(45, 34, 18, 0.9) 100%);
-    border-color: rgba(245, 158, 11, 0.4);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(145deg, #131c2e 0%, #0f1726 100%);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(245, 158, 11, 0.2);
 }
 .feed-jackpot-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 28px rgba(245, 158, 11, 0.28);
     border-color: #f59e0b;
+}
+[data-theme="dark"] .feed-jackpot-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.6);
 }
 
 .feed-jackpot-badge-row {
@@ -5631,7 +5635,7 @@ img#storyImgPreviewImg,
 .feed-jackpot-tag {
     font-size: 11px;
     color: #b45309;
-    font-weight: 600;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 3px;
@@ -5667,6 +5671,14 @@ img#storyImgPreviewImg,
     color: #92400e;
     font-size: 15px;
 }
+[data-theme="dark"] .feed-jackpot-avatar {
+    border-color: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+[data-theme="dark"] .feed-jackpot-avatar:not(img) {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
 .feed-jackpot-crown-mini {
     position: absolute;
     top: -7px;
@@ -5687,7 +5699,7 @@ img#storyImgPreviewImg,
     display: block;
 }
 [data-theme="dark"] .feed-jackpot-author-name {
-    color: #fde68a;
+    color: #f8fafc;
 }
 .feed-jackpot-author-sub {
     font-size: 11px;
@@ -5698,22 +5710,22 @@ img#storyImgPreviewImg,
     gap: 4px;
 }
 [data-theme="dark"] .feed-jackpot-author-sub {
-    color: #fde68a;
+    color: #fbbf24;
 }
 
 .feed-jackpot-book {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 8px;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 8px;
+    padding: 7px 9px;
+    background: rgba(255, 255, 255, 0.65);
+    border-radius: 10px;
     margin-bottom: 10px;
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 [data-theme="dark"] .feed-jackpot-book {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 .feed-jackpot-book-cover {
     width: 28px;
@@ -5736,7 +5748,7 @@ img#storyImgPreviewImg,
     display: block;
 }
 [data-theme="dark"] .feed-jackpot-book-title {
-    color: #fef3c7;
+    color: #f1f5f9;
 }
 .feed-jackpot-book-author {
     font-size: 11px;
@@ -5745,6 +5757,9 @@ img#storyImgPreviewImg,
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
+}
+[data-theme="dark"] .feed-jackpot-book-author {
+    color: #94a3b8;
 }
 
 .feed-jackpot-body {
@@ -5757,6 +5772,7 @@ img#storyImgPreviewImg,
 }
 [data-theme="dark"] .feed-jackpot-body {
     background: rgba(245, 158, 11, 0.08);
+    border-left-color: #f59e0b;
 }
 .feed-jackpot-body::before {
     content: "“";
@@ -5767,6 +5783,9 @@ img#storyImgPreviewImg,
     font-family: Georgia, serif;
     color: #d97706;
     line-height: 1;
+}
+[data-theme="dark"] .feed-jackpot-body::before {
+    color: #f59e0b;
 }
 .feed-jackpot-text {
     font-size: 12.5px;
@@ -5779,7 +5798,7 @@ img#storyImgPreviewImg,
     overflow: hidden;
 }
 [data-theme="dark"] .feed-jackpot-text {
-    color: #f3f4f6;
+    color: #e2e8f0;
 }
 
 .feed-jackpot-footer {
@@ -5790,6 +5809,10 @@ img#storyImgPreviewImg,
     color: var(--text-secondary, #6b7280);
     padding-top: 8px;
     border-top: 1px dashed rgba(245, 158, 11, 0.35);
+}
+[data-theme="dark"] .feed-jackpot-footer {
+    border-top-color: rgba(245, 158, 11, 0.2);
+    color: #94a3b8;
 }
 .feed-jackpot-stats {
     display: flex;
@@ -5841,9 +5864,9 @@ img#storyImgPreviewImg,
     margin-bottom: 34px;
 }
 [data-theme="dark"] .jackpot-hero-card {
-    background: linear-gradient(135deg, #181512 0%, #241c14 45%, #341a06 100%);
-    border-color: #d97706;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(245, 158, 11, 0.15);
+    background: linear-gradient(145deg, #151d30 0%, #101726 60%, #0d1320 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.45);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(245, 158, 11, 0.25);
 }
 
 .jackpot-hero-card::after {
@@ -5856,6 +5879,9 @@ img#storyImgPreviewImg,
     background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, transparent 70%);
     pointer-events: none;
     border-radius: 50%;
+}
+[data-theme="dark"] .jackpot-hero-card::after {
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
 }
 
 .jackpot-header {
@@ -5908,8 +5934,9 @@ img#storyImgPreviewImg,
     margin-bottom: 20px;
 }
 [data-theme="dark"] .jackpot-hero-author-box {
-    background: rgba(20, 18, 16, 0.7);
+    background: rgba(15, 23, 42, 0.75);
     border-color: rgba(245, 158, 11, 0.25);
+    backdrop-filter: blur(12px);
 }
 .jackpot-hero-author-left {
     display: flex;
@@ -5938,10 +5965,13 @@ img#storyImgPreviewImg,
     color: #92400e;
     background: #fde68a;
 }
-[data-theme="dark"] .jackpot-hero-avatar:not(img) {
-    background: rgba(245, 158, 11, 0.25);
-    color: #fbbf24;
+[data-theme="dark"] .jackpot-hero-avatar {
     border-color: #f59e0b;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+}
+[data-theme="dark"] .jackpot-hero-avatar:not(img) {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
 }
 .jackpot-hero-crown-large {
     position: absolute;
@@ -5960,7 +5990,7 @@ img#storyImgPreviewImg,
     gap: 8px;
 }
 [data-theme="dark"] .jackpot-hero-author-title {
-    color: #fef3c7;
+    color: #f8fafc;
 }
 .jackpot-hero-author-sub {
     font-size: 13px;
@@ -5987,8 +6017,8 @@ img#storyImgPreviewImg,
     margin-bottom: 20px;
 }
 [data-theme="dark"] .jackpot-hero-book-box {
-    background: rgba(20, 18, 16, 0.65);
-    border-color: rgba(245, 158, 11, 0.2);
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 .jackpot-hero-book-cover {
     width: 44px;
@@ -6008,7 +6038,7 @@ img#storyImgPreviewImg,
     color: #78350f;
 }
 [data-theme="dark"] .jackpot-hero-book-info h3 {
-    color: #fde68a;
+    color: #f1f5f9;
 }
 .jackpot-hero-book-info p {
     margin: 0;
@@ -6016,13 +6046,13 @@ img#storyImgPreviewImg,
     color: #92400e;
 }
 [data-theme="dark"] .jackpot-hero-book-info p {
-    color: #cbd5e1;
+    color: #94a3b8;
 }
 .jackpot-hero-book-info p strong {
     color: #78350f;
 }
 [data-theme="dark"] .jackpot-hero-book-info p strong {
-    color: #fef3c7;
+    color: #fbbf24;
 }
 
 .jackpot-hero-text-box {
@@ -6035,10 +6065,10 @@ img#storyImgPreviewImg,
     box-shadow: 0 4px 18px rgba(245, 158, 11, 0.08);
 }
 [data-theme="dark"] .jackpot-hero-text-box {
-    background: rgba(16, 15, 18, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13, 19, 33, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-left: 5px solid #f59e0b;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 .jackpot-hero-text-box::before {
     content: "“";
@@ -6049,6 +6079,9 @@ img#storyImgPreviewImg,
     font-family: Georgia, serif;
     color: #d97706;
     line-height: 1;
+}
+[data-theme="dark"] .jackpot-hero-text-box::before {
+    color: #f59e0b;
 }
 .jackpot-hero-text {
     font-size: 15.5px;
@@ -6069,9 +6102,9 @@ img#storyImgPreviewImg,
     box-shadow: 0 12px 40px rgba(217, 119, 6, 0.22);
 }
 [data-theme="dark"] .jackpot-hero-card.is-quote-card {
-    background: linear-gradient(135deg, #1a1612 0%, #261b11 40%, #3a1c06 100%);
-    border-color: #f59e0b;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(245, 158, 11, 0.2);
+    background: linear-gradient(145deg, #171f34 0%, #111828 60%, #0e1422 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.55);
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.55), 0 0 30px rgba(245, 158, 11, 0.12), inset 0 1px 0 rgba(245, 158, 11, 0.3);
 }
 
 .jackpot-hero-text-box.is-quote-text {
@@ -6080,9 +6113,10 @@ img#storyImgPreviewImg,
     padding: 26px 30px 26px 44px;
 }
 [data-theme="dark"] .jackpot-hero-text-box.is-quote-text {
-    background: rgba(20, 16, 12, 0.88);
+    background: rgba(15, 22, 38, 0.9);
     border: 1px solid rgba(245, 158, 11, 0.2);
     border-left: 6px solid #f59e0b;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .jackpot-hero-text-box.is-quote-text .jackpot-hero-text {
     font-family: Georgia, "Playfair Display", "Times New Roman", serif;
@@ -6100,8 +6134,8 @@ img#storyImgPreviewImg,
     border: 1px solid rgba(217, 119, 6, 0.25);
 }
 [data-theme="dark"] .jackpot-hero-book-box.is-quote-book {
-    background: rgba(20, 18, 16, 0.7);
-    border-color: rgba(245, 158, 11, 0.2);
+    background: rgba(15, 23, 42, 0.7);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .jackpot-hero-actions {
@@ -6137,13 +6171,14 @@ img#storyImgPreviewImg,
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
 }
 [data-theme="dark"] .jackpot-like-btn {
-    background: #1e1b18;
-    border-color: #d97706;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1.5px solid rgba(245, 158, 11, 0.5);
     color: #fbbf24;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 [data-theme="dark"] .jackpot-like-btn:hover {
-    background: #2a241f;
+    background: rgba(245, 158, 11, 0.15);
+    border-color: #f59e0b;
 }
 .jackpot-like-btn.is-liked {
     background: linear-gradient(135deg, #ef4444, #dc2626) !important;
@@ -6193,13 +6228,17 @@ img#storyImgPreviewImg,
     transition: background 0.2s, transform 0.2s;
 }
 [data-theme="dark"] .jackpot-original-link {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.14);
     color: #fde68a;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(245, 158, 11, 0.35);
 }
 .jackpot-original-link:hover {
     background: rgba(245, 158, 11, 0.28);
     transform: translateY(-1px);
+}
+[data-theme="dark"] .jackpot-original-link:hover {
+    background: rgba(245, 158, 11, 0.24);
+    border-color: #f59e0b;
 }
 
 /* Izohlar bo'limi */
