@@ -355,7 +355,25 @@ img { max-width: 100%; display: block; }
 }
 .nav-icon-btn:hover { background: var(--bg-subtle); color: var(--text); border-color: var(--border); text-decoration: none; }
 .nav-icon-btn:active { transform: scale(.95); }
-.nav-profile-link { display: inline-flex; border-radius: var(--radius-pill); }
+.nav-profile-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: transform .15s ease, opacity .15s ease;
+}
+.nav-profile-link:hover {
+    transform: scale(1.05);
+    text-decoration: none;
+}
+.nav-profile-link:active {
+    transform: scale(0.95);
+}
+.nav-profile-link.active .avatar {
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary);
+}
 
 .avatar {
     width: 38px; height: 38px; border-radius: var(--radius-pill);
@@ -3521,6 +3539,8 @@ body.modal-open { overflow: hidden; }
     .goal-book-title { font-size: 18.5px; }
     .page-title { font-size: 18.5px; margin-bottom: 14px; }
     .nav-links, .nav-actions .desktop-only { display: none; }
+    .nav-actions { gap: 6px; }
+    .nav-actions .avatar { width: 34px; height: 34px; font-size: 13.5px; }
     .burger { display: inline-flex; }
     .nav-links.open {
         display: flex; flex-direction: column; align-items: stretch; gap: 4px;

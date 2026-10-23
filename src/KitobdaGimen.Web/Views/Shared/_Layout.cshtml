@@ -288,6 +288,16 @@
                                 </button>
                             </form>
                         }
+                        <a href="/profile" class="nav-profile-link @(isProfilePage ? "active" : "")" title="Profil" aria-label="Profil">
+                            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                            {
+                                <img class="avatar" src="@me!.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="avatar">@initial</span>
+                            }
+                        </a>
                         <button class="nav-icon-btn burger" data-burger aria-label="Menyu">
                             <span class="material-symbols-outlined">menu</span>
                         </button>

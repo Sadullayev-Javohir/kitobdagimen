@@ -14,7 +14,6 @@ public class MorningQuoteJobTests : TestBase
         // Arrange
         using var db = CreateContext();
         var telegramBot = new FakeTelegramBotService();
-        var notifications = new SpyNotificationService();
         var logger = NullLogger<MorningQuoteJob>.Instance;
 
         var quote1 = new MorningQuote
@@ -38,7 +37,7 @@ public class MorningQuoteJobTests : TestBase
         db.MorningQuotes.AddRange(quote1, quote2);
         await db.SaveChangesAsync();
 
-        var job = new MorningQuoteJob(db, telegramBot, notifications, logger);
+        var job = new MorningQuoteJob(db, telegramBot, logger);
 
         // Act - 1-marta ishga tushganda (birinchi kun 05:30)
         await job.RunAsync(CancellationToken.None);
