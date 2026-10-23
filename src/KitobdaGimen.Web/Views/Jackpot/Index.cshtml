@@ -77,7 +77,7 @@
 
             <!-- Asosiy matn -->
             <div class="jackpot-hero-text-box @(!isPost ? "is-quote-text" : "")">
-                <p class="jackpot-hero-text">@Model.Content</p>
+                <p class="jackpot-hero-text">@KitobdaGimen.Application.Common.RichTextSanitizer.StripHtml(Model.Content)</p>
             </div>
 
             <!-- Amallar: Like va Asl havola -->
@@ -217,7 +217,7 @@
                             <span class="jackpot-history-card-author-name">@item.UserFullName 👑</span>
                         </div>
 
-                        <p class="jackpot-history-card-text">@item.Content</p>
+                        <p class="jackpot-history-card-text">@KitobdaGimen.Application.Common.RichTextSanitizer.StripHtml(item.Content)</p>
 
                         <div class="jackpot-history-card-footer">
                             <span>❤️ @item.LikeCount · 💬 @item.CommentCount</span>

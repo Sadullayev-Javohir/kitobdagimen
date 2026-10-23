@@ -328,7 +328,8 @@ public class DailyJackpotService : IDailyJackpotService
     {
         var isPost = j.Type == "post";
         var book = isPost ? j.Post?.Book : j.Quote?.Book;
-        var content = isPost ? (j.Post?.ReviewText ?? "") : (j.Quote?.Text ?? "");
+        var rawContent = isPost ? (j.Post?.ReviewText ?? "") : (j.Quote?.Text ?? "");
+        var content = RichTextSanitizer.StripHtml(rawContent);
         var imageUrl = isPost ? j.Post?.ImageUrl : j.Quote?.ImageUrl;
 
         var authorUsername = j.User.Username;

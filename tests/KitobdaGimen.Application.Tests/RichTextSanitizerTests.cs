@@ -107,4 +107,21 @@ public class RichTextSanitizerTests
         Assert.DoesNotContain("&lt;p", plain);
         Assert.Contains("Baho: ⭐⭐⭐⭐⭐ (5/5)\n\nMatn", plain);
     }
+
+    [Fact]
+    public void StripHtml_cleans_jackpot_review_text_with_html_tags_and_entities()
+    {
+        var raw = "<p>Oddiy maqsaddan boshlang. Cheklangan qobilyatingiz, aldashga moyilligingiz, noroziligingiz va ma&#39;suliyatdan qochishingiz bilan birdaniga og&#39;ir yukni ko&#39;taraolmaysiz. Masalan, shunday maqsad qo&#39;ying: kun oxirida hayotim tongdagidan ozgina yaxshiroq bo&#39;lsin. So&#39;ngra o&#39;zingizdan so&#39;rang: &quot;Bunga erishish uchun nima qilish qo&#39;limdan keladi, nima qilaman, evaziga qanday kichik mukofot bilan o&#39;zimni siylayman?&quot; Keyin tanlangan amalingizni bajaring, uni yomon bajarsangiz ham. So&#39;ng g&#39;olib sifatida o&#39;zingizni o&#39;sha la&#39;nati qavha bilan siylang. Biroz ahmoqona tuyulishi mumkin, lekin shunday davom etish kerak. Ertaga, indinga - har kuni shuni takrorlang. Shu taxlit har kuni marrangiz yuqorilaydi. Bu mo&#39;jiza. Bu omonatning murakkab foiziga o&#39;xshaydi. Uch yil shunday davom eting, hayotingiz butkul o&#39;zgaradi. Kattaroq oldidagi parda olinadi va barchasini ko&#39;ra boshlaysiz. Mo&#39;ljallanganlaringiz esa ko&#39;radiganlaringizni belgilaydi. Bu qaytarishga arziydi.</p>";
+        var clean = RichTextSanitizer.StripHtml(raw);
+
+        Assert.DoesNotContain("<p>", clean);
+        Assert.DoesNotContain("</p>", clean);
+        Assert.DoesNotContain("&#39;", clean);
+        Assert.DoesNotContain("&quot;", clean);
+        Assert.Contains("ma'suliyatdan", clean);
+        Assert.Contains("og'ir", clean);
+        Assert.Contains("\"Bunga erishish", clean);
+        Assert.Contains("o'zingizni", clean);
+        Assert.Contains("g'olib", clean);
+    }
 }

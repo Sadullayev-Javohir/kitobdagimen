@@ -33,11 +33,14 @@ public static class RichTextSanitizer
             return string.Empty;
         }
 
-        // Avval mavjud HTML-entity'larni dekodlaymiz — bu funksiyani IDEMPOTENT qiladi.
-        var text = WebUtility.HtmlDecode(input);
-        if (text.Contains("&lt;") || text.Contains("&gt;") || text.Contains("&amp;"))
+        // Avval mavjud HTML-entity'larni to'liq dekodlaymiz — bu funksiyani IDEMPOTENT qiladi.
+        var text = input;
+        var safety = 0;
+        while (text.Contains('&') && safety++ < 5)
         {
-            text = WebUtility.HtmlDecode(text);
+            var decoded = WebUtility.HtmlDecode(text);
+            if (decoded == text) break;
+            text = decoded;
         }
 
         // 1. Skript va style bloklarini butunlay o'chiramiz
@@ -95,10 +98,13 @@ public static class RichTextSanitizer
             return string.Empty;
         }
 
-        var text = WebUtility.HtmlDecode(html);
-        if (text.Contains("&lt;") || text.Contains("&gt;") || text.Contains("&amp;"))
+        var text = html;
+        var safety = 0;
+        while (text.Contains('&') && safety++ < 5)
         {
-            text = WebUtility.HtmlDecode(text);
+            var decoded = WebUtility.HtmlDecode(text);
+            if (decoded == text) break;
+            text = decoded;
         }
 
         text = Regex.Replace(text, @"<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>", "", RegexOptions.IgnoreCase);
@@ -112,7 +118,13 @@ public static class RichTextSanitizer
         text = Regex.Replace(text, @"<[^>]+>", "");
 
         // Entity'larni to'liq dekodlaymiz
-        text = WebUtility.HtmlDecode(text);
+        safety = 0;
+        while (text.Contains('&') && safety++ < 5)
+        {
+            var decoded = WebUtility.HtmlDecode(text);
+            if (decoded == text) break;
+            text = decoded;
+        }
 
         // Bo'shliqlarni tartibga keltiramiz
         text = Regex.Replace(text, @"[^\S\r\n]+", " ");
