@@ -3,8 +3,10 @@
 @using MediatR
 @inject ICurrentUserService CurrentUser
 @inject ISender Mediator
+@inject ITelegramBotService TelegramBotService
 @{
     var isAuth = CurrentUser.IsAuthenticated;
+    var telegramBotUsername = TelegramBotService.BotUsername;
     UserDto? me = null;
     if (isAuth)
     {
@@ -262,7 +264,7 @@
                             <div class="notif-panel" data-notif-panel hidden>
                                 <div class="notif-panel-head">
                                     <span>Bildirishnomalar</span>
-                                    <button type="button" class="notif-mark-all" data-notif-mark-all hidden>Barchasini o'qish</button>
+                                    <button type="button" class="notif-mark-all" data-notif-mark-all hidden>Barchasini tozalash</button>
                                 </div>
                                 <div class="notif-list" data-notif-list>
                                     <p class="notif-empty">Yangi bildirishnoma yo'q.</p>
@@ -315,13 +317,17 @@
                     </a>
 
                     <nav class="nav-links" data-nav-links>
+                        <a href="/Feed" class="@(mobilePath == "/" || mobilePath.StartsWith("/feed") ? "active" : "")" title="Tasma" aria-label="Tasma">
+                            <span class="material-symbols-outlined">dynamic_feed</span>
+                            <span class="nav-link-label">Tasma</span>
+                        </a>
                         <a href="/kitoblar" class="@(mobilePath.StartsWith("/kitoblar") ? "active" : "")" title="Kitoblar" aria-label="Kitoblar">
                             <span class="material-symbols-outlined">menu_book</span>
                             <span class="nav-link-label">Kitoblar</span>
                         </a>
-                        <a href="/quotes" class="@(mobilePath.StartsWith("/quotes") || mobilePath.StartsWith("/iqtibos") ? "active" : "")" title="Iqtiboslar" aria-label="Iqtiboslar">
-                            <span class="material-symbols-outlined">format_quote</span>
-                            <span class="nav-link-label">Iqtiboslar</span>
+                        <a href="/haqida" class="@(mobilePath.StartsWith("/haqida") || mobilePath.StartsWith("/landing") ? "active" : "")" title="Loyiha haqida" aria-label="Loyiha haqida">
+                            <span class="material-symbols-outlined">info</span>
+                            <span class="nav-link-label">Loyiha haqida</span>
                         </a>
                         <a href="/challenge" class="@(mobilePath.StartsWith("/challenge") ? "active" : "")" title="Challenge" aria-label="Challenge">
                             <span class="material-symbols-outlined">military_tech</span>
@@ -579,6 +585,10 @@
         })();
     </script>
     <partial name="_LikesModal" />
+    @if (!isAuth)
+    {
+        <partial name="_AuthPromptModal" />
+    }
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 

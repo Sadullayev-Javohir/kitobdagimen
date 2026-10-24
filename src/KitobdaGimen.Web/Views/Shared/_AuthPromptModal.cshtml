@@ -1,0 +1,61 @@
+@inject KitobdaGimen.Application.Common.Interfaces.ITelegramBotService TelegramBotService
+@{
+    var botUsername = TelegramBotService.BotUsername;
+}
+
+<!-- x.com uslubidagi doimiy pastki banner (Mehmon foydalanuvchilar uchun) -->
+<aside class="x-auth-banner" id="xAuthBanner" aria-label="Tizimga kirish taklifi">
+    <div class="x-auth-banner-inner">
+        <div class="x-auth-banner-text">
+            <strong class="x-auth-banner-title">KitobdagiMen'ga xush kelibsiz! 📚</strong>
+            <p class="x-auth-banner-desc">Kitobxonlar hamjamiyatiga qo'shiling — fikr bildiring, taqriz va iqtiboslarga layk bosing hamda sevimli mualliflaringizni kuzatib boring.</p>
+        </div>
+        <div class="x-auth-banner-actions">
+            <a href="/login" class="btn btn-outline btn-sm x-auth-btn-login">Kirish</a>
+            <a href="https://t.me/@(botUsername)?start=web" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm x-auth-btn-tg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                Ro'yxatdan o'tish
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- Universal Dinamik Kirish Modali (Jonli takliflar va amallar uchun) -->
+<div class="auth-modal" id="authPromptModal" hidden>
+    <div class="auth-modal-backdrop" data-auth-modal-close></div>
+    <div class="auth-modal-box card" role="dialog" aria-modal="true" aria-labelledby="authPromptTitle">
+        <button type="button" class="auth-modal-close" data-auth-modal-close aria-label="Yopish">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+
+        <div class="auth-modal-icon-badge">
+            <span class="material-symbols-outlined" id="authPromptIcon">menu_book</span>
+        </div>
+
+        <h3 class="auth-modal-title" id="authPromptTitle">KitobdagiMen'ga xush kelibsiz!</h3>
+        <p class="auth-modal-desc muted" id="authPromptDesc">Ushbu amalni bajarish uchun platformaga kiring yoki bepul ro'yxatdan o'ting.</p>
+
+        <div class="auth-modal-actions">
+            <a href="https://t.me/@(botUsername)?start=web" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-block auth-btn-tg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                <span>Telegram orqali 1-klikda kirish</span>
+            </a>
+
+            <a href="/login" class="btn btn-outline btn-block auth-btn-login">
+                <span class="material-symbols-outlined ic-sm">login</span>
+                <span>Kirish kodi bilan kirish</span>
+            </a>
+        </div>
+
+        <div class="auth-modal-footer">
+            <button type="button" class="btn btn-ghost btn-sm" data-auth-modal-close>
+                Hozircha faqat o'qish
+            </button>
+        </div>
+    </div>
+</div>
+

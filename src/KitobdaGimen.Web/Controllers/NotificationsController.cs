@@ -21,7 +21,7 @@ public class NotificationsController : AppController
 
     /// <summary>Marks notifications read (all unread, or just the posted ids).</summary>
     [HttpPost("read")]
-    public async Task<IActionResult> Read([FromBody] MarkReadRequest? body)
+    public async Task<IActionResult> Read([FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] MarkReadRequest? body = null)
     {
         await Mediator.Send(new MarkNotificationsReadCommand(body?.Ids));
         return NoContent();

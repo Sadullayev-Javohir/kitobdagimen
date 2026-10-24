@@ -15,39 +15,20 @@ public class HomeController : AppController
         _logger = logger;
     }
 
-    /// <summary>Landing page for anonymous users; authenticated users go straight to the feed.</summary>
-    public async Task<IActionResult> Index()
+    /// <summary>x.com kabi: har qanday tashrif buyuruvchi (mehmon yoki a'zo) to'g'ridan-to'g'ri tasmaga yo'naltiriladi.</summary>
+    public IActionResult Index()
     {
-        try
-        {
-            var isAuth = IsAuthenticatedUser;
-            _logger.LogInformation("Home/Index: isAuth={IsAuth}, userId={UserId}", isAuth, CurrentUserId);
-
-            if (isAuth)
-            {
-                return RedirectToAction("Index", "Feed");
-            }
-
-            await LoadLandingStatsAsync();
-            return View();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Home/Index failed");
-            throw;
-        }
+        return RedirectToAction("Index", "Feed");
     }
 
-    /// <summary>Renders the marketing landing page.</summary>
+    /// <summary>Marketing landing sahifasi alohida /haqida va /landing manzillarida saqlanadi.</summary>
+    [HttpGet("/haqida")]
+    [HttpGet("/landing")]
+    [HttpGet("/about")]
     public async Task<IActionResult> Landing()
     {
         try
         {
-            if (IsAuthenticatedUser)
-            {
-                return RedirectToAction("Index", "Feed");
-            }
-
             await LoadLandingStatsAsync();
             return View("Index");
         }

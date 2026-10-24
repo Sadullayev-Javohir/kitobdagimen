@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace KitobdaGimen.Web.Controllers;
 
-[Authorize]
 public class FeedController : AppController
 {
     private readonly IDailyJackpotService _jackpotService;
@@ -53,12 +52,15 @@ public class FeedController : AppController
         }
 
         ReadingGoalDto? activeGoal = null;
-        try
+        if (me != null)
         {
-            var goals = await Mediator.Send(new GetActiveReadingGoalsQuery());
-            activeGoal = goals?.FirstOrDefault();
+            try
+            {
+                var goals = await Mediator.Send(new GetActiveReadingGoalsQuery());
+                activeGoal = goals?.FirstOrDefault();
+            }
+            catch { }
         }
-        catch { }
 
         IReadOnlyList<ChallengeStandingDto> topReaders = Array.Empty<ChallengeStandingDto>();
         try

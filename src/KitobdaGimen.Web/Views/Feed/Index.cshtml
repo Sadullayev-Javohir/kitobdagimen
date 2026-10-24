@@ -16,91 +16,119 @@
     <div class="feed-layout">
         <!-- Chap panel / Left Sidebar: Yangilangan profil kartochkasi va Shaxsiy bo'limlar -->
         <aside class="feed-sidebar feed-sidebar-left">
-            <div class="feed-profile-card">
-                <div class="feed-profile-head">
-                    <a class="feed-profile-avatar-wrap" href="/profile">
-                        @if (!string.IsNullOrEmpty(me?.AvatarUrl))
-                        {
-                            <img class="feed-profile-avatar" src="@me.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
-                        }
-                        else
-                        {
-                            <span class="feed-profile-avatar">@meInitial</span>
-                        }
-                        <span class="feed-profile-status-dot" title="Faol kitobxon"></span>
-                    </a>
-                    <div class="feed-profile-identity">
-                        <a class="feed-profile-name" href="/profile">
-                            @(me?.FullName ?? "Kitobxon")
-                            @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(me?.Username))
+            @if (me != null)
+            {
+                <div class="feed-profile-card">
+                    <div class="feed-profile-head">
+                        <a class="feed-profile-avatar-wrap" href="/profile">
+                            @if (!string.IsNullOrEmpty(me?.AvatarUrl))
+                            {
+                                <img class="feed-profile-avatar" src="@me.AvatarUrl" alt="@me.FullName" referrerpolicy="no-referrer" />
+                            }
+                            else
+                            {
+                                <span class="feed-profile-avatar">@meInitial</span>
+                            }
+                            <span class="feed-profile-status-dot" title="Faol kitobxon"></span>
                         </a>
-                        @if (!string.IsNullOrEmpty(me?.Username))
-                        {
-                            <span class="feed-profile-handle">@@@me.Username</span>
-                        }
-                        else
-                        {
-                            <span class="feed-profile-handle">Kitobxon</span>
-                        }
+                        <div class="feed-profile-identity">
+                            <a class="feed-profile-name" href="/profile">
+                                @(me?.FullName ?? "Kitobxon")
+                                @Html.Raw(KitobdaGimen.Web.ViewHelpers.FounderBadge(me?.Username))
+                            </a>
+                            @if (!string.IsNullOrEmpty(me?.Username))
+                            {
+                                <span class="feed-profile-handle">@@@me.Username</span>
+                            }
+                            else
+                            {
+                                <span class="feed-profile-handle">Kitobxon</span>
+                            }
+                        </div>
+                        <a href="/profile/edit" class="feed-profile-edit-btn" title="Profilni tahrirlash" aria-label="Profilni tahrirlash">
+                            <span class="material-symbols-outlined">edit_square</span>
+                        </a>
                     </div>
-                    <a href="/profile/edit" class="feed-profile-edit-btn" title="Profilni tahrirlash" aria-label="Profilni tahrirlash">
-                        <span class="material-symbols-outlined">edit_square</span>
-                    </a>
-                </div>
 
-                @if (!string.IsNullOrWhiteSpace(Model.UserProfile?.Bio))
-                {
-                    <p class="feed-profile-bio">@Model.UserProfile.Bio</p>
-                }
+                    @if (!string.IsNullOrWhiteSpace(Model.UserProfile?.Bio))
+                    {
+                        <p class="feed-profile-bio">@Model.UserProfile.Bio</p>
+                    }
 
-                <div class="feed-profile-stats">
-                    <a href="/profile" class="feed-profile-stat">
-                        <span class="feed-profile-stat-val">@(Model.UserProfile?.PostCount ?? 0)</span>
-                        <span class="feed-profile-stat-lbl">Taqrizlar</span>
-                    </a>
-                    <a href="@(me != null ? $"/profile/{me.Id}/followers" : "/profile/followers")" class="feed-profile-stat">
-                        <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowerCount ?? 0)</span>
-                        <span class="feed-profile-stat-lbl">Kuzatuvchilar</span>
-                    </a>
-                    <a href="@(me != null ? $"/profile/{me.Id}/following" : "/profile/following")" class="feed-profile-stat">
-                        <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowingCount ?? 0)</span>
-                        <span class="feed-profile-stat-lbl">Kuzatilayotganlar</span>
-                    </a>
-                </div>
+                    <div class="feed-profile-stats">
+                        <a href="/profile" class="feed-profile-stat">
+                            <span class="feed-profile-stat-val">@(Model.UserProfile?.PostCount ?? 0)</span>
+                            <span class="feed-profile-stat-lbl">Taqrizlar</span>
+                        </a>
+                        <a href="@(me != null ? $"/profile/{me.Id}/followers" : "/profile/followers")" class="feed-profile-stat">
+                            <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowerCount ?? 0)</span>
+                            <span class="feed-profile-stat-lbl">Kuzatuvchilar</span>
+                        </a>
+                        <a href="@(me != null ? $"/profile/{me.Id}/following" : "/profile/following")" class="feed-profile-stat">
+                            <span class="feed-profile-stat-val">@(Model.UserProfile?.FollowingCount ?? 0)</span>
+                            <span class="feed-profile-stat-lbl">Kuzatilayotganlar</span>
+                        </a>
+                    </div>
 
-                @if (Model.ActiveGoal != null)
-                {
-                    var goalCover = !string.IsNullOrEmpty(Model.ActiveGoal.Book.CoverUrl)
-                        ? Model.ActiveGoal.Book.CoverUrl
-                        : "/img/default-book-cover.webp";
-                    <a href="/reading-books/@Model.ActiveGoal.Id" class="feed-profile-goal">
-                        <div class="feed-profile-goal-top">
-                            <span class="feed-profile-goal-badge">
-                                <span class="material-symbols-outlined">local_fire_department</span>
-                                Mutolaada
-                            </span>
-                            <span class="feed-profile-goal-pct">@(Model.ActiveGoal.ProgressPercent)%</span>
-                        </div>
-                        <div class="feed-profile-goal-book-row">
-                            <img class="feed-profile-goal-cover" src="@goalCover" alt="@Model.ActiveGoal.Book.Title" />
-                            <div class="feed-profile-goal-info">
-                                <span class="feed-profile-goal-title" title="@Model.ActiveGoal.Book.Title">@Model.ActiveGoal.Book.Title</span>
-                                <span class="feed-profile-goal-pages">@Model.ActiveGoal.CurrentPage / @Model.ActiveGoal.TotalPages bet · Bugun: <strong>@Model.ActiveGoal.PagesReadToday</strong></span>
+                    @if (Model.ActiveGoal != null)
+                    {
+                        var goalCover = !string.IsNullOrEmpty(Model.ActiveGoal.Book.CoverUrl)
+                            ? Model.ActiveGoal.Book.CoverUrl
+                            : "/img/default-book-cover.webp";
+                        <a href="/reading-books/@Model.ActiveGoal.Id" class="feed-profile-goal">
+                            <div class="feed-profile-goal-top">
+                                <span class="feed-profile-goal-badge">
+                                    <span class="material-symbols-outlined">local_fire_department</span>
+                                    Mutolaada
+                                </span>
+                                <span class="feed-profile-goal-pct">@(Model.ActiveGoal.ProgressPercent)%</span>
                             </div>
-                        </div>
-                        <div class="feed-profile-goal-track">
-                            <div class="feed-profile-goal-fill" style="width: @(Model.ActiveGoal.ProgressPercent)%"></div>
-                        </div>
-                    </a>
-                }
-                else
-                {
-                    <a href="/reading-books" class="feed-profile-goal-empty">
-                        <span class="material-symbols-outlined">add_circle</span>
-                        <span>Mutolaa uchun kitob tanlash</span>
-                    </a>
-                }
-            </div>
+                            <div class="feed-profile-goal-book-row">
+                                <img class="feed-profile-goal-cover" src="@goalCover" alt="@Model.ActiveGoal.Book.Title" />
+                                <div class="feed-profile-goal-info">
+                                    <span class="feed-profile-goal-title" title="@Model.ActiveGoal.Book.Title">@Model.ActiveGoal.Book.Title</span>
+                                    <span class="feed-profile-goal-pages">@Model.ActiveGoal.CurrentPage / @Model.ActiveGoal.TotalPages bet · Bugun: <strong>@Model.ActiveGoal.PagesReadToday</strong></span>
+                                </div>
+                            </div>
+                            <div class="feed-profile-goal-track">
+                                <div class="feed-profile-goal-fill" style="width: @(Model.ActiveGoal.ProgressPercent)%"></div>
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/reading-books" class="feed-profile-goal-empty">
+                            <span class="material-symbols-outlined">add_circle</span>
+                            <span>Mutolaa uchun kitob tanlash</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="feed-profile-card feed-guest-card" style="text-align:center; padding:22px 18px;">
+                    <div class="feed-guest-head" style="margin-bottom:14px;">
+                        <img src="/img/logo.png" alt="KitobdagiMen" style="width:48px;height:48px;border-radius:12px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);" />
+                        <h3 style="margin:0 0 4px;font-size:1.15rem;font-weight:700;">KitobdagiMen<span class="brand-dot">.uz</span></h3>
+                        <p class="muted" style="margin:0;font-size:0.85rem;line-height:1.4;">Kitobxonlar ijtimoiy platformasi</p>
+                    </div>
+                    <p style="font-size:0.86rem;line-height:1.45;color:var(--text-muted);margin:0 0 16px;">
+                        Kitoblar haqida fikr bildiring, iqtiboslarni saqlang va kitobsevarlar bilan do'stlashing!
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <a href="/login" class="btn btn-primary btn-block" style="display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;">
+                            <span class="material-symbols-outlined ic-sm">login</span>
+                            Tizimga kirish
+                        </a>
+                        <a href="https://t.me/KitobdagiMenBot?start=web" target="_blank" rel="noopener" class="btn btn-outline btn-block" style="display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                            </svg>
+                            Ro'yxatdan o'tish
+                        </a>
+                    </div>
+                </div>
+            }
 
             <!-- Kun iqtibosi yoki Kun taqrizi (Daily Jackpot kartasi) -->
             @if (Model.DailyJackpot != null)
@@ -581,7 +609,21 @@
         [typeModal, postModal, quoteModal].forEach(closeModal);
     }
 
-    trigger.addEventListener("click", () => openModal(typeModal));
+    trigger.addEventListener("click", () => {
+        if (document.body.dataset.authenticated !== "true") {
+            if (window.kitob && window.kitob.showAuthModal) {
+                window.kitob.showAuthModal({
+                    title: "O'z fikrlaringiz bilan ulashing ✍️",
+                    message: "Kitoblar haqida taqriz yozish yoki asarlardan iqtiboslar keltirish uchun tizimga kiring.",
+                    icon: "edit_note"
+                });
+            } else {
+                window.location.href = "/login";
+            }
+            return;
+        }
+        openModal(typeModal);
+    });
     typeModal.querySelectorAll("[data-type-choice-close]").forEach((el) => el.addEventListener("click", () => closeModal(typeModal)));
     postModal.querySelectorAll("[data-composer-close]").forEach((el) => el.addEventListener("click", () => closeModal(postModal)));
     quoteModal.querySelectorAll("[data-quote-composer-close]").forEach((el) => el.addEventListener("click", () => closeModal(quoteModal)));

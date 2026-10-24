@@ -6671,3 +6671,292 @@ img#storyImgPreviewImg,
         border-radius: 14px;
     }
 }
+
+/* ==========================================================================
+   x.com Uslubidagi Floating Auth Banner & Universal Kirish Modali
+   ========================================================================== */
+body[data-authenticated="false"] {
+    padding-bottom: 80px;
+}
+
+/* --- Floating Bottom Auth Banner --- */
+.x-auth-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 990;
+    background: var(--surface, #ffffff);
+    border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 12px 20px;
+    transition: transform 0.3s ease;
+}
+
+[data-theme="dark"] .x-auth-banner {
+    background: rgba(18, 24, 38, 0.96);
+    border-top-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.x-auth-banner-inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.x-auth-banner-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.x-auth-banner-title {
+    display: block;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text, #111827);
+    margin-bottom: 2px;
+}
+
+.x-auth-banner-desc {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--muted, #64748b);
+    line-height: 1.35;
+    white-space: normal;
+}
+
+.x-auth-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.x-auth-btn-login {
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 9999px;
+}
+
+.x-auth-btn-tg {
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #fff;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.x-auth-btn-tg:hover {
+    background: #0369a1;
+    border-color: #0369a1;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    body[data-authenticated="false"] {
+        padding-bottom: 124px;
+    }
+    .x-auth-banner {
+        padding: 10px 14px;
+    }
+    .x-auth-banner-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        text-align: center;
+    }
+    .x-auth-banner-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        font-size: 0.8rem;
+    }
+    .x-auth-banner-actions {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr;
+        gap: 8px;
+        width: 100%;
+    }
+    .x-auth-btn-login,
+    .x-auth-btn-tg {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* --- Universal Dinamik Kirish Modali --- */
+.auth-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.auth-modal[hidden] {
+    display: none !important;
+}
+
+.auth-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: authFadeIn 0.2s ease-out;
+}
+
+.auth-modal-box {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 440px;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+    border-radius: 20px;
+    padding: 32px 26px 22px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: authPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .auth-modal-box {
+    background: #182234;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+.auth-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted, #64748b);
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.auth-modal-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text, #111827);
+}
+
+[data-theme="dark"] .auth-modal-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.auth-modal-icon-badge {
+    width: 62px;
+    height: 62px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(59, 130, 246, 0.2));
+    color: #0284c7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 16px -4px rgba(2, 132, 199, 0.2);
+}
+
+.auth-modal-icon-badge span {
+    font-size: 34px;
+}
+
+.auth-modal-title {
+    font-size: 1.32rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--text, #111827);
+    line-height: 1.3;
+}
+
+.auth-modal-desc {
+    font-size: 0.92rem;
+    line-height: 1.48;
+    color: var(--muted, #64748b);
+    margin: 0 0 22px;
+}
+
+.auth-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.auth-modal-actions .auth-btn-tg {
+    padding: 12px 18px;
+    font-size: 0.96rem;
+    font-weight: 600;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+    transition: transform 0.15s, background 0.15s;
+}
+
+.auth-modal-actions .auth-btn-tg:hover {
+    background: #0369a1;
+    border-color: #0369a1;
+    transform: translateY(-1px);
+}
+
+.auth-modal-actions .auth-btn-login {
+    padding: 11px 18px;
+    font-size: 0.93rem;
+    font-weight: 600;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.auth-modal-footer {
+    margin-top: 6px;
+}
+
+.auth-modal-footer .btn-ghost {
+    color: var(--muted, #64748b);
+    font-size: 0.85rem;
+}
+
+@keyframes authFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes authPopIn {
+    from { opacity: 0; transform: scale(0.92) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}

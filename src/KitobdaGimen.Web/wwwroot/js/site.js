@@ -54,6 +54,18 @@
         const btn = e.target.closest("[data-like]");
         if (!btn) return;
         e.preventDefault();
+        if (document.body.dataset.authenticated !== "true") {
+            if (window.kitob && window.kitob.showAuthModal) {
+                window.kitob.showAuthModal({
+                    title: "Taqriz yoqdimi? ❤️",
+                    message: "Ushbu taqrizga layk bosish va o'z munosabatingizni bildirish uchun platformaga kiring.",
+                    icon: "favorite"
+                });
+            } else {
+                window.location.href = "/login";
+            }
+            return;
+        }
         const id = btn.getAttribute("data-like");
         try {
             const result = await apiPost(`/posts/${id}/like`);
@@ -72,6 +84,18 @@
         const btn = e.target.closest("[data-like-quote]");
         if (!btn) return;
         e.preventDefault();
+        if (document.body.dataset.authenticated !== "true") {
+            if (window.kitob && window.kitob.showAuthModal) {
+                window.kitob.showAuthModal({
+                    title: "Iqtibos ta'sir qildimi? ✨",
+                    message: "Ushbu iqtibosga layk bosish va uni saralanganlar safiga qo'shish uchun platformaga kiring.",
+                    icon: "format_quote"
+                });
+            } else {
+                window.location.href = "/login";
+            }
+            return;
+        }
         const id = btn.getAttribute("data-like-quote");
         try {
             const result = await apiPost(`/quotes/${id}/like`);
@@ -90,6 +114,18 @@
         const btn = e.target.closest("[data-follow]");
         if (!btn) return;
         e.preventDefault();
+        if (document.body.dataset.authenticated !== "true") {
+            if (window.kitob && window.kitob.showAuthModal) {
+                window.kitob.showAuthModal({
+                    title: "Kitobxonni kuzatib boring 👤",
+                    message: "Ushbu muallifning yangi taqrizlari va fikrlaridan doimiy xabardor bo'lish uchun platformaga kiring.",
+                    icon: "person_add"
+                });
+            } else {
+                window.location.href = "/login";
+            }
+            return;
+        }
         const id = btn.getAttribute("data-follow");
         const fromFeed = btn.getAttribute("data-follow-source") === "feed";
         try {
@@ -635,9 +671,9 @@ function initNotifications() {
         markAllBtn.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (unread <= 0) return;
-            apiPost("/notifications/read").catch(() => {});
-            items.forEach((n) => { n.isRead = true; });
+            if (unread <= 0 && items.length === 0) return;
+            apiPost("/notifications/read", { ids: null }).catch((err) => { console.error("Notif clear error:", err); });
+            items = [];
             setBadge(0);
             renderList();
         });
@@ -1873,4 +1909,107 @@ initNotifications();
 
     window.openLikesModal = openLikesModal;
     window.closeLikesModal = closeLikesModal;
+
+    // ===== Mehmonlar uchun universal Auth Modal va Jonli takliflar tizimi =====
+    (function initGuestModals() {
+        const isAuth = document.body.dataset.authenticated === "true";
+        const authModal = document.getElementById("authPromptModal");
+
+        function showAuthModal(opts) {
+            if (!authModal) {
+                window.location.href = "/login";
+                return;
+            }
+            opts = opts || {};
+            const iconEl = document.getElementById("authPromptIcon");
+            const titleEl = document.getElementById("authPromptTitle");
+            const descEl = document.getElementById("authPromptDesc");
+
+            if (iconEl && opts.icon) iconEl.textContent = opts.icon;
+            if (titleEl && opts.title) titleEl.textContent = opts.title;
+            if (descEl && opts.message) descEl.textContent = opts.message;
+
+            authModal.hidden = false;
+            document.body.classList.add("modal-open");
+        }
+
+        function closeAuthModal() {
+            if (!authModal) return;
+            authModal.hidden = true;
+            document.body.classList.remove("modal-open");
+            try {
+                // Keyingi 10 daqiqa avtomatik (timer/scroll) bezovta qilmaslik uchun
+                sessionStorage.setItem("kg_guest_prompt_dismissed", String(Date.now()));
+            } catch (_) {}
+        }
+
+        if (authModal) {
+            authModal.querySelectorAll("[data-auth-modal-close]").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    closeAuthModal();
+                });
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && !authModal.hidden) {
+                    closeAuthModal();
+                }
+            });
+        }
+
+        // Global export
+        window.kitob = window.kitob || {};
+        window.kitob.showAuthModal = showAuthModal;
+        window.kitob.closeAuthModal = closeAuthModal;
+
+        if (isAuth || !authModal) return;
+
+        // --- Jonli takliflar (x.com kabi mehmon uchun avtomatik modallar) ---
+        function canShowAutoPrompt() {
+            try {
+                const dismissed = sessionStorage.getItem("kg_guest_prompt_dismissed");
+                if (dismissed && Date.now() - parseInt(dismissed, 10) < 10 * 60 * 1000) {
+                    return false;
+                }
+                const shownCount = parseInt(sessionStorage.getItem("kg_auto_prompt_shown") || "0", 10);
+                return shownCount < 2; // Sessiyada ko'pi bilan 2 marta avtomatik chiqadi
+            } catch (_) {
+                return true;
+            }
+        }
+
+        function markAutoPromptShown() {
+            try {
+                const shownCount = parseInt(sessionStorage.getItem("kg_auto_prompt_shown") || "0", 10);
+                sessionStorage.setItem("kg_auto_prompt_shown", String(shownCount + 1));
+            } catch (_) {}
+        }
+
+        // 1) Scroll Trigger: foydalanuvchi ma'lumotlarni o'qib, pastga aylantirganda
+        let scrollTriggered = false;
+        window.addEventListener("scroll", () => {
+            if (scrollTriggered || !canShowAutoPrompt()) return;
+            if (window.scrollY > 750) {
+                scrollTriggered = true;
+                markAutoPromptShown();
+                showAuthModal({
+                    title: "Mutolaa maroqli ketyaptimi? 📖",
+                    message: "KitobdagiMen'da kitobxonlar o'z fikr va iqtiboslari bilan bo'lishmoqda. Sevimli kitoblaringizni saqlash va hamjamiyatga qo'shilish uchun dasturga kiring!",
+                    icon: "menu_book"
+                });
+            }
+        }, { passive: true });
+
+        // 2) Timer Trigger: foydalanuvchi sahifada 20 soniya davomida o'qib tursa
+        setTimeout(() => {
+            if (scrollTriggered || !canShowAutoPrompt() || !authModal.hidden) return;
+            markAutoPromptShown();
+            showAuthModal({
+                title: "Kitobxonlar davrasiga qo'shiling! ✨",
+                message: "KitobdagiMen platformasida o'qiyotgan kitoblaringizni belgilang, yillik o'qish maqsadlari qo'ying va do'stlar orttiring.",
+                icon: "local_library"
+            });
+        }, 20000);
+    })();
 })();
