@@ -2,28 +2,12 @@
 (function () {
     "use strict";
 
-    // ===== Sahifa yuklanish loaderi =====
-    // Barcha resurslar (rasm, shrift) yuklangach loaderni yashiramiz.
+    window.kitob = window.kitob || {};
+
+    // Sahifa yuklanish loaderi mavjud bo'lsa darhol olib tashlanadi
     (function () {
         var loader = document.getElementById("pageLoader");
-        if (!loader) return;
-        var hidden = false;
-        function hide() {
-            if (hidden) return;
-            hidden = true;
-            loader.classList.add("is-hidden");
-            // Animatsiya tugagach DOM'dan butunlay olib tashlaymiz
-            window.setTimeout(function () {
-                if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-            }, 450);
-        }
-        if (document.readyState === "complete") {
-            hide();
-        } else {
-            window.addEventListener("load", hide);
-            // Xavfsizlik chorasi: load hodisasi kechiksa ham loader 6 soniyada yo'qoladi
-            window.setTimeout(hide, 6000);
-        }
+        if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
     })();
 
     // Mobil burger menyu
@@ -1114,7 +1098,7 @@ async function uploadBookCover(file) {
     return data.url;
 }
 
-window.kitob = { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, createBookSuggestionItem, createBookSuggestionEmpty, renderAsaxiyBooks, uploadBookCover, compressImageForCover };
+window.kitob = Object.assign(window.kitob || {}, { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, createBookSuggestionItem, createBookSuggestionEmpty, renderAsaxiyBooks, uploadBookCover, compressImageForCover });
 
 // ===== Iqtibos ko'rishlari =====
 // Feed'da iqtibos kartasi ekranga chiqishi bilan (foydalanuvchi ichiga kirmasa ham) ko'rish

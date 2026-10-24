@@ -206,14 +206,6 @@
 <body data-authenticated="@(isAuth ? "true" : "false")" data-bottomnav="@(showBottomNav ? "true" : "false")" class="@(ViewData["BodyClass"] as string)">
     @Html.AntiForgeryToken()
 
-    @* Sahifa yuklanish loaderi *@
-    <div class="page-loader" id="pageLoader" role="status" aria-label="Yuklanmoqda">
-        <div class="page-loader-box">
-            <img class="page-loader-logo" src="~/img/logo.png" alt="" />
-            <span class="page-loader-ring"></span>
-        </div>
-    </div>
-
     @if (!hideChrome)
     {
         if (isAuth)
