@@ -1151,7 +1151,10 @@
                     },
                     body: fd
                 });
-                if (res.status === 401) { window.location.href = "/"; return; }
+                if (res.status === 401) {
+                    if (window.kitob && window.kitob.showAuthModal) window.kitob.showAuthModal();
+                    return;
+                }
                 if (!res.ok) {
                     let message = "Rasmni yuklab bo'lmadi.";
                     try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }

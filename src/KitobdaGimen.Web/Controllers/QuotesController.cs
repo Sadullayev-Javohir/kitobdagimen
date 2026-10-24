@@ -114,7 +114,9 @@ public class QuotesController : AppController
     /// <summary>
     /// Records that the current user saw this quote in the feed (fired when the card scrolls
     /// into view) and returns the new total. Idempotent — counts once per user per quote.
+    /// Viewable without logging in (RecordQuoteViewCommand ignores anonymous visitors).
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("{id:int}/view")]
     public async Task<IActionResult> RecordView(int id)
     {

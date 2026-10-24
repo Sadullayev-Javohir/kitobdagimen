@@ -244,7 +244,10 @@
                 credentials: "include",
                 body: fd
             });
-            if (res.status === 401) { window.location.href = "/"; return; }
+            if (res.status === 401) {
+                if (window.kitob && window.kitob.showAuthModal) window.kitob.showAuthModal();
+                return;
+            }
             if (!res.ok) {
                 let message = "Rasmni yuklab bo'lmadi.";
                 try { const d = await res.json(); message = d.message || message; } catch { /* ignore */ }
@@ -430,7 +433,13 @@ async function apiPost(url, body) {
         body: body ? JSON.stringify(body) : undefined
     });
     if (res.status === 401) {
-        window.location.href = "/";
+        if (window.kitob && window.kitob.showAuthModal) {
+            window.kitob.showAuthModal({
+                title: "Tizimga kiring 🔐",
+                message: "Ushbu amalni bajarish uchun platformaga kiring.",
+                icon: "lock"
+            });
+        }
         return null;
     }
     if (!res.ok) {
@@ -782,7 +791,11 @@ function infiniteScroll(opts) {
             headers: { "X-Requested-With": "XMLHttpRequest" },
             credentials: "include"
         });
-        if (res.status === 401) { window.location.href = "/"; return null; }
+        if (res.status === 401) {
+            done = true;
+            if (observer) observer.disconnect();
+            return null;
+        }
         if (!res.ok) throw new Error("network");
         const html = (await res.text()).trim();
         const tmp = document.createElement("div");
@@ -1073,7 +1086,13 @@ async function uploadBookCover(file) {
     });
 
     if (res.status === 401) {
-        window.location.href = "/";
+        if (window.kitob && window.kitob.showAuthModal) {
+            window.kitob.showAuthModal({
+                title: "Tizimga kiring 🔐",
+                message: "Ushbu amalni bajarish uchun platformaga kiring.",
+                icon: "lock"
+            });
+        }
         return null;
     }
 
@@ -1122,6 +1141,7 @@ window.kitob = Object.assign(window.kitob || {}, { apiPost, antiforgeryToken, sh
     }, { threshold: 0.5 });
 
     async function recordView(id) {
+        if (document.body.dataset.authenticated !== "true") return;
         try {
             const r = await apiPost(`/quotes/${id}/view`);
             if (r && typeof r.viewCount === "number") {
@@ -1452,6 +1472,7 @@ initNotifications();
         }
 
         async function recordView(s) {
+            if (document.body.dataset.authenticated !== "true") return;
             try {
                 const r = await apiPost(`/stories/${s.id}/view`);
                 if (r && typeof r.viewCount === "number") {
@@ -1648,7 +1669,10 @@ initNotifications();
                 
                 console.log("Upload response:", res.status, res.statusText);
                 
-                if (res.status === 401) { window.location.href = "/"; return; }
+                if (res.status === 401) {
+                    if (window.kitob && window.kitob.showAuthModal) window.kitob.showAuthModal();
+                    return;
+                }
                 if (!res.ok) {
                     let message = "Rasmni yuklab bo'lmadi.";
                     try { 
@@ -1914,15 +1938,13 @@ initNotifications();
             if (descEl && opts.message) descEl.textContent = opts.message;
 
             authModal.hidden = false;
-            document.body.classList.add("modal-open");
         }
 
         function closeAuthModal() {
             if (!authModal) return;
             authModal.hidden = true;
-            document.body.classList.remove("modal-open");
             try {
-                // Keyingi 10 daqiqa avtomatik (timer/scroll) bezovta qilmaslik uchun
+                // Sessiya davomida boshqa avtomatik bezovta qilmaslik
                 sessionStorage.setItem("kg_guest_prompt_dismissed", String(Date.now()));
             } catch (_) {}
         }
@@ -1953,11 +1975,9 @@ initNotifications();
         function canShowAutoPrompt() {
             try {
                 const dismissed = sessionStorage.getItem("kg_guest_prompt_dismissed");
-                if (dismissed && Date.now() - parseInt(dismissed, 10) < 10 * 60 * 1000) {
-                    return false;
-                }
+                if (dismissed) return false;
                 const shownCount = parseInt(sessionStorage.getItem("kg_auto_prompt_shown") || "0", 10);
-                return shownCount < 2; // Sessiyada ko'pi bilan 2 marta avtomatik chiqadi
+                return shownCount < 1; // Sessiyada ko'pi bilan 1 marta avtomatik chiqadi
             } catch (_) {
                 return true;
             }
@@ -1972,20 +1992,26 @@ initNotifications();
 
         // 1) Scroll Trigger: foydalanuvchi ma'lumotlarni o'qib, pastga aylantirganda
         let scrollTriggered = false;
+        let scrollTimer = null;
         window.addEventListener("scroll", () => {
             if (scrollTriggered || !canShowAutoPrompt()) return;
-            if (window.scrollY > 750) {
-                scrollTriggered = true;
-                markAutoPromptShown();
-                showAuthModal({
-                    title: "Mutolaa maroqli ketyaptimi? 📖",
-                    message: "KitobdagiMen'da kitobxonlar o'z fikr va iqtiboslari bilan bo'lishmoqda. Sevimli kitoblaringizni saqlash va hamjamiyatga qo'shilish uchun dasturga kiring!",
-                    icon: "menu_book"
-                });
-            }
+            if (scrollTimer) return;
+            scrollTimer = setTimeout(() => {
+                scrollTimer = null;
+                if (scrollTriggered || !canShowAutoPrompt()) return;
+                if (window.scrollY > 1200) {
+                    scrollTriggered = true;
+                    markAutoPromptShown();
+                    showAuthModal({
+                        title: "Mutolaa maroqli ketyaptimi? 📖",
+                        message: "KitobdagiMen'da kitobxonlar o'z fikr va iqtiboslari bilan bo'lishmoqda. Sevimli kitoblaringizni saqlash va hamjamiyatga qo'shilish uchun dasturga kiring!",
+                        icon: "menu_book"
+                    });
+                }
+            }, 250);
         }, { passive: true });
 
-        // 2) Timer Trigger: foydalanuvchi sahifada 20 soniya davomida o'qib tursa
+        // 2) Timer Trigger: foydalanuvchi sahifada 25 soniya davomida o'qib tursa
         setTimeout(() => {
             if (scrollTriggered || !canShowAutoPrompt() || !authModal.hidden) return;
             markAutoPromptShown();
@@ -1994,6 +2020,6 @@ initNotifications();
                 message: "KitobdagiMen platformasida o'qiyotgan kitoblaringizni belgilang, yillik o'qish maqsadlari qo'ying va do'stlar orttiring.",
                 icon: "local_library"
             });
-        }, 20000);
+        }, 25000);
     })();
 })();
