@@ -1256,11 +1256,11 @@ public class TelegramBotHostedService : BackgroundService
         var title = isPost ? "Kun taqrizi" : "Kun iqtibosi";
 
         var sb = new StringBuilder();
-        sb.AppendLine($"🎰 <b>{title} (Jackpot) va izohlar</b>");
+        sb.AppendLine($"💬 <b>{title} izohlari</b>");
         sb.AppendLine($"📚 <b>Kitob:</b> «{TelegramBotService.Escape(book?.Title ?? "")}»");
-        sb.AppendLine($"👑 <b>Muallif:</b> 🌟 {TelegramBotService.Escape(jackpot.User.FullName)}");
+        sb.AppendLine($"👤 <b>Kun qahramoni:</b> <b>{TelegramBotService.Escape(jackpot.User.FullName)}</b>");
         sb.AppendLine("━━━━━━━━━━━━━━━━━━━━");
-        sb.AppendLine($"<blockquote>{TelegramBotService.Escape(plain)}</blockquote>");
+        sb.AppendLine($"<blockquote>«{TelegramBotService.Escape(plain)}»</blockquote>");
         sb.AppendLine();
 
         var ordered = jackpot.Comments.OrderBy(c => c.CreatedAt).TakeLast(10).ToList();
@@ -1301,7 +1301,7 @@ public class TelegramBotHostedService : BackgroundService
 
         if (jackpot is null)
         {
-            await _bot.SendHtmlAsync(chatId, "🎰 <b>Bugungi jackpot hali aniqlanmoqda...</b>\n\nKuni bilan yozilgan taqriz va iqtiboslar orasidan random tanlanadi!", ct: ct);
+            await _bot.SendHtmlAsync(chatId, "<b>Bugungi tanlov hali aniqlanmoqda...</b>\n\nKun davomida yozilgan taqriz va iqtiboslar orasidan saralanadi.", ct: ct);
             return;
         }
 
@@ -1311,20 +1311,18 @@ public class TelegramBotHostedService : BackgroundService
         var plain = TelegramBotService.StripHtml(rawText);
         if (plain.Length > 500) plain = plain[..500] + "…";
 
-        var header = isPost ? "🎰 <b>BUGUNGI KUN TAQRIZI (JACKPOT)</b> 👑" : "🎰 <b>BUGUNGI KUN IQTIBOSI (JACKPOT)</b> 👑";
+        var header = isPost ? "<b>Bugungi kun taqrizi</b>" : "<b>Bugungi kun iqtibosi</b>";
         var authorSuffix = string.IsNullOrWhiteSpace(book?.Author) ? "" : $" — <i>{TelegramBotService.Escape(book.Author)}</i>";
 
         var sb = new StringBuilder();
         sb.AppendLine(header);
         sb.AppendLine();
-        sb.AppendLine($"«{TelegramBotService.Escape(plain)}»");
+        sb.AppendLine($"<blockquote>«{TelegramBotService.Escape(plain)}»</blockquote>");
         sb.AppendLine();
         sb.AppendLine($"📚 <b>Kitob:</b> «{TelegramBotService.Escape(book?.Title ?? "")}»{authorSuffix}");
-        sb.AppendLine($"👑 <b>Kun Qahramoni:</b> 🌟 <b>{TelegramBotService.Escape(jackpot.User.FullName)}</b> 👑");
+        sb.AppendLine($"👤 <b>Kun qahramoni:</b> <b>{TelegramBotService.Escape(jackpot.User.FullName)}</b>");
         sb.AppendLine();
         sb.AppendLine($"❤️ Yoqdi: <b>{jackpot.Likes.Count}</b> · 💬 Fikrlar: <b>{jackpot.Comments.Count}</b>");
-        sb.AppendLine();
-        sb.AppendLine("✨ <i>Ushbu kitobxon bugun platformamizda \"Kun Qahramoni\" premium maqomiga ega!</i>");
 
         var isLiked = viewer is not null && jackpot.Likes.Any(l => l.UserId == viewer.Id);
         var likeBtnText = isLiked ? $"❤️ Sizga yoqdi ({jackpot.Likes.Count})" : $"🤍 Yoqdi ({jackpot.Likes.Count})";
@@ -1340,7 +1338,7 @@ public class TelegramBotHostedService : BackgroundService
                 },
                 new object[]
                 {
-                    new { text = "👑 Saytda ochish (Jackpot Zali)", web_app = new { url = $"{_bot.WebAppUrl}/jackpot" } }
+                    new { text = "🌐 Saytda ochish", web_app = new { url = $"{_bot.WebAppUrl}/jackpot" } }
                 }
             }
         };

@@ -1168,28 +1168,26 @@ public class TelegramBotService : ITelegramBotService
 
             if (!string.IsNullOrWhiteSpace(cleanTgUsername))
             {
-                authorText = $"🌟 <b>{Escape(jackpot.User.FullName)}</b> (@{cleanTgUsername}) 👑";
+                authorText = $"<b>{Escape(jackpot.User.FullName)}</b> (@{cleanTgUsername})";
             }
             else if (TryExtractTelegramId(jackpot.User.GoogleId, out var tgId) && tgId > 0)
             {
-                authorText = $"🌟 <a href=\"tg://user?id={tgId}\">{Escape(jackpot.User.FullName)}</a> 👑";
+                authorText = $"<a href=\"tg://user?id={tgId}\"><b>{Escape(jackpot.User.FullName)}</b></a>";
             }
             else
             {
-                authorText = $"🌟 <b>{Escape(jackpot.User.FullName)}</b> 👑";
+                authorText = $"<b>{Escape(jackpot.User.FullName)}</b>";
             }
 
-            var headerTitle = isPost ? "🎰 <b>KUN TAQRIZI (JACKPOT)</b> 👑" : "🎰 <b>KUN IQTIBOSI (JACKPOT)</b> 👑";
+            var headerTitle = isPost ? "<b>Kun taqrizi</b>" : "<b>Kun iqtibosi</b>";
 
             var html = new StringBuilder();
             html.AppendLine(headerTitle);
             html.AppendLine();
-            html.AppendLine($"«{Escape(cleanText)}»");
+            html.AppendLine($"<blockquote>«{Escape(cleanText)}»</blockquote>");
             html.AppendLine();
             html.AppendLine($"📚 <b>Kitob:</b> «{Escape(bookTitle)}»{authorSuffix}");
-            html.AppendLine($"👑 <b>Kun Qahramoni:</b> {authorText}");
-            html.AppendLine();
-            html.AppendLine("✨ <i>Ushbu kitobxon bugun platformamizda \"Kun Qahramoni\" premium maqomiga ega bo'ldi!</i>");
+            html.AppendLine($"👤 <b>Kun qahramoni:</b> {authorText}");
 
             var likeCount = jackpot.Likes.Count;
             var likeBtnText = likeCount > 0 ? $"❤️ Yoqdi ({likeCount})" : "❤️ Yoqdi";
@@ -1205,10 +1203,21 @@ public class TelegramBotService : ITelegramBotService
                     },
                     new object[]
                     {
-                        new { text = "👑 Jackpot zaliga o'tish", url = $"{WebAppUrl}/jackpot" }
+                        new { text = "🌐 Saytda ko'rish", url = $"{WebAppUrl}/jackpot" }
                     }
                 }
             };
+
+            int? sentMsgId = null;
+            if (jackpot.TelegramChatId is long existingChatId && jackpot.TelegramMessageId is int existingMsgId && existingMsgId > 0)
+            {
+                var editRes = await EditHtmlAsync(existingChatId, existingMsgId, html.ToString(), markup, ct);
+                if (editRes?["ok"]?.GetValue<bool>() == true)
+                {
+                    _logger.LogInformation("Daily Jackpot #{JackpotId} mavjud Telegram xabari (#{MsgId}) yangilandi.", jackpotId, existingMsgId);
+                    return;
+                }
+            }
 
             var res = await SendHtmlAsync(
                 target.Value.ChatId,
@@ -1218,7 +1227,7 @@ public class TelegramBotService : ITelegramBotService
                 messageThreadId: target.Value.TopicId,
                 ct: ct);
 
-            var sentMsgId = res?["result"]?["message_id"]?.GetValue<int>();
+            sentMsgId = res?["result"]?["message_id"]?.GetValue<int>();
             if (sentMsgId.HasValue && sentMsgId.Value > 0)
             {
                 var realChatId = res?["result"]?["chat"]?["id"]?.GetValue<long>() ?? target.Value.ChatId;
@@ -1264,7 +1273,7 @@ public class TelegramBotService : ITelegramBotService
                     },
                     new object[]
                     {
-                        new { text = "👑 Jackpot zaliga o'tish", url = $"{WebAppUrl}/jackpot" }
+                        new { text = "🌐 Saytda ko'rish", url = $"{WebAppUrl}/jackpot" }
                     }
                 }
             };
@@ -1734,17 +1743,20 @@ public class TelegramBotService : ITelegramBotService
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
 
-        var sourceText = !string.IsNullOrWhiteSpace(source)
-            ? $"\n📚 <i>«{Escape(source)}» kitobidan</i>"
+        var trimmedText = text?.Trim() ?? string.Empty;
+        var quoteContent = trimmedText.StartsWith("«") || trimmedText.StartsWith("\"")
+            ? Escape(trimmedText)
+            : $"«{Escape(trimmedText)}»";
+
+        var sourcePart = !string.IsNullOrWhiteSpace(source)
+            ? $", <i>«{Escape(source.Trim())}»</i>"
             : string.Empty;
 
-        var html =
-            "🌅 <b>ERTA TONGGI MUTOLAA VA ILHOM</b>\n" +
-            "━━━━━━━━━━━━━━━━━━━━\n" +
-            $"<blockquote>«{Escape(text)}»</blockquote>\n\n" +
-            $"✍️ <b>{Escape(author)}</b>{sourceText}\n" +
-            "━━━━━━━━━━━━━━━━━━━━\n" +
-            "☀️ <i>Xayrli tong, aziz kitobxon! Yangi kun, yangi imkoniyat va yangi sahifalar muborak bo'lsin. Ko'rpani tark eting, aqlni uyg'oting — erta tonggi mutolaa barakasidan bahramand bo'ling! 📖✨</i>";
+        var attribution = !string.IsNullOrWhiteSpace(author)
+            ? $"\n\n— <b>{Escape(author.Trim())}</b>{sourcePart}"
+            : (!string.IsNullOrWhiteSpace(sourcePart) ? $"\n\n— {sourcePart.TrimStart(',', ' ')}" : string.Empty);
+
+        var html = $"<blockquote>{quoteContent}</blockquote>{attribution}";
 
         var markup = new
         {
@@ -1899,51 +1911,38 @@ public class TelegramBotService : ITelegramBotService
             .ToList();
 
         var totalAllPages = grouped.Sum(x => x.TotalPages);
-        var dateLabel = $"{date.Day}-{ChallengeCalendar.MonthName(date.Month)}, {date.Year}";
+        var monthName = ChallengeCalendar.MonthName(date.Month).ToLowerInvariant();
+        var dateLabel = $"{date.Day}-{monthName}";
 
         var sb = new StringBuilder();
-        sb.AppendLine("🌙 <b>«KITOBDAGIMEN» KUNLIK SARHISOBI</b>");
-        sb.AppendLine($"📅 <b>Sana:</b> {dateLabel}");
-        sb.AppendLine("━━━━━━━━━━━━━━━━━━━━");
+        sb.AppendLine($"📖 <b>Kunlik mutolaa</b> · {dateLabel}");
 
         if (grouped.Count == 0)
         {
             sb.AppendLine();
-            sb.AppendLine("<blockquote>📚 Bugun hali hech kim o'qilgan betlarni kiritmadi. Ertaga yangi kuch bilan mutolaani davom ettiramiz!</blockquote>");
+            sb.AppendLine("Bugun hali hech kim mutolaa kiritmadi.");
             return sb.ToString();
         }
 
-        var topReader = grouped[0];
-        var topHandle = await ResolveDisplayHandleAsync(db, topReader.UserId, topReader.PlatformUsername, ct);
-
-        sb.AppendLine($"<blockquote>👑 <b>BUGUNGI KUN QAHRAMONI:</b> {topHandle} — <b>{topReader.TotalPages} bet!</b>\n" +
-                      $"👥 <b>Faol kitobxonlar:</b> {grouped.Count} nafar\n" +
-                      $"📖 <b>Jami o'qilgan sahifalar:</b> {totalAllPages} bet</blockquote>");
         sb.AppendLine();
-        sb.AppendLine("🏆 <b>Bugun kim qancha kitob o'qidi:</b>");
-
         var rank = 0;
         foreach (var item in grouped)
         {
             rank++;
-            var medal = rank switch
-            {
-                1 => "🥇",
-                2 => "🥈",
-                3 => "🥉",
-                _ => $"<b>{rank}.</b>"
-            };
-
             var handle = await ResolveDisplayHandleAsync(db, item.UserId, item.PlatformUsername, ct);
+            var userLabel = !string.IsNullOrWhiteSpace(handle) && handle.StartsWith("@")
+                ? $"{Escape(item.FullName)} ({handle})"
+                : Escape(item.FullName);
+
             var booksText = item.Books.Count > 0
-                ? $" <i>(«{Escape(string.Join("», «", item.Books.Take(2)))}»)</i>"
+                ? $" · «{Escape(string.Join("», «", item.Books.Take(2)))}»"
                 : "";
 
-            sb.AppendLine($"{medal} {handle} ({Escape(item.FullName)}) — <b>{item.TotalPages} bet</b>{booksText}");
+            sb.AppendLine($"{rank}. {userLabel} — <b>{item.TotalPages} bet</b>{booksText}");
         }
 
         sb.AppendLine();
-        sb.AppendLine("🔥 <i>Barakalla! Har kungi kichik mutolaa katta g'alabalarga olib boradi!</i>");
+        sb.AppendLine($"Jami: <b>{totalAllPages} bet</b> · {grouped.Count} kitobxon");
         return sb.ToString();
     }
 
