@@ -31,6 +31,12 @@ public class KitobController : AppController
     [HttpGet("/kitoblar/cards")]
     public async Task<IActionResult> Cards(string? q, int page = 2)
     {
+        // To'g'ridan-to'g'ri brauzer orqali sahifa sifatida ochilsa, /kitoblar ga yo'naltiramiz
+        if (Request.Headers.XRequestedWith != "XMLHttpRequest")
+        {
+            return RedirectPermanent("/kitoblar");
+        }
+
         var books = await Mediator.Send(new GetBooksFeedQuery { Search = q, Page = page, PageSize = BookPageSize });
         return PartialView("_BookCards", books.Items);
     }

@@ -109,6 +109,12 @@ public class FeedController : AppController
     /// <summary>Returns the next page of post cards as an HTML fragment (infinite scroll).</summary>
     public async Task<IActionResult> Cards(string? q, int page = 2)
     {
+        // To'g'ridan-to'g'ri brauzer orqali sahifa sifatida ochilsa, /Feed ga yo'naltiramiz
+        if (Request.Headers.XRequestedWith != "XMLHttpRequest")
+        {
+            return RedirectPermanent("/Feed");
+        }
+
         var feed = await Mediator.Send(new GetFeedQuery { Search = q, Page = page, PageSize = FeedPageSize });
         ViewData["ShowAuthorActions"] = true;
         ViewData["TodayHeroUserId"] = await _jackpotService.GetTodayHeroUserIdAsync();

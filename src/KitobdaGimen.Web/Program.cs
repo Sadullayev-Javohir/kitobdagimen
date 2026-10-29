@@ -121,6 +121,25 @@ await DbInitializer.InitializeAsync(app.Services);
 // Application exception → JSON translation runs first so it wraps everything below.
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// Rescue listener: agar foydalanuvchi 400 xatolik sahifasini qayta yuklasa (F5),
+// yuborilgan matnni server logiga to'liq yozib oladi (antiforgery xato bersa ham).
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.Value?.Contains("/posts/create") == true && context.Request.Method == "POST")
+    {
+        try
+        {
+            context.Request.EnableBuffering();
+            using var reader = new StreamReader(context.Request.Body, System.Text.Encoding.UTF8, leaveOpen: true);
+            var body = await reader.ReadToEndAsync();
+            context.Request.Body.Position = 0;
+            Serilog.Log.Information("RESCUE_POST_BODY: {Body}", body);
+        }
+        catch { /* best effort */ }
+    }
+    await next();
+});
+
 // Reverse-proxy sarlavhalarini eng oldin qo'llaymiz (scheme/IP shundan keyin to'g'ri).
 app.UseForwardedHeaders();
 
