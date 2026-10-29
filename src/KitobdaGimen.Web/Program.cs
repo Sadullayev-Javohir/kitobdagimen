@@ -9,6 +9,7 @@ using KitobdaGimen.Web.Hubs;
 using KitobdaGimen.Web.Middleware;
 using KitobdaGimen.Web.RealTime;
 using KitobdaGimen.Web.Security;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Serilog;
@@ -29,9 +30,20 @@ builder.Services.AddControllersWithViews()
     });
 builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
 
-// Data Protection — "Yillik yakun" ulashish tokenlarini (foydalanuvchi id + yil)
-// himoyalash uchun. Standart holatda kalitlar avtomatik boshqariladi.
-builder.Services.AddDataProtection();
+// Data Protection — foydalanuvchi sessiyasi, antiforgery tokenlari va yillik yakun
+// tokenlarini himoyalash. Server/konteyner qayta ishga tushganda yoki deploy bo'lganda
+// kalitlar yo'qolib ketmasligi uchun doimiy papkaga (diskka) saqlanadi.
+var dataProtectionKeysFolder = builder.Configuration["DataProtection:KeysFolder"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "dataprotection-keys");
+try
+{
+    Directory.CreateDirectory(dataProtectionKeysFolder);
+}
+catch { /* ignore */ }
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysFolder))
+    .SetApplicationName("KitobdaGimen");
 
 // Reverse-proxy (nginx/Hetzner) ortida to'g'ri ishlash: HTTPS sxemasi va haqiqiy
 // mijoz IP'si X-Forwarded-* sarlavhalaridan olinadi. Busiz: cookie Secure flagi

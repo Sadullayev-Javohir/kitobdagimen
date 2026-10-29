@@ -53,6 +53,15 @@ public class QuotesController : AppController
     {
         var quote = await Mediator.Send(command);
         _ = _telegramBot.BroadcastQuoteToGroupAsync(quote.Id, CancellationToken.None);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+            Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            var profileSlug = !string.IsNullOrWhiteSpace(quote.Author.Username) ? quote.Author.Username : quote.Author.Id.ToString();
+            var quoteUrl = $"/iqtibos/{profileSlug}/{quote.Slug}";
+            return Json(new { success = true, url = quoteUrl, id = quote.Id, slug = quote.Slug });
+        }
+
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
             return Redirect(returnUrl);

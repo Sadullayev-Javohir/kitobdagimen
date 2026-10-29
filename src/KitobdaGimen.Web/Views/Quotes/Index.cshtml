@@ -171,6 +171,7 @@
     function openModal() {
         quoteModal.hidden = false;
         document.body.classList.add("modal-open");
+        restoreQuoteDraft();
         setTimeout(() => document.getElementById("quoteBookSearch")?.focus(), 50);
     }
     function closeModal() {
@@ -184,6 +185,7 @@
         if (e.key === "Escape" && !quoteModal.hidden) closeModal();
     });
 
+    const form = document.getElementById("quoteComposerForm");
     const search = document.getElementById("quoteBookSearch");
     const suggestions = document.getElementById("quoteBookSuggestions");
     const bookId = document.getElementById("quoteBookId");
@@ -195,6 +197,43 @@
     const quoteSubmit = document.getElementById("quoteSubmit");
     const hint = document.getElementById("quoteComposerHint");
     let timer;
+
+    function saveQuoteDraft() {
+        try {
+            const text = (quoteText.value || "").trim();
+            const bId = bookId.value;
+            const bLabel = selectedBookLabel.textContent || "";
+            if (text || bId) {
+                localStorage.setItem("kitob_draft_quote", JSON.stringify({
+                    bookId: bId,
+                    bookLabel: bLabel,
+                    text: quoteText.value || ""
+                }));
+            } else {
+                localStorage.removeItem("kitob_draft_quote");
+            }
+        } catch (_) {}
+    }
+
+    function restoreQuoteDraft() {
+        try {
+            const raw = localStorage.getItem("kitob_draft_quote");
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            if (!draft) return;
+            if (draft.bookId && !bookId.value) {
+                pickBook({
+                    id: draft.bookId,
+                    title: (draft.bookLabel || "").split(" — ")[0] || draft.bookLabel || "",
+                    author: (draft.bookLabel || "").split(" — ")[1] || ""
+                });
+            }
+            if (draft.text) {
+                quoteText.value = draft.text;
+            }
+            refreshSubmitState();
+        } catch (_) {}
+    }
 
     function refreshSubmitState() {
         const hasBook = !!bookId.value;
@@ -215,6 +254,7 @@
         suggestions.innerHTML = "";
         search.value = "";
         refreshSubmitState();
+        saveQuoteDraft();
         quoteText.focus();
     }
 
@@ -223,9 +263,13 @@
         selectedBook.hidden = true;
         bookPicker.hidden = false;
         refreshSubmitState();
+        saveQuoteDraft();
     });
 
-    quoteText.addEventListener("input", refreshSubmitState);
+    quoteText.addEventListener("input", () => {
+        refreshSubmitState();
+        saveQuoteDraft();
+    });
 
     search.addEventListener("input", () => {
         clearTimeout(timer);
@@ -360,6 +404,96 @@
         qImgPreview.hidden = true;
         qImgPreviewImg.src = "";
     });
+
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!bookId.value) {
+                alert("Avval kitobni tanlang yoki qo'shing.");
+                return;
+            }
+            const len = (quoteText.value || "").trim().length;
+            if (len < 3 || len > 400) {
+                alert("Iqtibos matni 3–400 ta belgidan iborat bo'lishi kerak.");
+                return;
+            }
+
+            quoteSubmit.disabled = true;
+            const origBtnText = quoteSubmit.textContent;
+            quoteSubmit.textContent = "Saqlanmoqda...";
+
+            try {
+                saveQuoteDraft();
+                const formData = new FormData(form);
+                let res = await fetch("/quotes/create", {
+                    method: "POST",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Accept": "application/json"
+                    },
+                    body: formData
+                });
+
+                // Antiforgery token muddati tugagan bo'lsa (400), fonda yangilab qayta urinib ko'ramiz
+                if (res.status === 400 && window.kitob && window.kitob.refreshAntiforgeryToken) {
+                    const freshToken = await window.kitob.refreshAntiforgeryToken();
+                    if (freshToken) {
+                        formData.set("__RequestVerificationToken", freshToken);
+                        const currentTokenInput = form.querySelector("input[name='__RequestVerificationToken']");
+                        if (currentTokenInput) currentTokenInput.value = freshToken;
+
+                        res = await fetch("/quotes/create", {
+                            method: "POST",
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest",
+                                "Accept": "application/json"
+                            },
+                            body: formData
+                        });
+                    }
+                }
+
+                if (res.ok) {
+                    try { localStorage.removeItem("kitob_draft_quote"); } catch (_) {}
+                    const data = await res.json();
+                    if (data && data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        window.location.reload();
+                    }
+                    return;
+                }
+
+                if (res.status === 401) {
+                    alert("Sessiyangiz tugagan. Yozgan iqtibosingiz saqlab qolindi! Tizimga kiring va uni joylang.");
+                    if (window.kitob && window.kitob.showAuthModal) {
+                        window.kitob.showAuthModal({
+                            title: "Tizimga kiring 🔐",
+                            message: "Yozgan iqtibosingiz saqlandi. Tizimga kiring va uni joylang.",
+                            icon: "lock"
+                        });
+                    }
+                    return;
+                }
+
+                let msg = "Iqtibosni saqlashda xatolik yuz berdi.";
+                try {
+                    const d = await res.json();
+                    if (d && d.message) msg = d.message;
+                } catch (_) {}
+
+                alert(msg + " (Yozgan matningiz yo'qolmadi, yana bir bor urinib ko'ring)");
+            } catch (err) {
+                alert("Tarmoq xatosi: " + (err.message || "Internet aloqasini tekshiring") + ". Yozgan matningiz saqlab qolindi!");
+            } finally {
+                quoteSubmit.disabled = false;
+                quoteSubmit.textContent = origBtnText;
+                refreshSubmitState();
+            }
+        });
+    }
+
+    restoreQuoteDraft();
 })();
 
 // Quotes sahifasi: saralash tablari, qidiruv va dinamik yangilanish

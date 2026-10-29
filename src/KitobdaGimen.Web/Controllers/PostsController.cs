@@ -99,7 +99,15 @@ public class PostsController : AppController
     {
         var post = await Mediator.Send(command);
         _ = _telegramBot.BroadcastPostToGroupAsync(post.Id, CancellationToken.None);
-        return Redirect(ViewHelpers.PostUrl(post.Author.Username, post.Author.Id, post.Slug));
+        var postUrl = ViewHelpers.PostUrl(post.Author.Username, post.Author.Id, post.Slug);
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+            Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new { success = true, url = postUrl, id = post.Id, slug = post.Slug });
+        }
+
+        return Redirect(postUrl);
     }
 
     /// <summary>Edits a post's review text/image and returns the updated post (JSON).</summary>

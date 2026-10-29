@@ -844,6 +844,50 @@
 
     postImageClear.addEventListener("click", resetPostImage);
 
+    function saveDraft() {
+        try {
+            const text = (reviewText.value || "").trim();
+            const bId = bookIdInput.value;
+            const bLabel = selectedLabel.textContent || "";
+            const coverEl = document.getElementById("selectedBookCover");
+            const bCover = coverEl ? coverEl.src : "";
+            if (text || bId) {
+                localStorage.setItem("kitob_draft_post", JSON.stringify({
+                    bookId: bId,
+                    bookLabel: bLabel,
+                    bookCover: bCover,
+                    reviewText: reviewText.value || ""
+                }));
+            } else {
+                localStorage.removeItem("kitob_draft_post");
+            }
+        } catch (_) {}
+    }
+
+    function restoreDraft() {
+        try {
+            const raw = localStorage.getItem("kitob_draft_post");
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            if (!draft) return;
+            if (draft.bookId && !bookIdInput.value) {
+                pickBook({
+                    id: draft.bookId,
+                    title: (draft.bookLabel || "").split(" — ")[0] || draft.bookLabel || "",
+                    author: (draft.bookLabel || "").split(" — ")[1] || "",
+                    coverUrl: draft.bookCover || "/img/default-book-cover.webp"
+                });
+            }
+            if (draft.reviewText) {
+                if (reviewEditor && reviewEditor.richEditor) {
+                    reviewEditor.richEditor.setHtml(draft.reviewText);
+                }
+                reviewText.value = draft.reviewText;
+            }
+            refreshState();
+        } catch (_) {}
+    }
+
     function pickBook(book) {
         bookIdInput.value = book.id;
         selectedLabel.textContent = `${book.title} — ${book.author}`;
@@ -855,6 +899,7 @@
         suggestions.innerHTML = "";
         search.value = "";
         refreshState();
+        saveDraft();
     }
 
     function clearBook() {
@@ -862,10 +907,16 @@
         selectedBook.hidden = true;
         bookPicker.hidden = false;
         refreshState();
+        saveDraft();
     }
 
     document.getElementById("clearBook").addEventListener("click", clearBook);
-    if (reviewEditor) reviewEditor.addEventListener("rich:input", refreshState);
+    if (reviewEditor) {
+        reviewEditor.addEventListener("rich:input", () => {
+            refreshState();
+            saveDraft();
+        });
+    }
 
     // --- Kitob qidirish ---
     search.addEventListener("input", () => {
@@ -936,26 +987,105 @@
         finally { nbSave.disabled = false; }
     });
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
         if (reviewEditor && reviewEditor.richEditor) reviewEditor.richEditor.sync();
         if (!bookIdInput.value) {
-            e.preventDefault();
             alert("Avval kitobni tanlang yoki qo'shing.");
-        } else if (!(reviewText.value || "").trim()) {
-            e.preventDefault();
+            return;
+        }
+        if (!(reviewText.value || "").trim()) {
             alert("Kitob haqida fikringizni yozing.");
-        } else if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooShort) {
-            e.preventDefault();
+            return;
+        }
+        if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooShort) {
             alert("Fikr kamida 3 belgidan iborat bo'lishi kerak.");
-        } else if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooLong) {
-            e.preventDefault();
+            return;
+        }
+        if (reviewEditor && reviewEditor.richEditor && reviewEditor.richEditor.check().tooLong) {
             alert("Fikr 5000 belgidan oshmasligi kerak.");
-        } else if (imageUploading) {
-            e.preventDefault();
+            return;
+        }
+        if (imageUploading) {
             alert("Rasm hali yuklanmoqda, biroz kuting.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const origBtnText = submitBtn.textContent;
+        submitBtn.textContent = "Yuborilmoqda...";
+
+        try {
+            saveDraft();
+            const formData = new FormData(form);
+            let res = await fetch("/posts/create", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json"
+                },
+                body: formData
+            });
+
+            // Antiforgery token muddati tugagan bo'lsa (400), fonda yangilab qayta urinib ko'ramiz
+            if (res.status === 400 && window.kitob && window.kitob.refreshAntiforgeryToken) {
+                const freshToken = await window.kitob.refreshAntiforgeryToken();
+                if (freshToken) {
+                    formData.set("__RequestVerificationToken", freshToken);
+                    const currentTokenInput = form.querySelector("input[name='__RequestVerificationToken']");
+                    if (currentTokenInput) currentTokenInput.value = freshToken;
+
+                    res = await fetch("/posts/create", {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Accept": "application/json"
+                        },
+                        body: formData
+                    });
+                }
+            }
+
+            if (res.ok) {
+                try { localStorage.removeItem("kitob_draft_post"); } catch (_) {}
+                const data = await res.json();
+                if (data && data.url) {
+                    window.location.href = data.url;
+                } else {
+                    window.location.reload();
+                }
+                return;
+            }
+
+            if (res.status === 401) {
+                alert("Sessiyangiz tugagan. Yozgan fikringiz saqlab qolindi! Tizimga kiring va uni joylang.");
+                if (window.kitob && window.kitob.showAuthModal) {
+                    window.kitob.showAuthModal({
+                        title: "Tizimga kiring 🔐",
+                        message: "Yozgan fikringiz saqlandi. Tizimga kiring va uni joylang.",
+                        icon: "lock"
+                    });
+                }
+                return;
+            }
+
+            let msg = "Fikrni joylashda xatolik yuz berdi.";
+            try {
+                const d = await res.json();
+                if (d && d.message) msg = d.message;
+            } catch (_) {}
+
+            alert(msg + " (Yozgan matningiz yo'qolmadi, yana bir bor urinib ko'ring)");
+        } catch (err) {
+            alert("Tarmoq xatosi: " + (err.message || "Internet aloqasini tekshiring") + ". Yozgan matningiz saqlab qolindi!");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origBtnText;
+            refreshState();
         }
     });
 
+    restoreDraft();
     refreshState();
 })();
 
@@ -1013,6 +1143,44 @@
         return await kitob.uploadBookCover(file);
     }
 
+    function saveQuoteDraft() {
+        try {
+            const text = (quoteText.value || "").trim();
+            const bId = bookIdInput.value;
+            const bLabel = selectedLabel.textContent || "";
+            if (text || bId) {
+                localStorage.setItem("kitob_draft_quote", JSON.stringify({
+                    bookId: bId,
+                    bookLabel: bLabel,
+                    text: quoteText.value || ""
+                }));
+            } else {
+                localStorage.removeItem("kitob_draft_quote");
+            }
+        } catch (_) {}
+    }
+
+    function restoreQuoteDraft() {
+        try {
+            const raw = localStorage.getItem("kitob_draft_quote");
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            if (!draft) return;
+            if (draft.bookId && !bookIdInput.value) {
+                pickBook({
+                    id: draft.bookId,
+                    title: (draft.bookLabel || "").split(" — ")[0] || draft.bookLabel || "",
+                    author: (draft.bookLabel || "").split(" — ")[1] || "",
+                    coverUrl: "/img/default-book-cover.webp"
+                });
+            }
+            if (draft.text) {
+                quoteText.value = draft.text;
+            }
+            refreshState();
+        } catch (_) {}
+    }
+
     function refreshState() {
         const hasBook = !!bookIdInput.value;
         const hasText = (quoteText.value || "").trim().length > 0;
@@ -1033,6 +1201,7 @@
         suggestions.innerHTML = "";
         search.value = "";
         refreshState();
+        saveQuoteDraft();
     }
 
     function clearBook() {
@@ -1040,10 +1209,14 @@
         selectedBook.hidden = true;
         bookPicker.hidden = false;
         refreshState();
+        saveQuoteDraft();
     }
 
     document.getElementById("quoteClearBook").addEventListener("click", clearBook);
-    quoteText.addEventListener("input", refreshState);
+    quoteText.addEventListener("input", () => {
+        refreshState();
+        saveQuoteDraft();
+    });
 
     // --- Kitob qidirish ---
     search.addEventListener("input", () => {
@@ -1180,19 +1353,96 @@
         quoteImageClear.addEventListener("click", resetQuoteImage);
     }
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
         if (!bookIdInput.value) {
-            e.preventDefault();
             alert("Avval kitobni tanlang yoki qo'shing.");
-        } else if (!(quoteText.value || "").trim()) {
-            e.preventDefault();
+            return;
+        }
+        if (!(quoteText.value || "").trim()) {
             alert("Iqtibos matnini yozing.");
-        } else if (quoteImageUploading) {
-            e.preventDefault();
+            return;
+        }
+        if (quoteImageUploading) {
             alert("Rasm hali yuklanmoqda, biroz kuting.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        const origBtnText = submitBtn.textContent;
+        submitBtn.textContent = "Saqlanmoqda...";
+
+        try {
+            saveQuoteDraft();
+            const formData = new FormData(form);
+            let res = await fetch("/quotes/create", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/json"
+                },
+                body: formData
+            });
+
+            // Antiforgery token muddati tugagan bo'lsa (400), fonda yangilab qayta urinib ko'ramiz
+            if (res.status === 400 && window.kitob && window.kitob.refreshAntiforgeryToken) {
+                const freshToken = await window.kitob.refreshAntiforgeryToken();
+                if (freshToken) {
+                    formData.set("__RequestVerificationToken", freshToken);
+                    const currentTokenInput = form.querySelector("input[name='__RequestVerificationToken']");
+                    if (currentTokenInput) currentTokenInput.value = freshToken;
+
+                    res = await fetch("/quotes/create", {
+                        method: "POST",
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest",
+                            "Accept": "application/json"
+                        },
+                        body: formData
+                    });
+                }
+            }
+
+            if (res.ok) {
+                try { localStorage.removeItem("kitob_draft_quote"); } catch (_) {}
+                const data = await res.json();
+                if (data && data.url) {
+                    window.location.href = data.url;
+                } else {
+                    window.location.reload();
+                }
+                return;
+            }
+
+            if (res.status === 401) {
+                alert("Sessiyangiz tugagan. Yozgan iqtibosingiz saqlab qolindi! Tizimga kiring va uni joylang.");
+                if (window.kitob && window.kitob.showAuthModal) {
+                    window.kitob.showAuthModal({
+                        title: "Tizimga kiring 🔐",
+                        message: "Yozgan iqtibosingiz saqlandi. Tizimga kiring va uni joylang.",
+                        icon: "lock"
+                    });
+                }
+                return;
+            }
+
+            let msg = "Iqtibosni saqlashda xatolik yuz berdi.";
+            try {
+                const d = await res.json();
+                if (d && d.message) msg = d.message;
+            } catch (_) {}
+
+            alert(msg + " (Yozgan matningiz yo'qolmadi, yana bir bor urinib ko'ring)");
+        } catch (err) {
+            alert("Tarmoq xatosi: " + (err.message || "Internet aloqasini tekshiring") + ". Yozgan matningiz saqlab qolindi!");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = origBtnText;
+            refreshState();
         }
     });
 
+    restoreQuoteDraft();
     refreshState();
 })();
 </script>

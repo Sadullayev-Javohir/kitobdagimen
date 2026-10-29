@@ -403,6 +403,30 @@ function antiforgeryToken() {
     return el ? el.value : "";
 }
 
+// Token eskirgan bo'lsa (masalan uzoq vaqt yozganda yoki server qayta yoqilganda), fonda yangilaydi
+async function refreshAntiforgeryToken() {
+    try {
+        const res = await fetch("/Feed", {
+            method: "GET",
+            cache: "no-store",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "include"
+        });
+        if (res.ok) {
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const fresh = doc.querySelector('input[name="__RequestVerificationToken"]');
+            if (fresh && fresh.value) {
+                document.querySelectorAll('input[name="__RequestVerificationToken"]').forEach(el => {
+                    el.value = fresh.value;
+                });
+                return fresh.value;
+            }
+        }
+    } catch (_) {}
+    return antiforgeryToken();
+}
+
 // Soddalashtirilgan AJAX GET yordamchisi (JSON qaytaradi)
 async function apiGet(url) {
     const res = await fetch(url, {
@@ -421,17 +445,35 @@ async function apiGet(url) {
 }
 
 // Soddalashtirilgan AJAX POST yordamchisi (JSON qaytaradi)
-async function apiPost(url, body) {
-    const res = await fetch(url, {
+async function apiPost(url, body, retryOn400 = true) {
+    let currentToken = antiforgeryToken();
+    let res = await fetch(url, {
         method: "POST",
         headers: {
             "X-Requested-With": "XMLHttpRequest",
-            "RequestVerificationToken": antiforgeryToken(),
+            "RequestVerificationToken": currentToken,
             ...(body ? { "Content-Type": "application/json" } : {})
         },
         credentials: "include",
         body: body ? JSON.stringify(body) : undefined
     });
+
+    if (res.status === 400 && retryOn400) {
+        const freshToken = await refreshAntiforgeryToken();
+        if (freshToken && freshToken !== currentToken) {
+            res = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "RequestVerificationToken": freshToken,
+                    ...(body ? { "Content-Type": "application/json" } : {})
+                },
+                credentials: "include",
+                body: body ? JSON.stringify(body) : undefined
+            });
+        }
+    }
+
     if (res.status === 401) {
         if (window.kitob && window.kitob.showAuthModal) {
             window.kitob.showAuthModal({
@@ -1117,7 +1159,7 @@ async function uploadBookCover(file) {
     return data.url;
 }
 
-window.kitob = Object.assign(window.kitob || {}, { apiPost, antiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, createBookSuggestionItem, createBookSuggestionEmpty, renderAsaxiyBooks, uploadBookCover, compressImageForCover });
+window.kitob = Object.assign(window.kitob || {}, { apiPost, antiforgeryToken, refreshAntiforgeryToken, showToast, infiniteScroll, FOUNDER_USERNAME, isFounder, founderBadge, createBookSuggestionItem, createBookSuggestionEmpty, renderAsaxiyBooks, uploadBookCover, compressImageForCover });
 
 // ===== Iqtibos ko'rishlari =====
 // Feed'da iqtibos kartasi ekranga chiqishi bilan (foydalanuvchi ichiga kirmasa ham) ko'rish
