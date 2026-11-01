@@ -14,10 +14,10 @@ public static class ChallengeCalendar
 
     /// <summary>
     /// Challenge rasman boshlanadigan birinchi davr (yil, oy). Bundan oldingi oylar uchun
-    /// g'olib aniqlanmaydi, e'lon qilinmaydi va reyting ko'rsatilmaydi. Challenge Iyul 2026 dan
-    /// boshlanadi.
+    /// g'olib aniqlanmaydi, e'lon qilinmaydi va reyting ko'rsatilmaydi. Haqiqiy challenge
+    /// Noyabr 2026 dan boshlanadi (Oktabr test davri edi).
     /// </summary>
-    public static readonly (int Year, int Month) StartPeriod = (2026, 7);
+    public static readonly (int Year, int Month) StartPeriod = (2026, 11);
 
     /// <summary>Berilgan davr challenge boshlanishidan oldinmi (unda g'olib bo'lmaydi).</summary>
     public static bool IsBeforeStart(int year, int month)

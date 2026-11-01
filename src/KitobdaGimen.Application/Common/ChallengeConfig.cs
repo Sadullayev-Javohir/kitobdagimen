@@ -150,6 +150,16 @@ public static class ChallengeConfigStore
                 return null;
             }
 
+            var (cy, cm) = ChallengeCalendar.CurrentPeriod();
+            var (from, to) = ChallengeCalendar.Range(cy, cm);
+
+            // Saqlangan sozlama joriy oydan oldingi davrga tegishli bo'lsa (eskirgan bo'lsa),
+            // uni joriy davr sifatida ishlatmaymiz — yangi oy yangidan boshlanadi.
+            if (cfg.EndDate < from || cfg.StartDate > to)
+            {
+                return null;
+            }
+
             EnsureThreePrizes(cfg);
             if (!string.IsNullOrWhiteSpace(cfg.Title))
             {

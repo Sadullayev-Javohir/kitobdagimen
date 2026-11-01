@@ -241,9 +241,13 @@ if (hangfireEnabled)
         "0 15 * * *",
         new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
-    // Challenge g'oliblari FAQAT super admin tomonidan qo'lda aniqlanadi (/challenge/admin).
-    // Avtomatik aniqlash o'chirilgan — avval rejalashtirilgan bo'lsa, uni olib tashlaymiz.
-    RecurringJob.RemoveIfExists(ChallengeFinalizeJob.RecurringJobId);
+    // Challenge g'oliblarini har oyning oxirgi kuni soat 23:59 da (O'zbekiston vaqti UTC+5 -> 18:59 UTC)
+    // avtomatik aniqlash va e'lon qilish jobi.
+    RecurringJob.AddOrUpdate<ChallengeFinalizeJob>(
+        ChallengeFinalizeJob.RecurringJobId,
+        job => job.RunAsync(CancellationToken.None),
+        "59 18 * * *",
+        new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
     // Jismoniy kitob band qilishlari 24 soatdan so'ng avtomatik "Mavjud"ga qaytadi.
     // Har 15 daqiqada muddati o'tgan band qilishlarni tekshiramiz.

@@ -231,6 +231,44 @@ public class ChallengeHandlerTests : TestBase
         Assert.Null(board.MyStanding);
     }
 
+    [Fact]
+    public async Task GetStoredOrNullAsync_ignores_outdated_month_config()
+    {
+        using var db = CreateContext();
+        // Oktabr configini saqlaymiz (o'tib ketgan davr)
+        var outdated = new ChallengeConfig
+        {
+            Title = "Oktabr Challenge",
+            StartDate = new DateOnly(2026, 10, 1),
+            EndDate = new DateOnly(2026, 10, 31)
+        };
+        db.AppSettings.Add(new Domain.Entities.AppSetting
+        {
+            Key = ChallengeConfigStore.SettingKey,
+            Value = System.Text.Json.JsonSerializer.Serialize(outdated),
+            UpdatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        var stored = await ChallengeConfigStore.GetStoredOrNullAsync(db);
+        Assert.Null(stored);
+
+        var config = await ChallengeConfigStore.GetOrDefaultAsync(db);
+        var (cy, cm) = ChallengeCalendar.CurrentPeriod();
+        Assert.Equal($"{ChallengeCalendar.MonthName(cm)} Challenge", config.Title);
+        var (from, to) = ChallengeCalendar.Range(cy, cm);
+        Assert.Equal(from, config.StartDate);
+        Assert.Equal(to, config.EndDate);
+    }
+
+    [Fact]
+    public void StartPeriod_is_November_2026_and_October_is_before_start()
+    {
+        Assert.Equal((2026, 11), ChallengeCalendar.StartPeriod);
+        Assert.True(ChallengeCalendar.IsBeforeStart(2026, 10));
+        Assert.False(ChallengeCalendar.IsBeforeStart(2026, 11));
+    }
+
     /// <summary>
     /// FinalizeChallengeMonthCommandHandler ISender orqali GetChallengeStandingsQuery yuboradi;
     /// bu fake faqat o'sha so'rovni haqiqiy handler'ga uzatadi.

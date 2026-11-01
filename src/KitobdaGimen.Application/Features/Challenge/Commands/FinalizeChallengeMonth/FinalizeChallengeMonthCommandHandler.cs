@@ -35,7 +35,7 @@ public class FinalizeChallengeMonthCommandHandler
             await AdminGuard.RequireAsync(_db, _currentUser, UserRole.SuperAdmin, cancellationToken);
         }
 
-        // Challenge boshlanishidan (Iyul 2026) oldingi oylar uchun g'olib aniqlanmaydi.
+        // Challenge boshlanishidan (Noyabr 2026) oldingi oylar uchun g'olib aniqlanmaydi.
         if (ChallengeCalendar.IsBeforeStart(request.Year, request.Month))
         {
             return 0;
@@ -62,10 +62,10 @@ public class FinalizeChallengeMonthCommandHandler
         }
 
         var announcedAt = DateTime.UtcNow;
-        var customCfg = await ChallengeConfigStore.GetStoredOrNullAsync(_db, cancellationToken);
+        var config = await ChallengeConfigStore.GetOrDefaultAsync(_db, cancellationToken);
         foreach (var s in standings)
         {
-            var prize = customCfg?.GetPrize(s.Rank);
+            var prize = config.GetPrize(s.Rank);
             _db.ChallengeWinners.Add(new ChallengeWinner
             {
                 Year = request.Year,
