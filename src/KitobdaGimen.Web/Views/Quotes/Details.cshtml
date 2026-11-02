@@ -73,7 +73,7 @@
                 }
                 <div class="meta">
                     <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(q.Author.Username, q.Author.Id)">@Model.Quote.Author.FullName</a>
-                    <time class="time" datetime="@q.CreatedAt.ToString("o")" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(q.CreatedAt)">
+                    <time class="time" datetime="@q.CreatedAt.ToString("o")" title="@KitobdaGimen.Web.ViewHelpers.ExactPublishedAt(q.CreatedAt)">
                         <span class="material-symbols-outlined">schedule</span>
                         @KitobdaGimen.Web.ViewHelpers.PublishedAt(q.CreatedAt)
                     </time>

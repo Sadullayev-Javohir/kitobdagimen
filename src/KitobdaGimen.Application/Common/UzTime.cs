@@ -27,9 +27,26 @@ public static class UzTime
 
     /// <summary>
     /// Iqtibos va taqriz kartalari uchun chop etilgan vaqt va sana (O'zbekiston, UTC+5).
-    /// Format: "17:43  02.11.26" (HH:mm  dd.MM.yy).
+    /// 1 kun ichida (24 soatgacha): "hozirgina", "5 daqiqa oldin", "4 soat oldin", "23 soat oldin".
+    /// 24 soatdan oshganda: "02.10.26" (dd.MM.yy formati).
     /// </summary>
     public static string FormatPublishedAt(DateTime utc)
+    {
+        var span = DateTime.UtcNow - utc;
+        if (span.TotalSeconds < 0) span = TimeSpan.Zero;
+
+        if (span.TotalSeconds < 60) return "hozirgina";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} daqiqa oldin";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} soat oldin";
+
+        var local = FromUtc(utc);
+        return local.ToString("dd.MM.yy", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Aniq soat va sana formati: masalan "17:43  02.11.26" (tooltip/title uchun).
+    /// </summary>
+    public static string FormatExactPublishedAt(DateTime utc)
     {
         var local = FromUtc(utc);
         return local.ToString("HH:mm  dd.MM.yy", System.Globalization.CultureInfo.InvariantCulture);

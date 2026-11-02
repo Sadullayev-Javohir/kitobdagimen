@@ -134,7 +134,7 @@
                                     <a class="name" href="@ViewHelpers.ProfileUrl(p.AuthorUsername, p.AuthorId)">@p.AuthorName</a>
                                     @Html.Raw(ViewHelpers.FounderBadge(p.AuthorUsername))
                                 </div>
-                                <div class="time" title="@ViewHelpers.RelativeTime(p.CreatedAt)">@ViewHelpers.PublishedAt(p.CreatedAt)</div>
+                                <div class="time" title="@ViewHelpers.ExactPublishedAt(p.CreatedAt)">@ViewHelpers.PublishedAt(p.CreatedAt)</div>
                             </div>
                         </header>
                         <p style="margin:8px 0 10px">@Excerpt(p.ReviewText, 300)</p>
@@ -182,7 +182,7 @@
                                     <a class="name" href="@ViewHelpers.ProfileUrl(qt.AuthorUsername, qt.AuthorId)">@qt.AuthorName</a>
                                     @Html.Raw(ViewHelpers.FounderBadge(qt.AuthorUsername))
                                 </div>
-                                <div class="time" title="@ViewHelpers.RelativeTime(qt.CreatedAt)">@ViewHelpers.PublishedAt(qt.CreatedAt)</div>
+                                <div class="time" title="@ViewHelpers.ExactPublishedAt(qt.CreatedAt)">@ViewHelpers.PublishedAt(qt.CreatedAt)</div>
                             </div>
                         </header>
                         <div class="quote-feed-body no-cover">

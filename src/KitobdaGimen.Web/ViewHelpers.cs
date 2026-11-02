@@ -79,9 +79,12 @@ public static class ViewHelpers
 
     /// <summary>
     /// Iqtibos va taqriz kartalari uchun chop etilgan vaqt va sana (O'zbekiston, UTC+5).
-    /// Format: "17:43  02.11.26" (HH:mm  dd.MM.yy).
+    /// 1 kun ichida: "4 soat oldin", "23 soat oldin"; 24 soatdan oshganda: "02.10.26".
     /// </summary>
     public static string PublishedAt(DateTime utc) => UzTime.FormatPublishedAt(utc);
+
+    /// <summary>Aniq soat va sana (tooltip uchun): "17:43  02.11.26".</summary>
+    public static string ExactPublishedAt(DateTime utc) => UzTime.FormatExactPublishedAt(utc);
 
     /// <summary>First letter of a name, upper-cased, for avatar fallbacks.</summary>
     public static string Initial(string? name)
