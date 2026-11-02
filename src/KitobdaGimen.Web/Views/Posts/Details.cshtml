@@ -77,9 +77,9 @@
                 </a>
                 <div class="meta">
                     <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(Model.Post.Author.Username, Model.Post.Author.Id)">@Model.Post.Author.FullName</a>
-                    <time class="time" datetime="@Model.Post.CreatedAt.ToString("o")" title="@Model.Post.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")">
+                    <time class="time" datetime="@Model.Post.CreatedAt.ToString("o")" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.Post.CreatedAt)">
                         <span class="material-symbols-outlined">schedule</span>
-                        @KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.Post.CreatedAt)
+                        @KitobdaGimen.Web.ViewHelpers.PublishedAt(Model.Post.CreatedAt)
                     </time>
                 </div>
             </div>

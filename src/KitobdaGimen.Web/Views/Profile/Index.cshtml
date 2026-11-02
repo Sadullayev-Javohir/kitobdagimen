@@ -320,7 +320,7 @@
                                         }
                                     </div>
                                 </div>
-                                <div class="muted" style="font-size:13px; margin-top:8px">@q.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy")</div>
+                                <div class="time muted" style="font-size:11px; margin-top:8px; white-space:pre-wrap; font-variant-numeric:tabular-nums" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(q.CreatedAt)">@KitobdaGimen.Web.ViewHelpers.PublishedAt(q.CreatedAt)</div>
                             </div>
                         }
                     </div>

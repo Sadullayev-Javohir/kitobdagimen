@@ -77,6 +77,12 @@ public static class ViewHelpers
         return utc.ToLocalTime().ToString("dd.MM.yyyy");
     }
 
+    /// <summary>
+    /// Iqtibos va taqriz kartalari uchun chop etilgan vaqt va sana (O'zbekiston, UTC+5).
+    /// Format: "17:43  02.11.26" (HH:mm  dd.MM.yy).
+    /// </summary>
+    public static string PublishedAt(DateTime utc) => UzTime.FormatPublishedAt(utc);
+
     /// <summary>First letter of a name, upper-cased, for avatar fallbacks.</summary>
     public static string Initial(string? name)
         => string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[..1].ToUpper();

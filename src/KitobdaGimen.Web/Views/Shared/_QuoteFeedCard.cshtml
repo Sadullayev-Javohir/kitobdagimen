@@ -37,7 +37,7 @@
                 @Html.Raw(KitobdaGimen.Web.ViewHelpers.DailyHeroCrown(isAuthorTodayHero))
                 <span class="badge badge-quote"><span class="material-symbols-outlined">format_quote</span>Iqtibos</span>
             </div>
-            <div class="time">@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)</div>
+            <div class="time" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)">@KitobdaGimen.Web.ViewHelpers.PublishedAt(Model.CreatedAt)</div>
         </div>
     </header>
 

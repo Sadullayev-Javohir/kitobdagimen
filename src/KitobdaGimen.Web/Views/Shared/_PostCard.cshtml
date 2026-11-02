@@ -41,7 +41,7 @@
                     <span class="badge badge-author">Muallif</span>
                 }
             </div>
-            <div class="time">@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)</div>
+            <div class="time" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(Model.CreatedAt)">@KitobdaGimen.Web.ViewHelpers.PublishedAt(Model.CreatedAt)</div>
         </div>
         @if (showAuthorActions && !Model.IsAuthor)
         {

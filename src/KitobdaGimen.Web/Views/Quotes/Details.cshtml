@@ -73,9 +73,9 @@
                 }
                 <div class="meta">
                     <a class="name" href="@KitobdaGimen.Web.ViewHelpers.ProfileUrl(q.Author.Username, q.Author.Id)">@Model.Quote.Author.FullName</a>
-                    <time class="time" datetime="@q.CreatedAt.ToString("o")">
+                    <time class="time" datetime="@q.CreatedAt.ToString("o")" title="@KitobdaGimen.Web.ViewHelpers.RelativeTime(q.CreatedAt)">
                         <span class="material-symbols-outlined">schedule</span>
-                        @KitobdaGimen.Web.ViewHelpers.RelativeTime(q.CreatedAt)
+                        @KitobdaGimen.Web.ViewHelpers.PublishedAt(q.CreatedAt)
                     </time>
                 </div>
                 <span class="badge badge-quote" style="margin-left:auto"><span class="material-symbols-outlined">format_quote</span>Iqtibos</span>

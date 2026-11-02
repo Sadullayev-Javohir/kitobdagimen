@@ -1305,7 +1305,7 @@ textarea.input { resize: vertical; min-height: 90px; }
 .post-head .name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .post-head .name { font-weight: 600; font-size: 14.5px; color: var(--text); }
 .post-head .name:hover { color: var(--primary); }
-.post-head .time { font-size: 12.5px; color: var(--text-muted); }
+.post-head .time { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: pre-wrap; font-variant-numeric: tabular-nums; }
 .post-follow-btn { margin-left: auto; flex-shrink: 0; }
 .badge-author { background: var(--accent-soft); color: var(--accent); font-size: 11.5px; padding: 2px 8px; }
 
@@ -1438,8 +1438,8 @@ textarea.input { resize: vertical; min-height: 90px; }
 .pd-author { display: flex; align-items: center; gap: 14px; }
 .pd-author .meta { line-height: 1.3; }
 .pd-author .name { font-weight: 600; color: var(--text); font-size: 15.5px; }
-.pd-author .time { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-muted); }
-.pd-author .time .material-symbols-outlined { font-size: 16px; }
+.pd-author .time { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-muted); white-space: pre-wrap; font-variant-numeric: tabular-nums; }
+.pd-author .time .material-symbols-outlined { font-size: 14px; }
 .pd-hero {
     border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow);
     background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; max-height: 420px;

@@ -18,5 +18,20 @@ public static class UzTime
     public static DateOnly Today => DateOnly.FromDateTime(Now);
 
     /// <summary>UTC vaqtni O'zbekiston mahalliy vaqtiga aylantiradi.</summary>
-    public static DateTime FromUtc(DateTime utc) => utc.Kind == DateTimeKind.Utc ? utc.AddHours(OffsetHours) : DateTime.SpecifyKind(utc, DateTimeKind.Utc).AddHours(OffsetHours);
+    public static DateTime FromUtc(DateTime utc)
+    {
+        if (utc.Kind == DateTimeKind.Local)
+            utc = utc.ToUniversalTime();
+        return (utc.Kind == DateTimeKind.Utc ? utc : DateTime.SpecifyKind(utc, DateTimeKind.Utc)).AddHours(OffsetHours);
+    }
+
+    /// <summary>
+    /// Iqtibos va taqriz kartalari uchun chop etilgan vaqt va sana (O'zbekiston, UTC+5).
+    /// Format: "17:43  02.11.26" (HH:mm  dd.MM.yy).
+    /// </summary>
+    public static string FormatPublishedAt(DateTime utc)
+    {
+        var local = FromUtc(utc);
+        return local.ToString("HH:mm  dd.MM.yy", System.Globalization.CultureInfo.InvariantCulture);
+    }
 }
